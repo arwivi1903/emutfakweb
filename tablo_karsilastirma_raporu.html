@@ -1,0 +1,421 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Veritabanı Karşılaştırma Raporu</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        body {
+            background-color: #f8f9fa;
+            padding: 20px 0;
+        }
+        .report-header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 30px;
+            border-radius: 10px;
+            margin-bottom: 30px;
+        }
+        .stat-card {
+            background: white;
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .stat-number {
+            font-size: 2.5rem;
+            font-weight: bold;
+            color: #667eea;
+        }
+        .stat-label {
+            color: #6c757d;
+            font-size: 0.9rem;
+            text-transform: uppercase;
+        }
+        .table-card {
+            background: white;
+            border-radius: 10px;
+            padding: 25px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+        .badge-custom {
+            padding: 8px 15px;
+            border-radius: 20px;
+            font-weight: 500;
+        }
+        .column-diff {
+            background-color: #f8f9fa;
+            padding: 15px;
+            border-radius: 8px;
+            margin: 10px 0;
+        }
+        .diff-item {
+            padding: 8px 0;
+            border-bottom: 1px solid #e9ecef;
+        }
+        .diff-item:last-child {
+            border-bottom: none;
+        }
+        .code-block {
+            background-color: #282c34;
+            color: #abb2bf;
+            padding: 15px;
+            border-radius: 5px;
+            font-family: 'Courier New', monospace;
+            font-size: 0.9rem;
+            overflow-x: auto;
+        }
+        .section-title {
+            border-left: 4px solid #667eea;
+            padding-left: 15px;
+            margin: 30px 0 20px 0;
+        }
+        .table-list {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+        .table-badge {
+            background-color: #e7f3ff;
+            color: #0066cc;
+            padding: 5px 12px;
+            border-radius: 15px;
+            font-size: 0.85rem;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <div class="report-header text-center">
+            <h1 class="mb-3">📊 Veritabanı Tablo Karşılaştırma Raporu</h1>
+            <p class="lead mb-0">emutfak_default.sql vs u0288420_ekm.sql</p>
+            <small>Oluşturulma Tarihi: 16 Aralık 2025</small>
+        </div>
+
+        <!-- İstatistikler -->
+        <div class="row mb-4">
+            <div class="col-md-3 col-sm-6">
+                <div class="stat-card text-center">
+                    <div class="stat-number">44</div>
+                    <div class="stat-label">Yerel Tablo</div>
+                    <small class="text-muted">emutfak_default.sql</small>
+                </div>
+            </div>
+            <div class="col-md-3 col-sm-6">
+                <div class="stat-card text-center">
+                    <div class="stat-number">42</div>
+                    <div class="stat-label">Canlı Tablo</div>
+                    <small class="text-muted">u0288420_ekm.sql</small>
+                </div>
+            </div>
+            <div class="col-md-3 col-sm-6">
+                <div class="stat-card text-center">
+                    <div class="stat-number text-success">40</div>
+                    <div class="stat-label">Aynı Yapıda</div>
+                    <small class="text-muted">✓ Uyumlu</small>
+                </div>
+            </div>
+            <div class="col-md-3 col-sm-6">
+                <div class="stat-card text-center">
+                    <div class="stat-number text-warning">2</div>
+                    <div class="stat-label">Farklılık Var</div>
+                    <small class="text-muted">⚠ Dikkat</small>
+                </div>
+            </div>
+        </div>
+
+        <!-- Eksik Tablolar -->
+        <div class="table-card">
+            <h3 class="section-title text-danger">❌ Eksik Tablolar</h3>
+            <p class="text-muted">Canlı sunucuda (u0288420_ekm.sql) bulunmayan tablolar</p>
+            
+            <div class="alert alert-danger" role="alert">
+                <strong>2 VIEW tablosu eksik</strong> - Bunlar sanal tablolardır ve veri kaybına yol açmaz.
+            </div>
+
+            <div class="row">
+                <div class="col-md-6">
+                    <div class="column-diff">
+                        <h5><span class="badge bg-danger">VIEW</span> vw_recent_logs</h5>
+                        <p class="mb-2"><strong>Açıklama:</strong> Son log kayıtlarını gösterir</p>
+                        <p class="mb-0"><strong>Sütun Sayısı:</strong> 11</p>
+                        <small class="text-muted">LogID, LogType, LogTypeName, LogDesc, LogStatus, UserID, UserName, LogDate, IpAddress, EntityType, EntityID</small>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="column-diff">
+                        <h5><span class="badge bg-danger">VIEW</span> vw_today_summary</h5>
+                        <p class="mb-2"><strong>Açıklama:</strong> Bugünkü log özetlerini gösterir</p>
+                        <p class="mb-0"><strong>Sütun Sayısı:</strong> 4</p>
+                        <small class="text-muted">LogType, LogStatus, count, log_date</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Farklılık Bulunan Tablolar -->
+        <div class="table-card">
+            <h3 class="section-title text-warning">⚠️ Farklılık Bulunan Tablolar</h3>
+            
+            <!-- Ayarlar Tablosu -->
+            <div class="border rounded p-3 mb-4">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <h4 class="mb-0">1️⃣ ayarlar</h4>
+                    <div>
+                        <span class="badge badge-custom bg-primary">Yerel: 15 sütun</span>
+                        <span class="badge badge-custom bg-warning text-dark">Canlı: 8 sütun</span>
+                    </div>
+                </div>
+
+                <div class="alert alert-warning">
+                    <strong>⚠️ Kritik Fark:</strong> Canlı sunucuda 7 sütun eksik!
+                </div>
+
+                <h6 class="mt-3 mb-2">🔵 Sadece emutfak_default.sql'de Olan Sütunlar:</h6>
+                <div class="table-responsive">
+                    <table class="table table-sm table-bordered">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Sütun Adı</th>
+                                <th>Veri Tipi</th>
+                                <th>Açıklama</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td><code>CompanyName</code></td>
+                                <td>varchar(255)</td>
+                                <td>Şirket adı</td>
+                            </tr>
+                            <tr>
+                                <td><code>SitePhone</code></td>
+                                <td>varchar(20)</td>
+                                <td>Telefon numarası</td>
+                            </tr>
+                            <tr>
+                                <td><code>SiteEmail</code></td>
+                                <td>varchar(255)</td>
+                                <td>E-posta adresi</td>
+                            </tr>
+                            <tr>
+                                <td><code>SiteURL</code></td>
+                                <td>varchar(255)</td>
+                                <td>Web sitesi URL'i</td>
+                            </tr>
+                            <tr>
+                                <td><code>SiteAddress</code></td>
+                                <td>text</td>
+                                <td>Adres bilgisi</td>
+                            </tr>
+                            <tr>
+                                <td><code>MetaRobots</code></td>
+                                <td>varchar(100)</td>
+                                <td>SEO robot ayarları</td>
+                            </tr>
+                            <tr>
+                                <td><code>SiteLanguage</code></td>
+                                <td>varchar(10)</td>
+                                <td>Dil ayarı</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <h6 class="mt-4 mb-2">🟡 Karakter Set Farkları:</h6>
+                <div class="alert alert-info">
+                    <p class="mb-1"><strong>7 sütunda</strong> karakter set farkı var (utf8 → utf8mb3)</p>
+                    <small>Bu fark geriye dönük uyumludur, Türkçe karakter desteği her ikisinde de vardır.</small>
+                </div>
+                <p class="text-muted mb-0">
+                    <small>Etkilenen sütunlar: SiteTitle, SiteDesc, SiteAuthor, SiteSeo, SiteKeyword, SiteLogo, SiteAvatar</small>
+                </p>
+            </div>
+
+            <!-- Users Tablosu -->
+            <div class="border rounded p-3">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <h4 class="mb-0">2️⃣ users</h4>
+                    <div>
+                        <span class="badge badge-custom bg-success">Yerel: 12 sütun</span>
+                        <span class="badge badge-custom bg-success">Canlı: 12 sütun</span>
+                    </div>
+                </div>
+
+                <div class="alert alert-info">
+                    <strong>ℹ️ Sütun sayısı aynı</strong> ancak karakter set farkları var
+                </div>
+
+                <h6 class="mt-3 mb-2">🟡 Karakter Set Farkları:</h6>
+                <div class="alert alert-info">
+                    <p class="mb-1"><strong>7 sütunda</strong> karakter set farkı var (utf8 → utf8mb3)</p>
+                    <small>Bu fark önemsizdir, her ikisi de aynı karakter setini temsil eder.</small>
+                </div>
+                <p class="text-muted mb-0">
+                    <small>Etkilenen sütunlar: UserName, UserMail, UserPass, UserPhone, UserPicture, SessionMail, IpAdress</small>
+                </p>
+            </div>
+        </div>
+
+        <!-- Aynı Yapıda Olan Tablolar -->
+        <div class="table-card">
+            <h3 class="section-title text-success">✅ Aynı Yapıda Olan Tablolar</h3>
+            <p class="text-muted mb-3">40 tablo tamamen uyumlu</p>
+            
+            <div class="table-list">
+                <span class="table-badge">admincek</span>
+                <span class="table-badge">adminkasa</span>
+                <span class="table-badge">bankalar</span>
+                <span class="table-badge">dolapboy</span>
+                <span class="table-badge">dosyalar</span>
+                <span class="table-badge">duyurular</span>
+                <span class="table-badge">edosyalar</span>
+                <span class="table-badge">faturafile</span>
+                <span class="table-badge">faturalar</span>
+                <span class="table-badge">firmalar</span>
+                <span class="table-badge">govdecinsi</span>
+                <span class="table-badge">govderenk</span>
+                <span class="table-badge">ilceler</span>
+                <span class="table-badge">iller</span>
+                <span class="table-badge">kapakcinsi</span>
+                <span class="table-badge">kasahareketleri</span>
+                <span class="table-badge">kasatips</span>
+                <span class="table-badge">log</span>
+                <span class="table-badge">lognew</span>
+                <span class="table-badge">logtypes</span>
+                <span class="table-badge">logtypesnew</span>
+                <span class="table-badge">musteriler</span>
+                <span class="table-badge">nakitkasa</span>
+                <span class="table-badge">odemeler</span>
+                <span class="table-badge">randevular</span>
+                <span class="table-badge">silinenrandevular</span>
+                <span class="table-badge">sozlesme_sablonlari</span>
+                <span class="table-badge">sozlesmeler</span>
+                <span class="table-badge">subeler</span>
+                <span class="table-badge">tahsilat</span>
+                <span class="table-badge">tahsilatcek</span>
+                <span class="table-badge">tahsilathavale</span>
+                <span class="table-badge">tahsilatkart</span>
+                <span class="table-badge">tahsilatnakit</span>
+                <span class="table-badge">taksitler</span>
+                <span class="table-badge">ticarifatura</span>
+                <span class="table-badge">urungrup</span>
+                <span class="table-badge">urunler</span>
+                <span class="table-badge">usergrup</span>
+                <span class="table-badge">virmanhareket</span>
+            </div>
+        </div>
+
+        <!-- Kritik Değerlendirme -->
+        <div class="table-card">
+            <h3 class="section-title text-primary">📋 Kritik Değerlendirme</h3>
+            
+            <div class="row">
+                <div class="col-md-6">
+                    <div class="alert alert-success">
+                        <h5 class="alert-heading">✅ Veri Uyumluluğu</h5>
+                        <hr>
+                        <ul class="mb-0">
+                            <li>Tüm kritik tablolar her iki veritabanında mevcut</li>
+                            <li>Veri tipleri genel olarak uyumlu</li>
+                            <li>Charset farkları geriye dönük uyumlu</li>
+                        </ul>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="alert alert-warning">
+                        <h5 class="alert-heading">⚠️ Dikkat Edilmesi Gerekenler</h5>
+                        <hr>
+                        <ul class="mb-0">
+                            <li><strong>ayarlar:</strong> 7 kolon eksik - uygulama hata verebilir</li>
+                            <li><strong>VIEW'lar:</strong> Dashboard/rapor sayfaları etkilenebilir</li>
+                            <li><strong>Charset:</strong> utf8 ve utf8mb3 aynı - sorun yok</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Öneriler -->
+        <div class="table-card">
+            <h3 class="section-title text-info">🔧 Öneriler ve Çözümler</h3>
+            
+            <div class="accordion" id="solutionsAccordion">
+                <!-- Canlıya Geçiş -->
+                <div class="accordion-item">
+                    <h2 class="accordion-header" id="headingOne">
+                        <button class="accordion-button" type="button" data-bs-toggle="collapse" data-bs-target="#collapseOne">
+                            <strong>1️⃣ Canlıya Geçiş İçin Yapılması Gerekenler</strong>
+                        </button>
+                    </h2>
+                    <div id="collapseOne" class="accordion-collapse collapse show" data-bs-parent="#solutionsAccordion">
+                        <div class="accordion-body">
+                            <h6>A) ayarlar Tablosuna Eksik Kolonları Ekleyin:</h6>
+                            <div class="code-block">ALTER TABLE ayarlar ADD COLUMN CompanyName varchar(255) DEFAULT NULL;
+ALTER TABLE ayarlar ADD COLUMN SitePhone varchar(20) DEFAULT NULL;
+ALTER TABLE ayarlar ADD COLUMN SiteEmail varchar(255) DEFAULT NULL;
+ALTER TABLE ayarlar ADD COLUMN SiteURL varchar(255) DEFAULT NULL;
+ALTER TABLE ayarlar ADD COLUMN SiteAddress text DEFAULT NULL;
+ALTER TABLE ayarlar ADD COLUMN MetaRobots varchar(100) DEFAULT NULL;
+ALTER TABLE ayarlar ADD COLUMN SiteLanguage varchar(10) DEFAULT NULL;</div>
+                            
+                            <h6 class="mt-3">B) VIEW Tablolarını Oluşturun</h6>
+                            <p class="text-muted">CREATE VIEW sorguları emutfak_default.sql dosyasından alınmalıdır.</p>
+                            
+                            <h6 class="mt-3">C) Uygulama Kodunu Test Edin</h6>
+                            <p class="text-muted">Değişiklikler sonrası tüm özellikleri test edin.</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Yerel Geliştirme -->
+                <div class="accordion-item">
+                    <h2 class="accordion-header" id="headingTwo">
+                        <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseTwo">
+                            <strong>2️⃣ Yerel Geliştirme İçin</strong>
+                        </button>
+                    </h2>
+                    <div id="collapseTwo" class="accordion-collapse collapse" data-bs-parent="#solutionsAccordion">
+                        <div class="accordion-body">
+                            <ul>
+                                <li>emutfak_default.sql kullanmaya devam edin</li>
+                                <li>Yeni özellikler için güncel yapı uygun</li>
+                                <li>Canlıya geçmeden önce yapı uyumluluğunu kontrol edin</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Veri Yedekleme -->
+                <div class="accordion-item">
+                    <h2 class="accordion-header" id="headingThree">
+                        <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseThree">
+                            <strong>3️⃣ Veri Yedekleme Stratejisi</strong>
+                        </button>
+                    </h2>
+                    <div id="collapseThree" class="accordion-collapse collapse" data-bs-parent="#solutionsAccordion">
+                        <div class="accordion-body">
+                            <div class="alert alert-danger">
+                                <strong>⚠️ ÖNEMLİ:</strong> Canlı sunucudaki veriyi kaybetmemek için değişiklik yapmadan önce tam yedek alın!
+                            </div>
+                            <div class="code-block">mysqldump -u kullanici -p u0288420_ekm > backup_$(date +%Y%m%d_%H%M%S).sql</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Footer -->
+        <div class="text-center mt-5 mb-4">
+            <p class="text-muted">
+                <small>Bu rapor otomatik olarak oluşturulmuştur • 16 Aralık 2025</small>
+            </p>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>
