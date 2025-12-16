@@ -1,0 +1,8 @@
+# Rewrite assets paths
+<IfModule mod_rewrite.c>
+    RewriteEngine On
+    RewriteBase /emutfakweb/p/
+    
+    # Redirect /assets/ requests to /dist/assets/
+    RewriteRule ^assets/(.*)$ dist/assets/$1 [L]
+</IfModule>
