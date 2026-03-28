@@ -154,12 +154,12 @@ document.addEventListener('DOMContentLoaded', function() {
             limit: 10
         });
 
-        fetch(`/emutfakweb/p/dist/api/usersapi.php?${params}`)
+        fetch(`/prolynweb/p/dist/api/usersapi.php?${params}`)
             .then(response => {
                 if (!response.ok) {
                     console.error('HTTP Error:', response.status, response.statusText);
                     if (response.status === 401) {
-                        window.location.href = '/emutfakweb/p/login.php';
+                        window.location.href = '/prolynweb/p/login.php';
                         return null;
                     }
                 }
@@ -175,7 +175,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     `Toplam: ${data.pagination.total}`;
                 } else {
                     if (data.redirect) {
-                        window.location.href = '/emutfakweb/p/login.php';
+                        window.location.href = '/prolynweb/p/login.php';
                     } else {
                         showError(data.message || 'Veriler yüklenirken hata oluştu');
                     }
@@ -311,7 +311,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
     window.deleteUser = function(userId) {
         if (confirm('Bu kullanıcıyı silmek istediğinize emin misiniz?')) {
-            fetch('/emutfakweb/p/dist/api/usersapi.php?action=delete', {
+            fetch('/prolynweb/p/dist/api/usersapi.php?action=delete', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json'

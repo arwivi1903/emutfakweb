@@ -27,7 +27,7 @@ if (!isset($_SESSION['admin_id'])) {
 
 // Database örneğini al
 try {
-    $db = new Database('master');
+    $db = new Database('prolyn_master');
 } catch (Exception $e) {
     http_response_code(500);
     echo json_encode(['success' => false, 'message' => 'Database hatası: ' . $e->getMessage()]);
@@ -72,7 +72,7 @@ if ($action === 'list' && $method === 'GET') {
         }
 
         // Toplam kayıt sayısını al
-        $countQuery = "SELECT COUNT(*) as total FROM admin_users WHERE {$whereClause}";
+        $countQuery = "SELECT COUNT(*) as total FROM admins WHERE {$whereClause}";
         $countResult = $db->getRow($countQuery, $params);
         $total = isset($countResult->total) ? (int)$countResult->total : 0;
 
@@ -80,7 +80,7 @@ if ($action === 'list' && $method === 'GET') {
         $query = "SELECT admin_id, email, full_name, admin_pic, role, status, 
                   can_manage_customers, can_manage_subscriptions, can_manage_payments, 
                   can_view_analytics, two_factor_enabled, last_login, created_at, updated_at 
-                  FROM admin_users 
+                  FROM admins
                   WHERE {$whereClause} 
                   ORDER BY {$sort} {$order} 
                   LIMIT " . (int)$limit . " OFFSET " . (int)$offset;

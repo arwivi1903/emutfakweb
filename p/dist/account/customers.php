@@ -35,6 +35,11 @@ require_once __DIR__ . '/../../config/header.php';
 require_once __DIR__ . '/../../config/sidebar.php';
 
 
+// Otomatik süre kontrolü: Süresi dolan deneme hesaplarını pasife (expired) al
+if (isset($db)) {
+    $db->Update("UPDATE customers SET status = 'expired' WHERE status = 'trial' AND trial_end_date < CURDATE() AND trial_end_date IS NOT NULL");
+}
+
 // Filtreler
 $q = trim($_GET['q'] ?? '');
 $status = trim($_GET['status'] ?? '');
@@ -118,7 +123,7 @@ function createSortLink($key, $label, $currentSort, $currentDir) {
     } else {
         $icon = ' <i class="ki-duotone ki-sort fs-5 text-muted"></i>';
     }
-    $href = 'customers.php?sort=' . $key . '&dir=' . $nextDir . '&page=1';
+    $href = 'dist/account/customers.php?sort=' . $key . '&dir=' . $nextDir . '&page=1';
     if (!empty($_GET['q'])) $href .= '&q=' . urlencode($_GET['q']);
     if (!empty($_GET['status'])) $href .= '&status=' . urlencode($_GET['status']);
     if (!empty($_GET['industry'])) $href .= '&industry=' . urlencode($_GET['industry']);
@@ -137,6 +142,13 @@ function createSortLink($key, $label, $currentSort, $currentDir) {
                 <?php if (isset($_GET['deleted'])): ?>
                 <div class="alert alert-success alert-dismissible fade show" role="alert">
                     <strong>Başarılı!</strong> Müşteri pasif duruma alındı.
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                </div>
+                <?php endif; ?>
+
+                <?php if (isset($_GET['updated'])): ?>
+                <div class="alert alert-success alert-dismissible fade show" role="alert">
+                    <strong>Başarılı!</strong> Müşteri bilgileri güncellendi.
                     <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
                 </div>
                 <?php endif; ?>
@@ -254,7 +266,7 @@ function createSortLink($key, $label, $currentSort, $currentDir) {
                             <span class="text-muted mt-1 fw-semibold fs-7">Tüm müşterilerinizi görüntüleyin ve yönetin</span>
                         </h3>
                         <div class="card-toolbar">
-                            <a href="customeradd.php" class="btn btn-sm btn-light-primary">
+                            <a href="dist/account/customeradd.php" class="btn btn-sm btn-light-primary">
                                 <i class="ki-duotone ki-plus fs-2"></i>
                                 Yeni Müşteri
                             </a>
@@ -291,7 +303,7 @@ function createSortLink($key, $label, $currentSort, $currentDir) {
                                 </div>
                                 <div class="col-md-4 text-end">
                                     <?php if ($q || $status || $industry || $letter): ?>
-                                    <a href="customers.php" class="btn btn-light-secondary">
+                                    <a href="dist/account/customers.php" class="btn btn-light-secondary">
                                         <i class="ki-duotone ki-arrows-circle fs-2"></i>
                                         Filtreleri Temizle
                                     </a>
@@ -399,7 +411,7 @@ function createSortLink($key, $label, $currentSort, $currentDir) {
                                                         <?php endif; ?>
                                                     </div>
                                                     <div class="d-flex flex-column">
-                                                        <a href="customer-detail.php?id=<?php echo (int)($customer->customer_id ?? 0); ?>" class="text-gray-900 fw-bold text-hover-primary"><?php echo htmlspecialchars($customer->company_name ?? ''); ?></a>
+                                                        <a href="dist/account/customer-detail.php?id=<?php echo (int)($customer->customer_id ?? 0); ?>" class="text-gray-900 fw-bold text-hover-primary"><?php echo htmlspecialchars($customer->company_name ?? ''); ?></a>
                                                         <?php if (!empty($customer->contact_name)): ?>
                                                             <span class="text-muted fs-7"><?php echo htmlspecialchars($customer->contact_name); ?></span>
                                                         <?php endif; ?>
@@ -456,12 +468,12 @@ function createSortLink($key, $label, $currentSort, $currentDir) {
                                                     $daysLeft = (int)$diff->format('%r%a');
                                                     
                                                     if ($daysLeft > 0) {
-                                                        $badgeClass = $daysLeft > 7 ? 'success' : ($daysLeft > 3 ? 'warning' : 'danger');
-                                                        echo '<span class="badge badge-light-' . $badgeClass . '">' . $daysLeft . ' gün</span>';
+                                                        $badgeClass = $daysLeft < 30 ? 'danger' : 'success';
+                                                        echo '<span class="badge badge-light-' . $badgeClass . '">' . $daysLeft . ' Gün</span>';
                                                     } elseif ($daysLeft === 0) {
                                                         echo '<span class="badge badge-danger">Bugün Bitiyor</span>';
                                                     } else {
-                                                        echo '<span class="badge badge-secondary">Süresi Doldu (' . abs($daysLeft) . ' gün)</span>';
+                                                        echo '<span class="badge badge-secondary">Süresi Doldu (' . abs($daysLeft) . ' Gün)</span>';
                                                     }
                                                 } else {
                                                     echo '<span class="text-muted">-</span>';
@@ -478,7 +490,7 @@ function createSortLink($key, $label, $currentSort, $currentDir) {
                                             </td>
                                             <td class="text-center">
                                                 <div class="d-flex justify-content-center gap-2">
-                                                    <a href="customer-edit.php?id=<?php echo (int)($customer->customer_id ?? 0); ?>" 
+                                                    <a href="dist/account/customer-edit.php?id=<?php echo (int)($customer->customer_id ?? 0); ?>" 
                                                        class="btn btn-icon btn-sm btn-primary" 
                                                        data-bs-toggle="tooltip" 
                                                        title="Düzenle">
@@ -541,7 +553,7 @@ function createSortLink($key, $label, $currentSort, $currentDir) {
                                         if (!empty($_GET['industry'])) $params['industry'] = $_GET['industry'];
                                         if (!empty($_GET['letter'])) $params['letter'] = $_GET['letter'];
                                         if (!empty($_GET['per_page'])) $params['per_page'] = $_GET['per_page'];
-                                        return 'customers.php?' . http_build_query($params);
+                                        return 'dist/account/customers.php?' . http_build_query($params);
                                     }
                                 }
                                 

@@ -1,15 +1,15 @@
 <?php
 
 /**
- * EMUTFAKWEB - Logging Konfigürasyonu
+ * prolynweb - Logging Konfigürasyonu
  * 
  * Sistemin tamamında kullanılacak logging ayarları
  */
 
 // Log dosya yolu
-define('LOG_FILE_PATH', '/Applications/XAMPP/xamppfiles/logs/emutfakweb.log');
-define('LOG_ERROR_PATH', '/Applications/XAMPP/xamppfiles/logs/emutfakweb_error.log');
-define('LOG_DEBUG_PATH', '/Applications/XAMPP/xamppfiles/logs/emutfakweb_debug.log');
+define('LOG_FILE_PATH', '/Applications/XAMPP/xamppfiles/logs/prolynweb.log');
+define('LOG_ERROR_PATH', '/Applications/XAMPP/xamppfiles/logs/prolynweb_error.log');
+define('LOG_DEBUG_PATH', '/Applications/XAMPP/xamppfiles/logs/prolynweb_debug.log');
 
 // Log seviyeleri
 define('LOG_LEVEL_DEBUG', 1);

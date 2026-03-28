@@ -9,10 +9,10 @@ if (isset($_GET['export']) && (int)$_GET['export'] === 1) {
     oturumkontrol();
 
     $logs = $db->getRows(
-        "SELECT LogID, LogType, LogDesc, LogStatus, UserID, IpAddress, UserAgent, RequestMethod, RequestPath, LogDate 
-         FROM admin_logsnew 
-         WHERE UserID = ? 
-         ORDER BY LogDate DESC",
+        "SELECT log_id, log_type, log_description, log_status, admin_id, ip_address, user_agent, request_method, request_path, created_at 
+         FROM admin_logs 
+         WHERE admin_id = ? 
+         ORDER BY created_at DESC",
         [$_SESSION['admin_id']]
     );
 
@@ -27,7 +27,7 @@ if (isset($_GET['export']) && (int)$_GET['export'] === 1) {
     fputcsv($out, ['Tip', 'Açıklama', 'İstek Yöntemi', 'İstek Yolu', 'Durum', 'Tarih', 'IP', 'User Agent', 'LogID']);
 
     foreach ($logs as $log) {
-        $typeLabel = match($log->LogType) {
+        $typeLabel = match($log->log_type) {
             1 => 'Hata',
             2 => 'Uyarı',
             3 => 'Başarılı',
@@ -36,18 +36,18 @@ if (isset($_GET['export']) && (int)$_GET['export'] === 1) {
             default => 'Bilinmiyor',
         };
 
-        $statusLabel = ucfirst($log->LogStatus ?? 'info');
+        $statusLabel = ucfirst($log->log_status ?? 'info');
 
         fputcsv($out, [
             $typeLabel,
-            $log->LogDesc ?? '-',
-            $log->RequestMethod ?? 'GET',
-            $log->RequestPath ?? '/',
+            $log->log_description ?? '-',
+            $log->request_method ?? 'GET',
+            $log->request_path ?? '/',
             $statusLabel,
-            $log->LogDate,
-            $log->IpAddress ?? '-',
-            $log->UserAgent ?? '-',
-            $log->LogID,
+            $log->created_at,
+            $log->ip_address ?? '-',
+            $log->user_agent ?? '-',
+            $log->log_id,
         ]);
     }
 
@@ -152,30 +152,30 @@ require_once '../../config/sidebar.php';
 									<?php
 									// Giriş denemesi için admin bilgilerini al
 									$logcek = $db->getRows("SELECT
-                                                                LogID,
-                                                                LogType,
-                                                                LogDesc,
-                                                                LogStatus,
-                                                                UserID,
-                                                                IpAddress,
-                                                                UserAgent,
-                                                                RequestMethod,
-                                                                RequestPath,
-                                                                OldValue,
-                                                                NewValue,
-                                                                EntityType,
-                                                                EntityID,
-                                                                AdditionalData,
-                                                                LogDate 
+                                                                log_id,
+                                                                log_type,
+                                                                log_description,
+                                                                log_status,
+                                                                admin_id,
+                                                                ip_address,
+                                                                user_agent,
+                                                                request_method,
+                                                                request_path,
+                                                                old_value,
+                                                                new_value,
+                                                                entity_type,
+                                                                entity_id,
+                                                                additional_data,
+                                                                created_at 
                                                             FROM
-                                                                admin_logsnew 
+                                                                admin_logs 
                                                             WHERE
-                                                                UserID = ? 
-                                                            ORDER BY LogDate DESC", [$_SESSION['admin_id']]);
+                                                                admin_id = ? 
+                                                            ORDER BY created_at DESC", [$_SESSION['admin_id']]);
 
 									foreach ($logcek as $log) {
-                                        // Badge rengini LogType'a göre belirle
-                                        $badgeClass = match($log->LogType) {
+                                        // Badge rengini log_type'a göre belirle
+                                        $badgeClass = match($log->log_type) {
                                             1 => 'badge-light-danger',
                                             2 => 'badge-light-warning',
                                             3 => 'badge-light-success',
@@ -185,7 +185,7 @@ require_once '../../config/sidebar.php';
                                         };
                                         
                                         // Status badge rengi
-                                        $statusBadge = match(strtolower($log->LogStatus ?? 'info')) {
+                                        $statusBadge = match(strtolower($log->log_status ?? 'info')) {
                                             'success' => 'badge-light-success',
                                             'error', 'failed' => 'badge-light-danger',
                                             'warning' => 'badge-light-warning',
@@ -197,7 +197,7 @@ require_once '../../config/sidebar.php';
                                         <td class="min-w-100px">
                                             <div class="badge <?php echo $badgeClass; ?>">
                                             <?php 
-                                            echo match($log->LogType) {
+                                            echo match($log->log_type) {
                                                 1 => 'Hata',
                                                 2 => 'Uyarı',
                                                 3 => 'Başarılı',
@@ -209,21 +209,21 @@ require_once '../../config/sidebar.php';
                                         </td>
 
                                         <td class="min-w-200px">
-                                            <span class="text-gray-800"><?php echo htmlspecialchars($log->LogDesc ?? '-'); ?></span>
+                                            <span class="text-gray-800"><?php echo htmlspecialchars($log->log_description ?? '-'); ?></span>
                                         </td>
 
                                         <td class="min-w-150px">
-                                            <span class="badge badge-light"><?php echo htmlspecialchars($log->RequestMethod ?? 'GET'); ?></span>
-                                            <span class="text-gray-600"><?php echo htmlspecialchars($log->RequestPath ?? '/'); ?></span>
+                                            <span class="badge badge-light"><?php echo htmlspecialchars($log->request_method ?? 'GET'); ?></span>
+                                            <span class="text-gray-600"><?php echo htmlspecialchars($log->request_path ?? '/'); ?></span>
                                         </td>
 
                                         <td class="min-w-100px">
                                             <div class="badge <?php echo $statusBadge; ?>">
-                                                <?php echo ucfirst($log->LogStatus ?? 'info'); ?>
+                                                <?php echo ucfirst($log->log_status ?? 'info'); ?>
                                             </div>
                                         </td>
 
-                                        <td class="pe-0 text-end min-w-150px"><?php echo tr_datetime($log->LogDate); ?></td>
+                                        <td class="pe-0 text-end min-w-150px"><?php echo tr_datetime($log->created_at); ?></td>
                                     </tr>
 									<?php } ?>
                                 </tbody>

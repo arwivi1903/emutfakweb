@@ -1,7 +1,7 @@
 <?php
 /**
  * Admin Paneli Çıkış Sayfası
- * emutfakweb/p/logout.php
+ * prolynweb/p/logout.php
  * 
  * Güvenli oturum kapatma işlemini gerçekleştirir
  */
@@ -32,5 +32,5 @@ if (ini_get("session.use_cookies")) {
 session_destroy();
 
 // Login sayfasına yönlendir
-header('Location: /emutfakweb/p/login.php', true, 302);
+header('Location: /prolynweb/p/login.php', true, 302);
 exit;

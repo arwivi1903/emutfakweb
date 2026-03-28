@@ -5,7 +5,7 @@ require_once '../../config/sidebar.php';
 $dbName = isset($_GET['db']) ? $_GET['db'] : '';
 
 if (empty($dbName)) {
-    header('Location: /emutfakweb/p/dist/toolbars/db_control.php');
+    header('Location: /prolynweb/p/dist/toolbars/db_control.php');
     exit;
 }
 ?>

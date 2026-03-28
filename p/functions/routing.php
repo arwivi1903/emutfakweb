@@ -4,7 +4,7 @@ function go($url, $time=0){
     
     // URL'yi normalize et - .php eklenmemişse ve tam path değilse düzenle
     if (strpos($url, '.php') === false && strpos($url, '/') !== 0 && strpos($url, 'http') !== 0) {
-        $url = '/emutfakweb/p/' . $url . '.php';
+        $url = '/prolynweb/p/' . $url . '.php';
     }
     
     if(!headers_sent()) {
@@ -40,7 +40,7 @@ function swallOk($url){
     if(!headers_sent()) {
         // URL'yi normalize et
         if (strpos($url, '.php') === false && strpos($url, '/') !== 0) {
-            $url = '/emutfakweb/p/' . $url . '.php';
+            $url = '/prolynweb/p/' . $url . '.php';
         }
         header("Location:".$url."?islem=ok");
         exit;
@@ -51,7 +51,7 @@ function swallError($url){
     if(!headers_sent()) {
         // URL'yi normalize et
         if (strpos($url, '.php') === false && strpos($url, '/') !== 0) {
-            $url = '/emutfakweb/p/' . $url . '.php';
+            $url = '/prolynweb/p/' . $url . '.php';
         }
         header("Location:".$url."?islem=no");
         exit;
@@ -62,7 +62,7 @@ function swallPass($url){
     if(!headers_sent()) {
         // URL'yi normalize et
         if (strpos($url, '.php') === false && strpos($url, '/') !== 0) {
-            $url = '/emutfakweb/p/' . $url . '.php';
+            $url = '/prolynweb/p/' . $url . '.php';
         }
         header("Location:".$url."?islem=pass");
         exit;
@@ -73,7 +73,7 @@ function swallType($url){
     if(!headers_sent()) {
         // URL'yi normalize et
         if (strpos($url, '.php') === false && strpos($url, '/') !== 0) {
-            $url = '/emutfakweb/p/' . $url . '.php';
+            $url = '/prolynweb/p/' . $url . '.php';
         }
         header("Location:".$url."?islem=type");
         exit;
@@ -84,7 +84,7 @@ function swallSifre($url){
     if(!headers_sent()) {
         // URL'yi normalize et
         if (strpos($url, '.php') === false && strpos($url, '/') !== 0) {
-            $url = '/emutfakweb/p/' . $url . '.php';
+            $url = '/prolynweb/p/' . $url . '.php';
         }
         header("Location:".$url."?islem=hata");
         exit;
@@ -95,7 +95,7 @@ function swallSifreAyni($url){
     if(!headers_sent()) {
         // URL'yi normalize et
         if (strpos($url, '.php') === false && strpos($url, '/') !== 0) {
-            $url = '/emutfakweb/p/' . $url . '.php';
+            $url = '/prolynweb/p/' . $url . '.php';
         }
         header("Location:".$url."?islem=sifreayni");
         exit;
@@ -106,7 +106,7 @@ function swallUserPasif($url){
     if(!headers_sent()) {
         // URL'yi normalize et
         if (strpos($url, '.php') === false && strpos($url, '/') !== 0) {
-            $url = '/emutfakweb/p/' . $url . '.php';
+            $url = '/prolynweb/p/' . $url . '.php';
         }
         header("Location:".$url."?islem=noaccess");
         exit;
@@ -117,7 +117,7 @@ function swallUser($url){
     if(!headers_sent()) {
         // URL'yi normalize et
         if (strpos($url, '.php') === false && strpos($url, '/') !== 0) {
-            $url = '/emutfakweb/p/' . $url . '.php';
+            $url = '/prolynweb/p/' . $url . '.php';
         }
         header("Location:".$url."?islem=user");
         exit;
@@ -128,7 +128,7 @@ function swallMsg($url, $status){
     if(!empty($status) && preg_match('/^[a-z0-9]+$/', $status) && !headers_sent()) {
         // URL'yi normalize et - .php eklenmemişse ve tam path değilse düzenle
         if (strpos($url, '.php') === false && strpos($url, '/') !== 0) {
-            $url = '/emutfakweb/p/' . $url . '.php';
+            $url = '/prolynweb/p/' . $url . '.php';
         }
         header("Location:".$url."?islem=".urlencode($status));
         exit;
@@ -139,7 +139,7 @@ function swallYetki($url){
     if(!headers_sent()) {
         // URL'yi normalize et
         if (strpos($url, '.php') === false && strpos($url, '/') !== 0) {
-            $url = '/emutfakweb/p/' . $url . '.php';
+            $url = '/prolynweb/p/' . $url . '.php';
         }
         header("Location:".$url."?islem=yetki");
         exit;

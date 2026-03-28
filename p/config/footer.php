@@ -2,7 +2,7 @@
     <div class="app-container container-fluid d-flex flex-column flex-md-row flex-center flex-md-stack py-3">
         <div class="text-dark order-2 order-md-1">
             <span class="text-muted fw-semibold me-1">2026&copy;</span>
-            <a href="index.php" target="_blank" class="text-gray-800 text-hover-primary">emutfak</a>
+            <a href="index.php" target="_blank" class="text-gray-800 text-hover-primary">prolyn</a>
         </div>
 
         <div class="text-dark order-1 order-md-2">
@@ -23,9 +23,9 @@
     </div>
 </div>
 </div>
+<!--end::Content wrapper-->
 </div>
-</div>
-</div>
+<!--end::Main-->
 
 
 <div id="kt_activities" class="bg-body" data-kt-drawer="true" data-kt-drawer-name="activities"

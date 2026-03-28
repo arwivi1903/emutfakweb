@@ -17,7 +17,7 @@ require_once '../../config/sidebar.php';
                                 <span class="path2"></span>
                             </i>
                             <div class="d-flex flex-column">
-                                <h4 class="mb-1 text-dark">emutfak Multi-Tenant Sistem</h4>
+                                <h4 class="mb-1 text-dark">prolyn Multi-Tenant Sistem</h4>
                                 <span>Sistem yapılandırması ve veritabanı testleri</span>
                             </div>
                         </div>
@@ -27,7 +27,7 @@ require_once '../../config/sidebar.php';
                 <?php
                 try {
                     // Master veritabanına bağlan
-                    $db_master = new Database('master');
+                    $db_master = new Database('prolyn_master');
                     
                     $tenantDbs = $db_master->allAssoc("
                         SELECT 
@@ -40,12 +40,12 @@ require_once '../../config/sidebar.php';
                     ");
                     
                     // Master DB İstatistikleri
-                    $masterTables = $db_master->allAssoc("SELECT TABLE_NAME FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_SCHEMA = 'emutfak_master'");
+                    $masterTables = $db_master->allAssoc("SELECT TABLE_NAME FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_SCHEMA = 'prolyn_master'");
                     $packages = $db_master->allAssoc("SELECT plan_name, max_admin_users, max_total_users FROM package_features");
                     
-                    // Reference schema (emutfak_default ana şablon veritabanı)
+                    // Reference schema (prolyn_master ana şablon veritabanı)
                     $referenceSchema = [];
-                    $refTablesResult = $db_master->allAssoc("SELECT TABLE_NAME FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_SCHEMA = 'emutfak_default'");
+                    $refTablesResult = $db_master->allAssoc("SELECT TABLE_NAME FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_SCHEMA = 'prolyn_default'");
                     if ($refTablesResult && is_array($refTablesResult)) {
                         foreach ($refTablesResult as $row) {
                             $referenceSchema[] = $row['TABLE_NAME'];
@@ -283,9 +283,9 @@ require_once '../../config/sidebar.php';
                                             <span class="path1"></span>
                                             <span class="path2"></span>
                                         </i>
-                                        Master Database
+                                        Prolyn Master Database
                                     </span>
-                                    <span class="text-muted mt-1 fw-semibold fs-7">emutfak_master</span>
+                                    <span class="text-muted mt-1 fw-semibold fs-7">prloyn_master</span>
                                 </h3>
                             </div>
                             <div class="card-body py-4">
@@ -484,11 +484,11 @@ require_once '../../config/sidebar.php';
                                 $connections = [];
                                 
                                 try {
-                                    $db_m = new Database('master');
-                                    $connections['Master'] = ['db' => 'emutfak_master', 'status' => true];
+                                    $db_m = new Database('prolyn_master');
+                                    $connections['Prolyn Master'] = ['db' => 'prolyn_master', 'status' => true];
                                 } catch (Exception $e) {
                                     $isolationTest = false;
-                                    $connections['Master'] = ['db' => 'emutfak_master', 'status' => false];
+                                    $connections['Prolyn Master'] = ['db' => 'prolyn_master', 'status' => false];
                                 }
                                 
                                 $testTenants = array_slice($tenantDbs, 0, 3);

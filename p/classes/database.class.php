@@ -1,6 +1,6 @@
 <?php
 
-// Session başlatılmamışsa başlat
+// Oturum başlatılmamışsa başlat
 if (session_status() === PHP_SESSION_NONE) {
     session_start();
 }
@@ -9,12 +9,12 @@ if (session_status() === PHP_SESSION_NONE) {
 
 class Database 
 {
-  private $MYSQL_HOST='localhost'; 
-  private $MYSQL_USER='root'; // mysql kullanıcı adınız  
-  private $MYSQL_PASS='';  // mysql şifreniz
-  public  $MYSQL_DB='emutfak_master'; //kendi database adınızı yazın
-  private $CHARSET='utf8mb4';
-  private $COLLATION='utf8mb4_unicode_ci';
+  private $MYSQL_HOST; 
+  private $MYSQL_USER;
+  private $MYSQL_PASS;
+  public  $MYSQL_DB;
+  private $CHARSET;
+  private $COLLATION;
   private $pdo=null;
   private $stmt=null;
   private $lastError=null;
@@ -22,7 +22,7 @@ class Database
   private $inTransaction=false;
 
   private function ConnectDB(){
-    //database bağlantısı
+    // Veritabanı bağlantısı
     $SQL="mysql:host=".$this->MYSQL_HOST.";dbname=".$this->MYSQL_DB.";charset=".$this->CHARSET; 
     try{
       $options = [
@@ -39,9 +39,24 @@ class Database
   }
 
   public function __construct($dbName = null){ 
+    // Config dosyasını yükle
+    $configPath = __DIR__ . '/../config/db_config.php';
+    if (file_exists($configPath)) {
+        $config = require $configPath;
+        $this->MYSQL_HOST = $config['host'];
+        $this->MYSQL_USER = $config['user'];
+        $this->MYSQL_PASS = $config['pass'];
+        $this->MYSQL_DB   = $config['db'];
+        $this->CHARSET    = $config['charset'];
+        $this->COLLATION  = $config['collation'];
+    } else {
+        // Yedek veya Hata (Eski hardcoded değerler kullanılmasın, hata fırlat)
+        throw new Exception("Veritabanı konfigürasyon dosyası bulunamadı: " . $configPath);
+    }
+
     //bağlantıyı aç - multi-tenant desteği
-    if ($dbName === 'master') {
-      $this->MYSQL_DB = 'emutfak_master';
+    if ($dbName === 'prolyn_master') {
+      $this->MYSQL_DB = 'prolyn_master';
     } elseif ($dbName !== null) {
       $this->MYSQL_DB = $dbName;
     } elseif (isset($_SESSION['database_name'])) {
@@ -204,7 +219,7 @@ class Database
   // ===== YENİ FONKSIYONLAR =====
 
   private function logError($message){
-    //hata logging
+    // Hata günlüğü
     $this->lastError = $message;
     if($this->debugMode){
       error_log("[DATABASE] " . date("Y-m-d H:i:s") . " - " . $message);
@@ -212,7 +227,7 @@ class Database
   }
 
   public function setDebugMode($debug = false){
-    //debug modunu aç/kapat
+    // Hata ayıklama modunu aç/kapat
     $this->debugMode = $debug;
     return $this;
   }

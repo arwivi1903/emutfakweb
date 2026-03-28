@@ -1,7 +1,7 @@
 <?php
 /**
  * Admin Panel Login Sayfası
- * emutfakweb/p/login.php
+ * prolynweb/p/login.php
  */
 
 // Session başlat
@@ -11,7 +11,7 @@ if (session_status() === PHP_SESSION_NONE) {
 
 // Zaten giriş yapıldıysa index'e yönlendir
 if (isset($_SESSION['admin_id'])) {
-    header('Location: /emutfakweb/p/index.php', true, 302);
+    header('Location: /prolynweb/p/index.php', true, 302);
     exit;
 }
 
@@ -22,7 +22,7 @@ $messageType = '';
 if (isset($_GET['islem'])) {
     $messages = [
         'hata'          => ['type' => 'danger', 'text' => 'Kullanıcı mail veya şifreniz yanlış'],
-        'yetki'         => ['type' => 'warning', 'text' => 'Oturumunuz sona ermiş. Lütfen tekrar giriş yapınız.'],
+        'yetki'         => ['type' => 'primary', 'text' => 'Oturumunuz sona ermiş. Lütfen tekrar giriş yapınız.'],
         'ok'            => ['type' => 'success', 'text' => 'Giriş Başarılı'],
         'bos'           => ['type' => 'danger', 'text' => 'Email ve şifre zorunludur'],
         'kullanici_yok' => ['type' => 'danger', 'text' => 'Kullanıcı mail veya şifreniz yanlış'],
@@ -39,10 +39,10 @@ if (isset($_GET['islem'])) {
 <!DOCTYPE html>
 <html lang="tr">
 <head>
-    <base href="/emutfakweb/p/"/>
+    <base href="/prolynweb/p/"/>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>E-Mutfak Admin Paneli - Giriş</title>
+    <title>Prolyn Admin Paneli - Giriş</title>
     <link rel="shortcut icon" href="dist/assets/media/logos/favicon.ico" />
     <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Inter:300,400,500,600,700" />
     <link href="dist/assets/plugins/global/plugins.bundle.css" rel="stylesheet" type="text/css" />
@@ -105,7 +105,7 @@ if (isset($_GET['islem'])) {
 
                         <!-- Login Başlığı -->
                         <div class="text-center mb-11">
-                            <h1 class="text-dark fw-bolder mb-3">E-Mutfak Admin Paneli</h1>
+                            <h1 class="text-dark fw-bolder mb-3">Prolyn Admin Paneli</h1>
                             <div class="text-gray-400 fw-semibold fs-6">Giriş Yapınız</div>
                         </div>
 
@@ -118,7 +118,7 @@ if (isset($_GET['islem'])) {
                                     type="email" 
                                     name="email" 
                                     class="form-control bg-light border-0" 
-                                    placeholder="admin@emutfak.com"
+                                    placeholder="admin@prolyn.com"
                                     required 
                                     autocomplete="off" />
                             </div>

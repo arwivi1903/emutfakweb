@@ -1,0 +1,214 @@
+/**
+ * Dashboard Custom CSS
+ * Additional styles for dashboard enhancements
+ */
+
+/* Chart Containers */
+.chart-container {
+    position: relative;
+    height: 300px;
+    width: 100%;
+}
+
+/* Notification Badge */
+#notification-badge {
+    font-size: 0.65rem;
+    padding: 0.25rem 0.4rem;
+    min-width: 18px;
+    height: 18px;
+    line-height: 1;
+}
+
+/* Notification List */
+#notification-list {
+    max-height: 325px;
+    overflow-y: auto;
+}
+
+.notification-item {
+    transition: all 0.3s ease;
+    border-bottom: 1px dashed #e4e6ef;
+}
+
+.notification-item:last-child {
+    border-bottom: none;
+}
+
+.notification-item:hover {
+    background-color: #f5f8fa;
+}
+
+.mark-read-btn {
+    opacity: 0;
+    transition: opacity 0.2s ease;
+}
+
+.notification-item:hover .mark-read-btn {
+    opacity: 1;
+}
+
+/* Metric Cards Animation */
+.card-flush {
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.card-flush:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 0.5rem 1.5rem 0.5rem rgba(0, 0, 0, 0.075);
+}
+
+/* Chart Loading State */
+.chart-loading {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 300px;
+}
+
+.chart-loading .spinner-border {
+    width: 3rem;
+    height: 3rem;
+}
+
+/* Trend Badges */
+.badge-trend-up {
+    background-color: #e8fff3;
+    color: #50cd89;
+}
+
+.badge-trend-down {
+    background-color: #fff5f8;
+    color: #f1416c;
+}
+
+/* System Health Status */
+.health-status-healthy {
+    color: #50cd89;
+}
+
+.health-status-warning {
+    color: #ffc700;
+}
+
+.health-status-critical {
+    color: #f1416c;
+}
+
+/* Responsive Adjustments */
+@media (max-width: 991.98px) {
+    .chart-container {
+        height: 250px;
+    }
+    
+    #notification-list {
+        max-height: 250px;
+    }
+}
+
+/* Fade In Animation */
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.fade-in {
+    animation: fadeIn 0.3s ease-in-out;
+}
+
+/* Pulse Animation for Notifications */
+@keyframes pulse {
+    0% {
+        box-shadow: 0 0 0 0 rgba(241, 65, 108, 0.7);
+    }
+    70% {
+        box-shadow: 0 0 0 10px rgba(241, 65, 108, 0);
+    }
+    100% {
+        box-shadow: 0 0 0 0 rgba(241, 65, 108, 0);
+    }
+}
+
+.notification-pulse {
+    animation: pulse 2s infinite;
+}
+
+/* Scrollbar Styling */
+#notification-list::-webkit-scrollbar {
+    width: 6px;
+}
+
+#notification-list::-webkit-scrollbar-track {
+    background: #f1f1f1;
+}
+
+#notification-list::-webkit-scrollbar-thumb {
+    background: #888;
+    border-radius: 3px;
+}
+
+#notification-list::-webkit-scrollbar-thumb:hover {
+    background: #555;
+}
+
+/* Empty State */
+.empty-state {
+    padding: 3rem 1rem;
+    text-align: center;
+}
+
+.empty-state-icon {
+    font-size: 3rem;
+    color: #a1a5b7;
+    margin-bottom: 1rem;
+}
+
+.empty-state-text {
+    color: #a1a5b7;
+    font-size: 1rem;
+}
+
+/* Loading Skeleton */
+.skeleton {
+    background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+    background-size: 200% 100%;
+    animation: loading 1.5s infinite;
+}
+
+@keyframes loading {
+    0% {
+        background-position: 200% 0;
+    }
+    100% {
+        background-position: -200% 0;
+    }
+}
+
+/* Chart Tooltip Custom Styling */
+.chartjs-tooltip {
+    opacity: 1;
+    position: absolute;
+    background: rgba(0, 0, 0, 0.8);
+    color: white;
+    border-radius: 3px;
+    padding: 10px;
+    pointer-events: none;
+    transform: translate(-50%, -100%);
+    transition: all 0.1s ease;
+}
+
+/* Dashboard Grid Spacing */
+.dashboard-grid {
+    gap: 1.5rem;
+}
+
+@media (min-width: 1200px) {
+    .dashboard-grid {
+        gap: 2rem;
+    }
+}

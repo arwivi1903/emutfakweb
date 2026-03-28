@@ -4,6 +4,12 @@ ini_set('display_errors', 1);
 ini_set('display_startup_errors', 1);
 error_reporting(E_ALL);
 
+// Güvenlik Başlıkları
+header("X-Frame-Options: SAMEORIGIN");
+header("X-XSS-Protection: 1; mode=block");
+header("X-Content-Type-Options: nosniff");
+header("Referrer-Policy: strict-origin-when-cross-origin");
+
 
 require_once __DIR__ . '/../classes/allClass.php';
 require_once __DIR__ . '/../functions/combine.php';
@@ -22,7 +28,7 @@ $metatag = $db->getrow("SELECT * FROM setting");
 <!DOCTYPE html>
 <html lang="tr">
 <head>
-    <base href="/emutfakweb/p/" />
+    <base href="/prolynweb/p/" />
     <title></title>
     <meta charset="utf-8" />
     <meta name="description" content="" />
@@ -40,8 +46,9 @@ $metatag = $db->getrow("SELECT * FROM setting");
     <link href="dist/assets/plugins/custom/datatables/datatables.bundle.css" rel="stylesheet" type="text/css" />
     <link href="dist/assets/plugins/global/plugins.bundle.css" rel="stylesheet" type="text/css" />
     <link href="dist/assets/css/style.bundle.css" rel="stylesheet" type="text/css" />
+    <link href="dist/assets/css/custom/dashboard_custom.css" rel="stylesheet" type="text/css" />
     <script>
-    // Frame-busting to prevent site from being loaded within a frame without permission (click-jacking) if (window.top != window.self) { window.top.location.replace(window.self.location.href); }
+    // Click-jacking önlemi: Sitenin başka bir frame içinde yüklenmesini engeller. if (window.top != window.self) { window.top.location.replace(window.self.location.href); }
     </script>
 </head>
 
@@ -3387,6 +3394,57 @@ target="_blank">
                                             
                                         </div>
 
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Notification Dropdown -->
+                            <div class="app-navbar-item ms-1 ms-md-4">
+                                <div class="btn btn-icon btn-custom btn-icon-muted btn-active-light btn-active-color-primary w-35px h-35px position-relative" 
+                                     data-kt-menu-trigger="{default: 'click', lg: 'hover'}" 
+                                     data-kt-menu-attach="parent" 
+                                     data-kt-menu-placement="bottom-end">
+                                    <i class="ki-duotone ki-notification-on fs-2">
+                                        <span class="path1"></span>
+                                        <span class="path2"></span>
+                                        <span class="path3"></span>
+                                    </i>
+                                    <span class="badge badge-circle badge-danger position-absolute top-0 start-100 translate-middle" 
+                                          id="notification-badge" 
+                                          style="display: none;">0</span>
+                                </div>
+                                
+                                <div class="menu menu-sub menu-sub-dropdown menu-column w-350px w-lg-375px" data-kt-menu="true">
+                                    <div class="d-flex flex-column bgi-no-repeat rounded-top" 
+                                         style="background-image:url('dist/assets/media/misc/menu-header-bg.jpg')">
+                                        <h3 class="text-white fw-semibold px-9 mt-10 mb-6">
+                                            Bildirimler
+                                            <span class="fs-8 opacity-75 ps-3" id="notification-count-text">0 yeni</span>
+                                        </h3>
+                                        <ul class="nav nav-line-tabs nav-line-tabs-2x nav-stretch fw-semibold px-9">
+                                            <li class="nav-item">
+                                                <a class="nav-link text-white opacity-75 opacity-state-100 pb-4 active" data-bs-toggle="tab" href="#kt_topbar_notifications_1">Tümü</a>
+                                            </li>
+                                        </ul>
+                                    </div>
+                                    
+                                    <div class="tab-content">
+                                        <div class="tab-pane fade show active" id="kt_topbar_notifications_1" role="tabpanel">
+                                            <div class="scroll-y mh-325px my-5 px-8" id="notification-list">
+                                                <div class="text-center py-10">
+                                                    <div class="spinner-border text-primary" role="status">
+                                                        <span class="visually-hidden">Yükleniyor...</span>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            
+                                            <div class="py-3 text-center border-top">
+                                                <a href="#" class="btn btn-color-gray-600 btn-active-color-primary" id="mark-all-read-btn">
+                                                    Tümünü Okundu İşaretle
+                                                    <i class="ki-duotone ki-arrow-right fs-5"><span class="path1"></span><span class="path2"></span></i>
+                                                </a>
+                                            </div>
+                                        </div>
                                     </div>
                                 </div>
                             </div>

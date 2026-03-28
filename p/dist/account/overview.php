@@ -28,7 +28,7 @@ require_once '../../config/sidebar.php';
                             <label class="col-lg-4 fw-semibold text-muted">Şirket</label>
                             <div class="col-lg-8 fv-row">
                                 <span
-                                    class="fw-semibold text-gray-800 fs-6"><?php echo ($_SESSION['company'] ?? 'Emutfak'); ?></span>
+                                    class="fw-semibold text-gray-800 fs-6"><?php echo ($_SESSION['company'] ?? 'Prolyn'); ?></span>
                             </div>
                         </div>
                         <div class="row mb-7">
