@@ -205,3 +205,6 @@ function checkCSRF()
 
 
 
+
+// Otomatik CSRF Koruması Devrede
+checkCSRF();

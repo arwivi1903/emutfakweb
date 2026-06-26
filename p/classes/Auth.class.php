@@ -204,6 +204,26 @@ class Auth
 
         xlogSimple('GIRIS_BASARILI', "Admin giriş başarılı - {$admin->email}");
         
+        // Oturum tablosuna kayıt at (Sistem Geneli Aktif Oturumlar Takibi)
+        $session_id = session_id();
+        $user_agent = $_SERVER['HTTP_USER_AGENT'] ?? 'Unknown';
+        $user_type = ($activeSource['table'] === 'yoneticiler') ? 'admin' : 'customer';
+        $firma_adi = ($activeSource['table'] === 'yoneticiler') ? 'Prolyn Master' : 'Kiracı Yöneticisi';
+        
+        try {
+            $this->db->Insert("INSERT INTO oturumlar (session_id, user_type, user_id, user_email, user_full_name, tenant_db, firma_adi, ip_address, user_agent, last_activity, expires_at, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, NOW(), DATE_ADD(NOW(), INTERVAL 1440 MINUTE), NOW())",
+                [$session_id, $user_type, $admin->admin_id, $admin->email, $admin->full_name, $this->db->MYSQL_DB, $firma_adi, $ip, $user_agent]
+            );
+        } catch (Exception $e) {
+            try {
+                $this->db->Update("UPDATE oturumlar SET user_type=?, user_id=?, user_email=?, user_full_name=?, tenant_db=?, firma_adi=?, ip_address=?, user_agent=?, last_activity=NOW(), expires_at=DATE_ADD(NOW(), INTERVAL 1440 MINUTE) WHERE session_id=?", 
+                    [$user_type, $admin->admin_id, $admin->email, $admin->full_name, $this->db->MYSQL_DB, $firma_adi, $ip, $user_agent, $session_id]
+                );
+            } catch (Exception $e2) {
+                error_log("Oturum kayıt hatası: " . $e2->getMessage());
+            }
+        }
+
         xlog(
             'GIRIS_BASARILI', 
             [
@@ -217,5 +237,55 @@ class Auth
             $admin->admin_id,
             $this->db
         );
+    }
+
+    /**
+     * Oturumdaki kullanıcının belirli bir modüle yetkisi olup olmadığını kontrol eder.
+     * Yetkisi yoksa access_denied.php sayfasına yönlendirir.
+     *
+     * @param string $permissionName İzin adı (ör. manage_tenants)
+     */
+    public static function requireModule(string $permissionName): void
+    {
+        if (session_status() === PHP_SESSION_NONE) {
+            session_start();
+        }
+
+        // Eğer kullanıcı login olmamışsa (zaten header.php redirect atar ama garanti olsun)
+        if (empty($_SESSION['admin_id'])) {
+            header("Location: /prolynweb/p/login.php");
+            exit;
+        }
+
+        // Superadmin her şeye yetkilidir
+        if (isset($_SESSION['role']) && $_SESSION['role'] === 'superadmin') {
+            return;
+        }
+
+        global $db;
+        $admin_id = (int)$_SESSION['admin_id'];
+
+        // Kullanıcının rol tablosundan izinlerini kontrol et
+        $sql = "SELECT COUNT(*) as c FROM yonetici_rolleri yr
+                JOIN rol_izinleri ri ON yr.role_id = ri.role_id
+                JOIN izinler i ON ri.permission_id = i.id
+                WHERE yr.admin_id = ? AND i.name = ?";
+        
+        $hasPermission = false;
+        try {
+            $row = $db->getRow($sql, [$admin_id, $permissionName]);
+            if ($row && $row->c > 0) {
+                $hasPermission = true;
+            }
+        } catch (Exception $e) {
+            error_log("Permission check error: " . $e->getMessage());
+        }
+
+        if (!$hasPermission) {
+            // Log the denied access attempt
+            xlogSimple('ACCESS_DENIED', "Modül: {$permissionName}", null, $admin_id, $db);
+            header("Location: /prolynweb/p/partials/access_denied.php");
+            exit;
+        }
     }
 }

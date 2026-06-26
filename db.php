@@ -23,3 +23,14 @@ try {
     // Sitede DB hatası varsa kritik bir hata göster
     die("Sistem bakımı devam etmektedir. Lütfen daha sonra tekrar deneyiniz.");
 }
+
+// Tüm ayarları çekip global bir diziye atalım
+$appSettings = [];
+try {
+    $stmt = $pdo->query("SELECT setting_key, setting_value FROM sistem_ayarlari WHERE is_public = 1 OR category IN ('seo', 'social', 'contact', 'general')");
+    while ($row = $stmt->fetch()) {
+        $appSettings[$row['setting_key']] = $row['setting_value'];
+    }
+} catch (\Exception $e) {
+    // Ayarlar çekilemezse boş dizi kalsın
+}

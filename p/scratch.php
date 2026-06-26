@@ -1,11 +1,11 @@
 <?php
-require_once 'classes/allClass.php';
-$db = new Database('prolyn_master');
-$stmt = $db->TableOperations("SHOW TABLES");
-while ($row = $stmt->fetch(PDO::FETCH_NUM)) {
-    echo "TABLE: " . $row[0] . "\n";
-    $cols = $db->TableOperations("SHOW COLUMNS FROM " . $row[0]);
-    while ($col = $cols->fetch(PDO::FETCH_NUM)) {
-        echo "  - " . $col[0] . " (" . $col[1] . ")\n";
-    }
+require_once '../db.php';
+try {
+    $stmt = $pdo->query("SHOW TABLES IN prolyn_master");
+    $tables = $stmt->fetchAll(PDO::FETCH_COLUMN);
+    echo "Tables in prolyn_master:\n";
+    print_r($tables);
+} catch (PDOException $e) {
+    echo "Error: " . $e->getMessage();
 }
+?>

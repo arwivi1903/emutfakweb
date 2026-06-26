@@ -20,6 +20,15 @@ $db = new Database();
 start_secure_session();
 oturumkontrol();
 
+// Aktif oturum takibini güncelle (Sistem Geneli Aktif Oturumlar Takibi)
+if (isset($_SESSION['admin_id'])) {
+    try {
+        $db->Update("UPDATE oturumlar SET last_activity = NOW(), expires_at = DATE_ADD(NOW(), INTERVAL 1440 MINUTE) WHERE session_id = ?", [session_id()]);
+    } catch (Exception $e) {
+        // Hata durumunda yoksay
+    }
+}
+
 // meta ayarları çekme
 $metatag = $db->getrow("SELECT * FROM setting");
 
@@ -1151,7 +1160,7 @@ Sign-Up</span>
 
 <a href="dist/authentication/general/welcome.html"
 class="menu-link">
-<span class="menu-title">Welcome Message</span>
+<span class="menu-title">--</span>
 </a>
 
 </div>
@@ -1227,7 +1236,7 @@ class="menu-link">
 
 <a href="dist/authentication/email/welcome-message.html"
 class="menu-link">
-<span class="menu-title">Welcome Message</span>
+<span class="menu-title">--</span>
 </a>
 
 </div>
@@ -3373,7 +3382,7 @@ target="_blank">
                                     <div data-kt-search-element="content"
                                         class="menu menu-sub menu-sub-dropdown p-7 w-325px w-md-375px">
                                         <div data-kt-search-element="wrapper">
-                                            <form data-kt-search-element="form" class="w-100 position-relative mb-3"
+                                            <form data-kt-search-element="form" class="w-100 position-relative mb-5"
                                                 autocomplete="off">
                                                 <i
                                                     class="ki-duotone ki-magnifier fs-2 text-gray-500 position-absolute top-50 translate-middle-y ms-0">
@@ -3392,8 +3401,25 @@ target="_blank">
                                                 </span>
                                             </form>
                                             
+                                            <!-- Hızlı Bağlantılar -->
+                                            <div class="mb-2">
+                                                <div class="fs-7 text-muted fw-semibold mb-3">Hızlı Bağlantılar</div>
+                                                <div class="d-flex flex-column gap-2">
+                                                    <a href="crm/tenants.php" class="d-flex align-items-center text-gray-700 text-hover-primary py-2 fs-6">
+                                                        <i class="ki-duotone ki-briefcase fs-4 me-3 text-primary"><span class="path1"></span><span class="path2"></span></i>
+                                                        Müşteri Listesi
+                                                    </a>
+                                                    <a href="dist/toolbars/db_control.php" class="d-flex align-items-center text-gray-700 text-hover-primary py-2 fs-6">
+                                                        <i class="ki-duotone ki-shield-search fs-4 me-3 text-success"><span class="path1"></span><span class="path2"></span></i>
+                                                        Veritabanı Kontrolü
+                                                    </a>
+                                                    <a href="logs/notification_queue.php" class="d-flex align-items-center text-gray-700 text-hover-primary py-2 fs-6">
+                                                        <i class="ki-duotone ki-message-text-2 fs-4 me-3 text-warning"><span class="path1"></span><span class="path2"></span></i>
+                                                        Sms & E-posta Kuyruğu
+                                                    </a>
+                                                </div>
+                                            </div>
                                         </div>
-
                                     </div>
                                 </div>
                             </div>
@@ -3454,85 +3480,36 @@ target="_blank">
                                 <div class="cursor-pointer symbol symbol-35px"
                                     data-kt-menu-trigger="{default: 'click', lg: 'hover'}" data-kt-menu-attach="parent"
                                     data-kt-menu-placement="bottom-end">
-                                    <img src="<?php echo $_SESSION['admin_pic']; ?>" class="rounded-3" alt="user" />
+                                    <?php if (!empty($_SESSION['admin_pic'])): ?>
+                                        <img src="<?php echo $_SESSION['admin_pic']; ?>" class="rounded-3" alt="user" />
+                                    <?php else: ?>
+                                        <div class="symbol-label fs-3 fw-bold bg-light-primary text-primary">
+                                            <?= mb_substr($_SESSION['full_name'] ?? 'A', 0, 1, 'UTF-8') ?>
+                                        </div>
+                                    <?php endif; ?>
                                 </div>
                                 <div class="menu menu-sub menu-sub-dropdown menu-column menu-rounded menu-gray-800 menu-state-bg menu-state-color fw-semibold py-4 fs-6 w-275px"
                                     data-kt-menu="true">
                                     <div class="menu-item px-3">
                                         <div class="menu-content d-flex align-items-center px-3">
                                             <div class="symbol symbol-50px me-5">
-                                                <img alt="Logo" src="<?php echo $_SESSION['admin_pic']; ?>" />
+                                                <?php if (!empty($_SESSION['admin_pic'])): ?>
+                                                    <img alt="Logo" src="<?php echo $_SESSION['admin_pic']; ?>" />
+                                                <?php else: ?>
+                                                    <div class="symbol-label fs-2 fw-bold bg-light-primary text-primary">
+                                                        <?= mb_substr($_SESSION['full_name'] ?? 'A', 0, 1, 'UTF-8') ?>
+                                                    </div>
+                                                <?php endif; ?>
                                             </div>
                                             <div class="d-flex flex-column">
-                                                <div class="fw-bold d-flex align-items-center fs-5"><?php echo $_SESSION['full_name']; ?>
-                                                    <!-- <span
-                                                        class="badge badge-light-success fw-bold fs-8 px-2 py-1 ms-2">Pro
-                                                    </span> -->
-                                                </div>
-                                                <a href="#"
-                                                    class="fw-semibold text-muted text-hover-primary fs-7"><?php echo $_SESSION['email']; ?></a>
+                                                <div class="fw-bold d-flex align-items-center fs-5"><?php echo $_SESSION['full_name'] ?? 'Yönetici'; ?></div>
+                                                <a href="#" class="fw-semibold text-muted text-hover-primary fs-7"><?php echo $_SESSION['email'] ?? 'admin@prolyn.net'; ?></a>
                                             </div>
                                         </div>
                                     </div>
                                     <div class="separator my-2"></div>
                                     <div class="menu-item px-5">
-                                        <a href="dist/account/overview.php" class="menu-link px-5">Profil</a>
-                                    </div>
-                                    <div class="menu-item px-5">
-                                        <a href="dist/apps/projects/list.html" class="menu-link px-5">
-                                            <span class="menu-text">My Projects</span>
-                                            <span class="menu-badge">
-                                                <span
-                                                    class="badge badge-light-danger badge-circle fw-bold fs-7">3</span>
-                                            </span>
-                                        </a>
-                                    </div>
-                                    <div class="menu-item px-5" data-kt-menu-trigger="{default: 'click', lg: 'hover'}"
-                                        data-kt-menu-placement="left-start" data-kt-menu-offset="-15px, 0">
-                                        <a href="#" class="menu-link px-5">
-                                            <span class="menu-title">My Subscription</span>
-                                            <span class="menu-arrow"></span>
-                                        </a>
-                                        <div class="menu-sub menu-sub-dropdown w-175px py-4">
-                                            <div class="menu-item px-3">
-                                                <a href="dist/account/referrals.html"
-                                                    class="menu-link px-5">Referrals</a>
-                                            </div>
-                                            <div class="menu-item px-3">
-                                                <a href="dist/account/billing.html" class="menu-link px-5">Billing</a>
-                                            </div>
-                                            <div class="menu-item px-3">
-                                                <a href="dist/account/statements.html"
-                                                    class="menu-link px-5">Payments</a>
-                                            </div>
-                                            <div class="menu-item px-3">
-                                                <a href="dist/account/statements.html"
-                                                    class="menu-link d-flex flex-stack px-5">Statements
-                                                    <span class="ms-2 lh-0" data-bs-toggle="tooltip"
-                                                        title="View your statements">
-                                                        <i class="ki-duotone ki-information-5 fs-5">
-                                                            <span class="path1"></span>
-                                                            <span class="path2"></span>
-                                                            <span class="path3"></span>
-                                                        </i>
-                                                    </span></a>
-                                            </div>
-                                            <div class="separator my-2"></div>
-                                            <div class="menu-item px-3">
-                                                <div class="menu-content px-3">
-                                                    <label
-                                                        class="form-check form-switch form-check-custom form-check-solid">
-                                                        <input class="form-check-input w-30px h-20px" type="checkbox"
-                                                            value="1" checked="checked" name="notifications" />
-                                                        <span
-                                                            class="form-check-label text-muted fs-7">Notifications</span>
-                                                    </label>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                    <div class="menu-item px-5">
-                                        <a href="dist/account/statements.html" class="menu-link px-5">My Statements</a>
+                                        <a href="dist/account/overview.php" class="menu-link px-5">Profilim</a>
                                     </div>
                                     <div class="separator my-2"></div>
                                     <div class="menu-item px-5" data-kt-menu-trigger="{default: 'click', lg: 'hover'}"
@@ -3610,7 +3587,7 @@ target="_blank">
                                     </div>
 
                                     <div class="menu-item px-5 my-1">
-                                        <a href="dist/account/settings.html" class="menu-link px-5">Account Settings</a>
+                                        <a href="#" class="menu-link px-5">Ayarlar</a>
                                     </div>
                                     <div class="menu-item px-5">
                                         <a href="logout.php" class="menu-link px-5">Çıkış Yap</a>

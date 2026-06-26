@@ -79,6 +79,7 @@ $plans = $db->getRowsAssoc("SELECT * FROM abonelikler ORDER BY price_monthly ASC
                                 </div>
                                 <div class="card-body">
                                     <form method="POST" action="plans.php">
+                            <?= csrfTokenField() ?>
                                         <input type="hidden" name="action" value="update_plan">
                                         <input type="hidden" name="plan_id" value="<?php echo $plan['id']; ?>">
                                         

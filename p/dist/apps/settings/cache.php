@@ -168,6 +168,7 @@ $commonCacheKeys = [
                                     Bu işlem tüm cache dosyalarını silecektir. Sonraki sayfa yüklemesi daha yavaş olabilir ancak veriler güncellenecektir.
                                 </p>
                                 <form method="POST" onsubmit="return confirm('Tüm cache temizlenecek. Emin misiniz?');">
+                            <?= csrfTokenField() ?>
                                     <input type="hidden" name="action" value="flush_all">
                                     <button type="submit" class="btn btn-danger">
                                         <i class="ki-duotone ki-trash fs-2">
@@ -194,6 +195,7 @@ $commonCacheKeys = [
                             </div>
                             <div class="card-body">
                                 <form method="POST">
+                            <?= csrfTokenField() ?>
                                     <input type="hidden" name="action" value="clear_specific">
                                     <div class="mb-5">
                                         <label class="form-label">Cache Anahtarı Seç</label>

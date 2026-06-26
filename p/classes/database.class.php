@@ -55,18 +55,25 @@ class Database
     }
 
     //bağlantıyı aç - multi-tenant desteği
-    if ($dbName === 'prolyn_master') {
-      $this->MYSQL_DB = 'prolyn_master';
-    } elseif ($dbName !== null) {
+    if ($dbName !== null) {
       $this->MYSQL_DB = $dbName;
-    } elseif (isset($_SESSION['database_name'])) {
-      $this->MYSQL_DB = $_SESSION['database_name'];
     }
     $this->ConnectDB();
   }
   
   private function myQuery($query,$params=null){
     //diğer metodlardaki tekrarlı verileri bitirmek için kullanılan metod
+    
+    // YENİ: Soft Delete (Silmeleri Engelle, Pasife Çek)
+    $trimmed_query = trim($query);
+    if (stripos($trimmed_query, 'DELETE') === 0) {
+        if (preg_match('/^DELETE\s+FROM\s+`?([a-zA-Z0-9_]+)`?\s*(WHERE\s+.*)?$/i', $trimmed_query, $matches)) {
+            $table = $matches[1];
+            $where = isset($matches[2]) ? $matches[2] : '';
+            $query = "UPDATE `$table` SET del_status = 0 $where";
+        }
+    }
+
     try{
       if(is_null($params)){
         $this->stmt=$this->pdo->query($query);

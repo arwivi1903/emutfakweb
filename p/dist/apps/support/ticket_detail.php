@@ -193,7 +193,8 @@ $replies = $db->getRows("SELECT tr.*, a.full_name as admin_name, a.admin_pic
                                 </div>
                             </div>
                             <div class="card-body border-top p-9">
-                                <form action="" method="POST">
+                                <form method="POST">
+                            <?= csrfTokenField() ?>
                                     <input type="hidden" name="action" value="reply_ticket">
                                     <div class="row mb-6">
                                         <label class="col-lg-2 col-form-label fw-semibold fs-6">Durum</label>

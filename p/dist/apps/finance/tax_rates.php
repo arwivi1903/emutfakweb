@@ -174,6 +174,7 @@ require_once __DIR__ . '/../../../config/sidebar.php';
                                            data-bs-target="#kt_modal_edit_tax">Düzenle</a>
 
                                         <form method="POST" style="display: inline;">
+                            <?= csrfTokenField() ?>
                                             <input type="hidden" name="action" value="toggle_status">
                                             <input type="hidden" name="tax_id" value="<?= $tax->tax_id ?>">
                                             <input type="hidden" name="new_status" value="<?= $is_active ? 0 : 1 ?>">
@@ -206,6 +207,7 @@ require_once __DIR__ . '/../../../config/sidebar.php';
             </div>
             <div class="modal-body scroll-y mx-5 mx-xl-15 my-7">
                 <form id="kt_modal_add_tax_form" class="form" method="POST">
+                            <?= csrfTokenField() ?>
                     <input type="hidden" name="action" value="add_tax">
                     
                     <!-- Vergi Adı -->
@@ -255,6 +257,7 @@ require_once __DIR__ . '/../../../config/sidebar.php';
             </div>
             <div class="modal-body scroll-y mx-5 mx-xl-15 my-7">
                 <form id="kt_modal_edit_tax_form" class="form" method="POST">
+                            <?= csrfTokenField() ?>
                     <input type="hidden" name="action" value="edit_tax">
                     <input type="hidden" name="tax_id" id="edit_tax_id">
                     

@@ -109,6 +109,7 @@ require_once __DIR__ . '/../../config/sidebar.php';
                         <?php endif; ?>
 
                         <form id="kt_account_profile_details_form" class="form" method="post">
+                            <?= csrfTokenField() ?>
                             <div class="card-body border-top p-9">
                                 
                                 <div class="row mb-6">

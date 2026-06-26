@@ -35,6 +35,7 @@ foreach ($settings as $s) {
                     </div>
                     <div id="kt_account_settings_profile_details" class="collapse show">
                         <form id="kt_account_profile_details_form" class="form" method="POST">
+                            <?= csrfTokenField() ?>
                             <input type="hidden" name="action" value="save_settings">
                             <div class="card-body border-top p-9">
                                 

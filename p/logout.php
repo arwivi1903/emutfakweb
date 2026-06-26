@@ -11,6 +11,15 @@ if (session_status() === PHP_SESSION_NONE) {
     session_start();
 }
 
+// Oturum tablosundan sil (Sistem Geneli Aktif Oturumlar Takibi)
+require_once __DIR__ . '/classes/allClass.php';
+try {
+    $db = new Database();
+    $db->Delete("DELETE FROM oturumlar WHERE session_id = ?", [session_id()]);
+} catch (Exception $e) {
+    // Hata durumunda yoksay
+}
+
 // Session'daki tüm verileri temizle
 $_SESSION = [];
 

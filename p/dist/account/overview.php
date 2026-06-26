@@ -25,58 +25,37 @@ require_once '../../config/sidebar.php';
                             </div>
                         </div>
                         <div class="row mb-7">
-                            <label class="col-lg-4 fw-semibold text-muted">Şirket</label>
+                            <label class="col-lg-4 fw-semibold text-muted">Kullanıcı Adı</label>
+                            <div class="col-lg-8">
+                                <span class="fw-bold fs-6 text-gray-800"><?php echo $_SESSION['username'] ?? ''; ?></span>
+                            </div>
+                        </div>
+                        <div class="row mb-7">
+                            <label class="col-lg-4 fw-semibold text-muted">E-posta</label>
+                            <div class="col-lg-8">
+                                <span class="fw-bold fs-6 text-gray-800"><?php echo $_SESSION['email'] ?? ''; ?></span>
+                            </div>
+                        </div>
+                        <div class="row mb-7">
+                            <label class="col-lg-4 fw-semibold text-muted">Rolü</label>
                             <div class="col-lg-8 fv-row">
-                                <span
-                                    class="fw-semibold text-gray-800 fs-6"><?php echo ($_SESSION['company'] ?? 'Prolyn'); ?></span>
+                                <span class="fw-semibold text-gray-800 fs-6"><?php echo ucfirst($_SESSION['role'] ?? 'Admin'); ?></span>
                             </div>
                         </div>
                         <div class="row mb-7">
-                            <label class="col-lg-4 fw-semibold text-muted">İletişim Telefonu
-                                <span class="ms-1" data-bs-toggle="tooltip" title="Telefon numarası aktif olmalıdır">
-                                    <i class="ki-duotone ki-information fs-7">
-                                        <span class="path1"></span>
-                                        <span class="path2"></span>
-                                        <span class="path3"></span>
-                                    </i>
-                                </span></label>
-                            <div class="col-lg-8 d-flex align-items-center">
-                                <span
-                                    class="fw-bold fs-6 text-gray-800 me-2"><?php echo ($_SESSION['phone'] ?? ''); ?></span>
-                                <span class="badge badge-success">Doğrulandı</span>
+                            <label class="col-lg-4 fw-semibold text-muted">Hesap Durumu</label>
+                            <div class="col-lg-8">
+                                <?php if (isset($_SESSION['status']) && $_SESSION['status'] === 'active'): ?>
+                                    <span class="badge badge-light-success">Aktif</span>
+                                <?php else: ?>
+                                    <span class="badge badge-light-danger">Pasif</span>
+                                <?php endif; ?>
                             </div>
                         </div>
                         <div class="row mb-7">
-                            <label class="col-lg-4 fw-semibold text-muted">Şirket Sitesi</label>
+                            <label class="col-lg-4 fw-semibold text-muted">Son Giriş IP</label>
                             <div class="col-lg-8">
-                                <a href="#"
-                                    class="fw-semibold fs-6 text-gray-800 text-hover-primary"><?php echo ($_SESSION['company_website'] ?? '#'); ?></a>
-                            </div>
-                        </div>
-                        <div class="row mb-7">
-                            <label class="col-lg-4 fw-semibold text-muted">Ülke
-                                <span class="ms-1" data-bs-toggle="tooltip" title="Menşe ülkesi">
-                                    <i class="ki-duotone ki-information fs-7">
-                                        <span class="path1"></span>
-                                        <span class="path2"></span>
-                                        <span class="path3"></span>
-                                    </i>
-                                </span></label>
-                            <div class="col-lg-8">
-                                <span
-                                    class="fw-bold fs-6 text-gray-800"><?php echo ($_SESSION['country'] ?? 'Türkiye'); ?></span>
-                            </div>
-                        </div>
-                        <div class="row mb-7">
-                            <label class="col-lg-4 fw-semibold text-muted">İletişim</label>
-                            <div class="col-lg-8">
-                                <span class="fw-bold fs-6 text-gray-800">Email, Telefon</span>
-                            </div>
-                        </div>
-                        <div class="row mb-10">
-                            <label class="col-lg-4 fw-semibold text-muted">Değişikliklere İzin Ver</label>
-                            <div class="col-lg-8">
-                                <span class="fw-semibold fs-6 text-gray-800">Evet</span>
+                                <span class="fw-semibold fs-6 text-gray-800"><?php echo $_SESSION['last_ip'] ?? 'Bilinmiyor'; ?></span>
                             </div>
                         </div>
                     </div>

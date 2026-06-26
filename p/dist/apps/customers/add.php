@@ -56,6 +56,7 @@ require_once __DIR__ . '/../../../config/sidebar.php';
                         <?php endif; ?>
 
                         <form class="form" method="post">
+                            <?= csrfTokenField() ?>
                             <div class="card-body border-top p-9">
                                 
                                 <div class="row mb-6">

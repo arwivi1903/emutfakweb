@@ -9,6 +9,8 @@ if (session_status() === PHP_SESSION_NONE) {
     session_start();
 }
 
+require_once __DIR__ . '/functions/combine.php';
+
 // Zaten giriş yapıldıysa index'e yönlendir
 if (isset($_SESSION['admin_id'])) {
     header('Location: /prolynweb/p/index.php', true, 302);
@@ -111,6 +113,7 @@ if (isset($_GET['islem'])) {
 
                         <!-- Login Formu -->
                         <form class="form w-100" method="POST" action="config/islem.php">
+                            <?= csrfTokenField() ?>
                             <!-- Email -->
                             <div class="fv-row mb-8">
                                 <label class="form-label fw-bold text-dark fs-6 mb-2">Email</label>

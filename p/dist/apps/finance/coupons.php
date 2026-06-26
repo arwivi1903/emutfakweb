@@ -126,6 +126,7 @@ require_once __DIR__ . '/../../../config/sidebar.php';
                                     </td>
                                     <td class="text-end">
                                         <form method="POST" style="display: inline;">
+                            <?= csrfTokenField() ?>
                                             <input type="hidden" name="action" value="toggle_status">
                                             <input type="hidden" name="coupon_id" value="<?= $coupon->coupon_id ?>">
                                             <input type="hidden" name="new_status" value="<?= $coupon->is_active ? 0 : 1 ?>">
@@ -158,6 +159,7 @@ require_once __DIR__ . '/../../../config/sidebar.php';
             </div>
             <div class="modal-body scroll-y mx-5 mx-xl-15 my-7">
                 <form id="kt_modal_add_coupon_form" class="form" method="POST">
+                            <?= csrfTokenField() ?>
                     <input type="hidden" name="action" value="add_coupon">
                     
                     <!-- Kupon Kodu -->

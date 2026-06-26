@@ -10,10 +10,10 @@ if (isset($_GET['export']) && (int)$_GET['export'] === 1) {
 
     $logs = $db->getRows(
         "SELECT log_id, log_type, log_description, log_status, admin_id, ip_address, user_agent, request_method, request_path, created_at 
-         FROM admin_logs 
+         FROM yonetici_loglari 
          WHERE admin_id = ? 
          ORDER BY created_at DESC",
-        [$_SESSION['admin_id']]
+        [$_SESSION['admin_id'] ?? 0]
     );
 
     $filename = 'logs-' . date('Ymd-His') . '.csv';
@@ -168,10 +168,10 @@ require_once '../../config/sidebar.php';
                                                                 additional_data,
                                                                 created_at 
                                                             FROM
-                                                                admin_logs 
+                                                                yonetici_loglari 
                                                             WHERE
                                                                 admin_id = ? 
-                                                            ORDER BY created_at DESC", [$_SESSION['admin_id']]);
+                                                            ORDER BY created_at DESC", [$_SESSION['admin_id'] ?? 0]);
 
 									foreach ($logcek as $log) {
                                         // Badge rengini log_type'a göre belirle
