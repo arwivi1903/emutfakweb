@@ -40,11 +40,11 @@ function showAccordion($keywords) {
                 <div data-kt-menu-trigger="click" class="menu-item menu-accordion <?= showAccordion(['customers']) ?>">
                     <span class="menu-link">
                         <span class="menu-icon"><i class="ki-duotone ki-people fs-2"><span class="path1"></span><span class="path2"></span><span class="path3"></span><span class="path4"></span><span class="path5"></span></i></span>
-                        <span class="menu-title">Müşteriler</span>
+                        <span class="menu-title">İşletmeler (Tenants)</span>
                         <span class="menu-arrow"></span>
                     </span>
                     <div class="menu-sub menu-sub-accordion">
-                        <div class="menu-item"><a class="menu-link <?= isActive('customers/list.php') ?>" href="dist/apps/customers/list.php"><span class="menu-bullet"><span class="bullet bullet-dot"></span></span><span class="menu-title">Müşteri Listesi</span></a></div>
+                        <div class="menu-item"><a class="menu-link <?= isActive('tenants.php') ?>" href="tenants.php"><span class="menu-bullet"><span class="bullet bullet-dot"></span></span><span class="menu-title">İşletme Listesi</span></a></div>
                         <div class="menu-item"><a class="menu-link <?= isActive('customers/admins.php') ?>" href="dist/apps/customers/admins.php"><span class="menu-bullet"><span class="bullet bullet-dot"></span></span><span class="menu-title">Yöneticiler</span></a></div>
                     </div>
                 </div>
@@ -56,12 +56,12 @@ function showAccordion($keywords) {
                 <div data-kt-menu-trigger="click" class="menu-item menu-accordion <?= showAccordion(['subscriptions']) ?>">
                     <span class="menu-link">
                         <span class="menu-icon"><i class="ki-duotone ki-bill fs-2"><span class="path1"></span><span class="path2"></span><span class="path3"></span><span class="path4"></span><span class="path5"></span><span class="path6"></span></i></span>
-                        <span class="menu-title">Abonelikler</span>
+                        <span class="menu-title">Abonelikler & Paketler</span>
                         <span class="menu-arrow"></span>
                     </span>
                     <div class="menu-sub menu-sub-accordion">
                         <div class="menu-item"><a class="menu-link <?= isActive('subscriptions/list.php') ?>" href="dist/apps/subscriptions/list.php"><span class="menu-bullet"><span class="bullet bullet-dot"></span></span><span class="menu-title">Aktif Abonelikler</span></a></div>
-                        <div class="menu-item"><a class="menu-link <?= isActive('subscriptions/plans.php') ?>" href="dist/apps/subscriptions/plans.php"><span class="menu-bullet"><span class="bullet bullet-dot"></span></span><span class="menu-title">Paket Planları</span></a></div>
+                        <div class="menu-item"><a class="menu-link <?= isActive('plans.php') ?>" href="plans.php"><span class="menu-bullet"><span class="bullet bullet-dot"></span></span><span class="menu-title">SaaS Paketleri</span></a></div>
                     </div>
                 </div>
 

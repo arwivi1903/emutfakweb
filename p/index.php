@@ -8,13 +8,22 @@
 require_once 'config/header.php';
 require_once 'config/sidebar.php';
 
-// Dashboard istatistikleri için örnek veriler
+// Dashboard istatistikleri için gerçek veriler
+$total_tenants = $db->getColumn("SELECT COUNT(id) FROM tenants WHERE deleted_at IS NULL") ?: 0;
+$revenue = $db->getColumn("SELECT SUM(amount) FROM payments WHERE status = 'completed'") ?: 0;
+// Aktif Kullanıcı (Şimdilik mock, ileride tenant bazlı toplanabilir veya subscription bazlı hesaplanabilir)
+$active_users = 2847; 
+$growth = 23.5;
+
 $stats = [
-    'total_projects' => 156,
-    'active_users' => 2847,
-    'revenue' => 125840,
-    'growth' => 23.5
+    'total_projects' => $total_tenants,
+    'active_users' => $active_users,
+    'revenue' => $revenue,
+    'growth' => $growth
 ];
+
+// Son Aktiviteler (Son eklenen müşteriler)
+$recent_activities = $db->getRowsAssoc("SELECT company_name, created_at FROM tenants ORDER BY id DESC LIMIT 5");
 ?>
 
 <style>
@@ -521,51 +530,21 @@ $stats = [
                                 <a href="#" class="text-primary fw-semibold">Tümünü Gör</a>
                             </div>
                             <div class="activity-feed">
-                                <div class="activity-item">
-                                    <div class="activity-icon" style="background: var(--gradient-primary);">
-                                        <i class="ki-duotone ki-document text-white fs-3"></i>
+                                <?php if (!empty($recent_activities)): ?>
+                                    <?php foreach ($recent_activities as $activity): ?>
+                                    <div class="activity-item">
+                                        <div class="activity-icon" style="background: var(--gradient-primary);">
+                                            <i class="ki-duotone ki-briefcase text-white fs-3"></i>
+                                        </div>
+                                        <div class="activity-content">
+                                            <div class="activity-title">Yeni Müşteri: <?php echo htmlspecialchars($activity['company_name']); ?></div>
+                                            <div class="activity-time"><?php echo date('d.m.Y H:i', strtotime($activity['created_at'])); ?></div>
+                                        </div>
                                     </div>
-                                    <div class="activity-content">
-                                        <div class="activity-title">Yeni proje oluşturuldu</div>
-                                        <div class="activity-time">2 saat önce</div>
-                                    </div>
-                                </div>
-                                <div class="activity-item">
-                                    <div class="activity-icon" style="background: var(--gradient-success);">
-                                        <i class="ki-duotone ki-user-tick text-white fs-3"></i>
-                                    </div>
-                                    <div class="activity-content">
-                                        <div class="activity-title">5 yeni kullanıcı kaydı</div>
-                                        <div class="activity-time">4 saat önce</div>
-                                    </div>
-                                </div>
-                                <div class="activity-item">
-                                    <div class="activity-icon" style="background: var(--gradient-info);">
-                                        <i class="ki-duotone ki-wallet text-white fs-3"></i>
-                                    </div>
-                                    <div class="activity-content">
-                                        <div class="activity-title">Ödeme alındı: ₺15,000</div>
-                                        <div class="activity-time">6 saat önce</div>
-                                    </div>
-                                </div>
-                                <div class="activity-item">
-                                    <div class="activity-icon" style="background: var(--gradient-warning);">
-                                        <i class="ki-duotone ki-notification text-white fs-3"></i>
-                                    </div>
-                                    <div class="activity-content">
-                                        <div class="activity-title">Sistem güncellemesi</div>
-                                        <div class="activity-time">1 gün önce</div>
-                                    </div>
-                                </div>
-                                <div class="activity-item">
-                                    <div class="activity-icon" style="background: var(--gradient-danger);">
-                                        <i class="ki-duotone ki-shield-tick text-white fs-3"></i>
-                                    </div>
-                                    <div class="activity-content">
-                                        <div class="activity-title">Güvenlik taraması tamamlandı</div>
-                                        <div class="activity-time">2 gün önce</div>
-                                    </div>
-                                </div>
+                                    <?php endforeach; ?>
+                                <?php else: ?>
+                                    <div class="text-muted text-center mt-3">Henüz aktivite bulunmuyor.</div>
+                                <?php endif; ?>
                             </div>
                         </div>
                     </div>
