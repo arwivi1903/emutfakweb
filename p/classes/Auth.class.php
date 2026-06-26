@@ -5,7 +5,7 @@ class Auth
     private $db;
     private $loginCandidates = [
         [
-            'table' => 'admins',
+            'table' => 'yoneticiler',
             'id_col' => 'admin_id',
             'pass_col' => 'password_hash',
             'email_cols' => ['email', 'username'],
@@ -13,7 +13,7 @@ class Auth
             'status_col' => 'status'
         ],
         [
-            'table' => 'admins',
+            'table' => 'yoneticiler',
             'id_col' => 'admin_id',
             'pass_col' => 'password_hash',
             'email_cols' => ['email', 'username'],

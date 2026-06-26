@@ -13,9 +13,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && isset($_
     $tenant_id = (int)$_POST['tenant_id'];
     
     if ($action === 'suspend') {
-        $db->Update("UPDATE tenants SET status = 'suspended' WHERE id = ?", [$tenant_id]);
+        $db->Update("UPDATE kurumlar SET status = 'suspended' WHERE id = ?", [$tenant_id]);
     } elseif ($action === 'activate') {
-        $db->Update("UPDATE tenants SET status = 'active' WHERE id = ?", [$tenant_id]);
+        $db->Update("UPDATE kurumlar SET status = 'active' WHERE id = ?", [$tenant_id]);
     }
     
     // Refresh page to avoid re-post
@@ -24,7 +24,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && isset($_
 }
 
 // Tenant Listesini Çek (Soft deleted olmayanları getir)
-$tenants = $db->getRowsAssoc("SELECT * FROM tenants WHERE deleted_at IS NULL ORDER BY id DESC");
+$tenants = $db->getRowsAssoc("SELECT * FROM kurumlar WHERE deleted_at IS NULL ORDER BY id DESC");
 ?>
 
 <div class="app-main flex-column flex-row-fluid" id="kt_app_main">

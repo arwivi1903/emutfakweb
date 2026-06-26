@@ -42,7 +42,7 @@ if (isset($_GET['islem'])) {
     <base href="/prolynweb/p/"/>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>Prolyn Admin Paneli - Giriş</title>
+    <title>Prolyn.Net ERP - Giriş</title>
     <link rel="shortcut icon" href="dist/assets/media/logos/favicon.ico" />
     <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Inter:300,400,500,600,700" />
     <link href="dist/assets/plugins/global/plugins.bundle.css" rel="stylesheet" type="text/css" />

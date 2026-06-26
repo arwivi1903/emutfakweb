@@ -81,14 +81,14 @@ function current_admin(bool $refreshFromDb = true): ?array
         $db = get_db_instance();
 
         // Girişte belirlenen tablo/kolon varsa onları kullan; yoksa varsayılanı dene
-        $table = $_SESSION['admin_table'] ?? admin_users;
+        $table = $_SESSION['admin_table'] ?? 'yoneticiler';
         $idCol = $_SESSION['admin_id_col'] ?? 'admin_id';
 
         // SELECT * ile çek, status/kolon varyasyonlarını toleranslı işle
         $adminRow = $db->getRow("SELECT * FROM {$table} WHERE {$idCol} = ? LIMIT 1", [$sessionAdmin['admin_id']]);
         if (!$adminRow) {
-            // Fallback: admin_users -> admins -> users
-            foreach (['admin_users','admins','users'] as $fb) {
+            // Fallback: yoneticiler -> admins -> users
+            foreach (['yoneticiler','admins','users'] as $fb) {
                 $idC = ($fb === 'users') ? 'id' : 'admin_id';
                 $adminRow = $db->getRow("SELECT * FROM {$fb} WHERE {$idC} = ? LIMIT 1", [$sessionAdmin['admin_id']]);
                 if ($adminRow) { $table = $fb; $idCol = $idC; break; }
@@ -97,6 +97,8 @@ function current_admin(bool $refreshFromDb = true): ?array
 
         if (!$adminRow) {
             // Admin bulunamadı - session'ı temizle
+            unset($_SESSION['admin_id']);
+            unset($_SESSION['email']);
             return null;
         }
 

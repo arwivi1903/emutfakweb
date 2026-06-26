@@ -1,12 +1,24 @@
+<?php
+$versionJsonPath = __DIR__ . '/version.json';
+$version = '1.0.0';
+if (file_exists($versionJsonPath)) {
+    $vData = json_decode(file_get_contents($versionJsonPath), true);
+    if ($vData && isset($vData['major'])) {
+        $version = $vData['major'] . '.' . $vData['minor'] . '.' . $vData['patch'];
+    }
+}
+?>
 <div id="kt_app_footer" class="app-footer">
     <div class="app-container container-fluid d-flex flex-column flex-md-row flex-center flex-md-stack py-3">
         <div class="text-dark order-2 order-md-1">
             <span class="text-muted fw-semibold me-1">2026&copy;</span>
-            <a href="index.php" target="_blank" class="text-gray-800 text-hover-primary">prolyn</a>
+            <span class="text-gray-800 fw-bold me-2">ERP ONLINE</span>
+            <span class="text-muted fw-semibold me-1">created by</span>
+            <a href="https://www.echoshift.net" target="_blank" class="text-gray-800 text-hover-primary fw-bold">EchoShift</a>
         </div>
 
         <div class="text-dark order-1 order-md-2">
-            <span class="text-muted fw-semibold">Version <span class="badge badge-light-info">1.0.0</span></span>
+            <span class="text-muted fw-semibold">Version <span class="badge badge-light-info"><?= htmlspecialchars($version) ?></span></span>
         </div>
 
         <!-- <ul class="menu menu-gray-600 menu-hover-primary fw-semibold order-1">

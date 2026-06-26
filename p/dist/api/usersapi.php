@@ -72,7 +72,7 @@ if ($action === 'list' && $method === 'GET') {
         }
 
         // Toplam kayıt sayısını al
-        $countQuery = "SELECT COUNT(*) as total FROM admins WHERE {$whereClause}";
+        $countQuery = "SELECT COUNT(*) as total FROM yoneticiler WHERE {$whereClause}";
         $countResult = $db->getRow($countQuery, $params);
         $total = isset($countResult->total) ? (int)$countResult->total : 0;
 
@@ -80,7 +80,7 @@ if ($action === 'list' && $method === 'GET') {
         $query = "SELECT admin_id, email, full_name, admin_pic, role, status, 
                   can_manage_customers, can_manage_subscriptions, can_manage_payments, 
                   can_view_analytics, two_factor_enabled, last_login, created_at, updated_at 
-                  FROM admins
+                  FROM yoneticiler
                   WHERE {$whereClause} 
                   ORDER BY {$sort} {$order} 
                   LIMIT " . (int)$limit . " OFFSET " . (int)$offset;

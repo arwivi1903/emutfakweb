@@ -23,7 +23,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
 }
 
 // Plan Listesini Çek
-$plans = $db->getRowsAssoc("SELECT * FROM plans ORDER BY price_monthly ASC");
+$plans = $db->getRowsAssoc("SELECT * FROM abonelikler ORDER BY price_monthly ASC");
 ?>
 
 <div class="app-main flex-column flex-row-fluid" id="kt_app_main">

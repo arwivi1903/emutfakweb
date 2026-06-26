@@ -22,7 +22,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['action']) && $_POST['a
     }
 }
 
-$admins = $db->getRows("SELECT * FROM admins ORDER BY created_at DESC");
+$admins = $db->getRows("SELECT * FROM yoneticiler ORDER BY created_at DESC");
 ?>
 <div class="app-main flex-column flex-row-fluid" id="kt_app_main">
     <div class="d-flex flex-column flex-column-fluid">

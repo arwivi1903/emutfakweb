@@ -29,14 +29,14 @@ $metatag = $db->getrow("SELECT * FROM setting");
 <html lang="tr">
 <head>
     <base href="/prolynweb/p/" />
-    <title></title>
+    <title>Prolyn.Net ERP</title>
     <meta charset="utf-8" />
     <meta name="description" content="" />
     <meta name="keywords" content="" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta property="og:locale" content="tr_TR" />
     <meta property="og:type" content="article" />
-    <meta property="og:title" content="" />
+    <meta property="og:title" content="Prolyn.Net ERP" />
     <meta property="og:url" content="" />
     <meta property="og:site_name" content="" />
     <link rel="canonical" href="" />
