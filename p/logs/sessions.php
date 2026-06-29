@@ -11,7 +11,7 @@ require_once '../config/sidebar.php';
 // Oturum Sonlandırma
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['action'] === 'kill_session') {
     $session_id = trim($_POST['session_id']);
-    $db->Query("DELETE FROM oturumlar WHERE session_id = ?", [$session_id]);
+    $db->Delete("DELETE FROM oturumlar WHERE session_id = ?", [$session_id]);
     
     echo "<script>window.location.href='logs/sessions.php?success=killed';</script>";
     exit;
@@ -51,14 +51,20 @@ $sessions = $db->getRowsAssoc($query);
         <div id="kt_app_content" class="app-content flex-column-fluid">
             <div id="kt_app_content_container" class="app-container container-fluid">
 
-                <?php if(isset($_GET['success'])): ?>
-                <div class="alert alert-success d-flex align-items-center p-5 mb-5">
-                    <i class="ki-duotone ki-shield-tick fs-2hx text-success me-4"><span class="path1"></span><span class="path2"></span></i>
-                    <div class="d-flex flex-column">
-                        <h4 class="mb-1 text-success">Başarılı</h4>
-                        <span>Oturum başarıyla sonlandırıldı. (İlgili kullanıcının çıkışı yapıldı)</span>
-                    </div>
-                </div>
+                <?php if(isset($_GET['success']) && $_GET['success'] === 'killed'): ?>
+                <script>
+                document.addEventListener("DOMContentLoaded", function() {
+                    Swal.fire({
+                        text: "Oturum başarıyla sonlandırıldı. (İlgili kullanıcının çıkışı yapıldı)",
+                        icon: "success",
+                        buttonsStyling: false,
+                        confirmButtonText: "Tamam",
+                        customClass: {
+                            confirmButton: "btn btn-primary"
+                        }
+                    });
+                });
+                </script>
                 <?php endif; ?>
 
                 <div class="card shadow-sm">
@@ -125,7 +131,7 @@ $sessions = $db->getRowsAssoc($query);
                             <?= csrfTokenField() ?>
                                                     <input type="hidden" name="action" value="kill_session">
                                                     <input type="hidden" name="session_id" value="<?php echo htmlspecialchars($sess['session_id']); ?>">
-                                                    <button type="submit" class="btn btn-sm btn-light-danger" onclick="return confirm('Bu oturumu zorla sonlandırmak istediğinize emin misiniz? Kullanıcı sistemden atılacaktır.');">
+                                                    <button type="button" class="btn btn-sm btn-light-danger" onclick="confirmKillSession(this);">
                                                         <i class="ki-duotone ki-trash fs-3"><span class="path1"></span><span class="path2"></span><span class="path3"></span><span class="path4"></span><span class="path5"></span></i> Sonlandır
                                                     </button>
                                                 </form>
@@ -145,5 +151,26 @@ $sessions = $db->getRowsAssoc($query);
         </div>
     </div>
 </div>
+
+<script>
+function confirmKillSession(btn) {
+    Swal.fire({
+        title: 'Emin misiniz?',
+        text: 'Bu oturumu zorla sonlandırmak istediğinize emin misiniz? Kullanıcı sistemden atılacaktır.',
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonText: 'Evet, Sonlandır',
+        cancelButtonText: 'İptal',
+        customClass: {
+            confirmButton: "btn btn-danger",
+            cancelButton: "btn btn-active-light"
+        }
+    }).then((result) => {
+        if (result.isConfirmed) {
+            btn.closest('form').submit();
+        }
+    });
+}
+</script>
 
 <?php require_once '../config/footer.php'; ?>

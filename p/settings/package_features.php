@@ -14,6 +14,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
     
     $params = [
         $_POST['plan_display_name'],
+        (float)$_POST['price'],
         (int)$_POST['max_admin_users'],
         (int)$_POST['max_total_users'],
         (int)$_POST['max_storage_gb'],
@@ -32,7 +33,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
     ];
     
     $sql = "UPDATE paket_ozellikleri SET 
-            plan_display_name = ?, max_admin_users = ?, max_total_users = ?, max_storage_gb = ?, max_file_size_mb = ?, 
+            plan_display_name = ?, price = ?, max_admin_users = ?, max_total_users = ?, max_storage_gb = ?, max_file_size_mb = ?, 
             max_files_per_upload = ?, api_access = ?, api_requests_per_month = ?, custom_reports = ?, advanced_analytics = ?, 
             white_label = ?, email_campaigns = ?, bulk_operations = ?, support_level = ?, support_response_hours = ?
             WHERE feature_id = ?";
@@ -98,6 +99,10 @@ $plans = $db->getRowsAssoc("SELECT * FROM paket_ozellikleri ORDER BY feature_id 
                             </div>
                             <div class="card-body pt-5">
                                 <div class="d-flex flex-stack fs-6 fw-semibold mb-3">
+                                    <span class="text-gray-400">Fiyat (Aylık):</span>
+                                    <span class="text-gray-800 fw-bold"><?php echo number_format($plan['price'], 2, ',', '.'); ?> TL</span>
+                                </div>
+                                <div class="d-flex flex-stack fs-6 fw-semibold mb-3">
                                     <span class="text-gray-400">Max Admin:</span>
                                     <span class="text-gray-800"><?php echo $plan['max_admin_users']; ?></span>
                                 </div>
@@ -158,11 +163,15 @@ $plans = $db->getRowsAssoc("SELECT * FROM paket_ozellikleri ORDER BY feature_id 
                 
                 <div class="modal-body scroll-y mx-5 mx-xl-15 my-7">
                     <div class="row mb-5">
-                        <div class="col-md-6 mb-5">
+                        <div class="col-md-4 mb-5">
                             <label class="required fs-6 fw-semibold mb-2">Görünür İsim (Display Name)</label>
                             <input type="text" class="form-control form-control-solid" name="plan_display_name" id="inp_plan_display_name" required />
                         </div>
-                        <div class="col-md-6 mb-5">
+                        <div class="col-md-4 mb-5">
+                            <label class="required fs-6 fw-semibold mb-2">Fiyat (TL)</label>
+                            <input type="number" step="0.01" class="form-control form-control-solid" name="price" id="inp_price" required />
+                        </div>
+                        <div class="col-md-4 mb-5">
                             <label class="required fs-6 fw-semibold mb-2">Destek Seviyesi</label>
                             <select class="form-select form-select-solid" name="support_level" id="inp_support_level" required>
                                 <option value="email">Email</option>
@@ -258,6 +267,7 @@ function editPlan(plan) {
     document.getElementById('edit_modal_title').innerText = plan.plan_name.toUpperCase() + ' Planını Düzenle';
     document.getElementById('inp_feature_id').value = plan.feature_id;
     document.getElementById('inp_plan_display_name').value = plan.plan_display_name;
+    document.getElementById('inp_price').value = plan.price;
     document.getElementById('inp_support_level').value = plan.support_level;
     document.getElementById('inp_max_admin_users').value = plan.max_admin_users;
     document.getElementById('inp_max_total_users').value = plan.max_total_users;

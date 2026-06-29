@@ -1042,6 +1042,7 @@ CREATE TABLE `paket_ozellikleri` (
   `feature_id` int(11) NOT NULL AUTO_INCREMENT COMMENT 'Feature id Bilgisi',
   `plan_name` enum('basic','pro','enterprise') NOT NULL COMMENT 'Plan name Bilgisi',
   `plan_display_name` varchar(100) DEFAULT NULL COMMENT 'Plan display name Bilgisi',
+  `price` decimal(10,2) NOT NULL DEFAULT 0.00 COMMENT 'Fiyat Bilgisi',
   `max_admin_users` int(11) DEFAULT NULL COMMENT 'Max admin users Bilgisi',
   `max_total_users` int(11) DEFAULT NULL COMMENT 'Max total users Bilgisi',
   `max_storage_gb` int(11) DEFAULT NULL COMMENT 'Max storage gb Bilgisi',
@@ -1068,7 +1069,7 @@ CREATE TABLE `paket_ozellikleri` (
 
 LOCK TABLES `paket_ozellikleri` WRITE;
 /*!40000 ALTER TABLE `paket_ozellikleri` DISABLE KEYS */;
-INSERT INTO `paket_ozellikleri` VALUES (1,'basic','Başlangıç Paketi',2,5,5,50,10,0,0,0,0,0,0,0,'email',48,'2025-11-21 13:05:29'),(2,'pro','Profosyonel Paketi',5,25,50,100,25,1,10000,1,1,0,1,1,'priority',24,'2025-11-21 13:05:29'),(3,'enterprise','Kurumsal Paket',999,999,999,999,999,1,999999,1,1,1,1,1,'dedicated',4,'2025-11-21 13:05:29');
+INSERT INTO `paket_ozellikleri` VALUES (1,'basic','Başlangıç Paketi',499.00,2,5,5,50,10,0,0,0,0,0,0,0,'email',48,'2025-11-21 13:05:29'),(2,'pro','Profosyonel Paketi',999.00,5,25,50,100,25,1,10000,1,1,0,1,1,'priority',24,'2025-11-21 13:05:29'),(3,'enterprise','Kurumsal Paket',2499.00,999,999,999,999,999,1,999999,1,1,1,1,1,'dedicated',4,'2025-11-21 13:05:29');
 /*!40000 ALTER TABLE `paket_ozellikleri` ENABLE KEYS */;
 UNLOCK TABLES;
 

@@ -52,7 +52,7 @@ foreach ($allTenants as $t) {
 }
 
 // Son kayıt olan 5 kurum
-$recentTenants = $db->getRows("SELECT customer_id, customer_code, company_name, company_email, status, trial_end_date, created_at FROM kurumlar WHERE del_status = 1 AND deleted_at IS NULL ORDER BY customer_id DESC LIMIT 5");
+$recentTenants = $db->getRows("SELECT customer_id, tenant_alias, company_name, company_email, status, trial_end_date, sozlesme_bitis_tarihi, created_at FROM kurumlar WHERE del_status = 1 AND deleted_at IS NULL ORDER BY customer_id DESC LIMIT 5");
 
 // Son 5 sistem hatası
 $recentErrors = $db->getRows("SELECT error_id, error_message, severity, created_at FROM sistem_hatalari WHERE del_status = 1 ORDER BY error_id DESC LIMIT 5");
@@ -183,7 +183,7 @@ $recentErrors = $db->getRows("SELECT error_id, error_message, severity, created_
                                                 <th class="min-w-150px">Kurum Adı</th>
                                                 <th class="min-w-100px">Kurum Kodu</th>
                                                 <th class="min-w-125px">Durum</th>
-                                                <th class="min-w-125px">Deneme Bitiş</th>
+                                                <th class="min-w-125px">Bitiş Tarihi</th>
                                                 <th class="text-end min-w-70px">İşlem</th>
                                             </tr>
                                         </thead>
@@ -195,7 +195,10 @@ $recentErrors = $db->getRows("SELECT error_id, error_message, severity, created_
                                             <?php else: ?>
                                                 <?php foreach ($recentTenants as $tenant): 
                                                     $trialEndDateStr = $tenant->trial_end_date;
+                                                    $contractDateStr = $tenant->sozlesme_bitis_tarihi ?? '';
                                                     $hasTrialDate = !empty($trialEndDateStr) && $trialEndDateStr !== '0000-00-00' && $trialEndDateStr !== '1970-01-01';
+                                                    $hasContractDate = !empty($contractDateStr) && $contractDateStr !== '0000-00-00' && $contractDateStr !== '1970-01-01';
+                                                    
                                                     $isTrialExpired = false;
                                                     if ($hasTrialDate) {
                                                         $trialEndTimestamp = strtotime($trialEndDateStr . ' 23:59:59');
@@ -206,12 +209,12 @@ $recentErrors = $db->getRows("SELECT error_id, error_message, severity, created_
                                                         <td>
                                                             <div class="d-flex align-items-center">
                                                                 <div class="d-flex flex-column">
-                                                                    <a href="crm/tenant_detail.php?id=<?= $tenant->customer_id ?>" class="text-gray-800 text-hover-primary fw-bold mb-1"><?= htmlspecialchars($tenant->company_name) ?></a>
-                                                                    <span class="text-muted fs-7"><?= htmlspecialchars($tenant->company_email) ?></span>
+                                                                    <a href="crm/tenant_detail.php?id=<?= $tenant->customer_id ?>" class="text-gray-800 text-hover-primary fw-bold mb-1"><?= htmlspecialchars($tenant->company_name ?? '') ?></a>
+                                                                    <span class="text-muted fs-7"><?= htmlspecialchars($tenant->company_email ?? '') ?></span>
                                                                 </div>
                                                             </div>
                                                         </td>
-                                                        <td><code class="text-gray-700"><?= htmlspecialchars($tenant->customer_code) ?></code></td>
+                                                        <td><code class="text-gray-700"><?= htmlspecialchars($tenant->tenant_alias ?? '') ?></code></td>
                                                         <td>
                                                             <?php if ($tenant->status === 'active'): ?>
                                                                 <?php if ($isTrialExpired): ?>
@@ -224,12 +227,16 @@ $recentErrors = $db->getRows("SELECT error_id, error_message, severity, created_
                                                             <?php endif; ?>
                                                         </td>
                                                         <td>
-                                                            <?php if ($hasTrialDate): ?>
-                                                                <span class="<?= $isTrialExpired ? 'text-danger fw-bold' : 'text-gray-600' ?>">
-                                                                    <?= date('d.m.Y', strtotime($trialEndDateStr)) ?>
+                                                            <?php if ($hasContractDate): ?>
+                                                                <span class="text-success fw-bold" title="Sözleşme Bitiş">
+                                                                    <i class="ki-duotone ki-calendar-tick fs-7 text-success me-1"><span class="path1"></span><span class="path2"></span><span class="path3"></span><span class="path4"></span><span class="path5"></span><span class="path6"></span></i><?= date('d.m.Y', strtotime($contractDateStr)) ?>
+                                                                </span>
+                                                            <?php elseif ($hasTrialDate): ?>
+                                                                <span class="<?= $isTrialExpired ? 'text-danger fw-bold' : 'text-warning fw-bold' ?>" title="Deneme Bitiş">
+                                                                    <i class="ki-duotone ki-time fs-7 <?= $isTrialExpired ? 'text-danger' : 'text-warning' ?> me-1"><span class="path1"></span><span class="path2"></span></i><?= date('d.m.Y', strtotime($trialEndDateStr)) ?>
                                                                 </span>
                                                             <?php else: ?>
-                                                                -
+                                                                <span class="text-muted">-</span>
                                                             <?php endif; ?>
                                                         </td>
                                                         <td class="text-end">

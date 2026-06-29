@@ -169,13 +169,14 @@ function showAccordion($keywords) {
                 <div class="menu-item pt-5">
                     <div class="menu-content"><span class="menu-heading fw-bold text-uppercase fs-7">Sistem Ayarları</span></div>
                 </div>
-                <div data-kt-menu-trigger="click" class="menu-item menu-accordion <?= showAccordion(['settings', 'settings/api_keys.php']) ?>">
+                <div data-kt-menu-trigger="click" class="menu-item menu-accordion <?= showAccordion(['settings', 'settings/api_keys.php', 'plans.php']) ?>">
                     <span class="menu-link">
                         <span class="menu-icon"><i class="ki-duotone ki-setting-2 fs-2"><span class="path1"></span><span class="path2"></span></i></span>
                         <span class="menu-title">Yönetim Ayarları</span>
                         <span class="menu-arrow"></span>
                     </span>
                     <div class="menu-sub menu-sub-accordion">
+                        <div class="menu-item"><a class="menu-link <?= isActive('plans.php') ?>" href="plans.php"><span class="menu-bullet"><span class="bullet bullet-dot"></span></span><span class="menu-title">SaaS Paketleri (Matris)</span></a></div>
                         <div class="menu-item"><a class="menu-link <?= isActive('settings/admins.php') ?>" href="settings/admins.php"><span class="menu-bullet"><span class="bullet bullet-dot"></span></span><span class="menu-title">Yöneticiler</span></a></div>
                         <div class="menu-item"><a class="menu-link <?= isActive('settings/roles.php') ?>" href="settings/roles.php"><span class="menu-bullet"><span class="bullet bullet-dot"></span></span><span class="menu-title">Roller ve Yetkiler</span></a></div>
                         <div class="menu-item"><a class="menu-link <?= isActive('settings/api_keys.php') ?>" href="settings/api_keys.php"><span class="menu-bullet"><span class="bullet bullet-dot"></span></span><span class="menu-title">API Anahtarları</span></a></div>

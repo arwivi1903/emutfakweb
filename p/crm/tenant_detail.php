@@ -80,6 +80,65 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
         echo "<script>window.location.href='crm/tenant_detail.php?id={$tenant_id}&tab=info&success=converted';</script>";
         exit;
     }
+
+    // PAKET YÜKSELTME / DEĞİŞTİRME (PRORATION)
+    if ($_POST['action'] === 'upgrade_package') {
+        $new_paket = trim($_POST['new_paket']); // Bu artık paket ID (feature_id) veya plan_name olmalı ama select option value'si plan_display_name olarak gelirse diye adından bulacağız ya da id'den. Daha iyisi select box option'larına plan_name (basic, pro) koymak, görünen ismi plan_display_name yapmak.
+        $upgrade_fee = (float)($_POST['upgrade_fee'] ?? 0);
+        
+        // Veritabanından paketi bul
+        $paket_info = $db->getRowAssoc("SELECT * FROM paket_ozellikleri WHERE plan_name = ?", [$new_paket]);
+        if (!$paket_info) {
+            die("Geçersiz paket seçimi!");
+        }
+        
+        $plan_name = $paket_info['plan_name'];
+        $plan_display_name = $paket_info['plan_display_name'];
+        $allowed_modules = $paket_info['allowed_modules'] ?? '[]';
+
+        // Update kurumlar (Notice we DO NOT change sozlesme_bitis_tarihi)
+        $db->Update("
+            UPDATE kurumlar 
+            SET musteri_paketi = ?,
+                allowed_modules = ?,
+                updated_at = NOW()
+            WHERE customer_id = ?
+        ", [$plan_display_name, $allowed_modules, $tenant_id]);
+
+        // Update abonelikler table
+        $db->Update("
+            UPDATE abonelikler 
+            SET plan_name = ?,
+                updated_at = NOW()
+            WHERE customer_id = ? AND status = 'active'
+        ", [$plan_name, $tenant_id]);
+
+        // Update customers table (login sistemi bu tabloyu kullanabilir, convert_trial'daki gibi)
+        try {
+            $db->Update("
+                UPDATE customers 
+                SET musteri_paketi = ?,
+                    allowed_modules = ?,
+                    updated_at = NOW()
+                WHERE customer_id = ?
+            ", [$new_paket, $allowed_modules, $tenant_id]);
+        } catch (Exception $e) {
+            // sessiz geç
+        }
+
+        // Create an invoice if there's a fee
+        if ($upgrade_fee > 0) {
+            $invoice_number = 'UPG-' . date('YmdHis') . '-' . $tenant_id;
+            $db->Insert("
+                INSERT INTO faturalar 
+                (invoice_number, customer_id, issue_date, due_date, total_amount, status, notes)
+                VALUES (?, ?, CURDATE(), CURDATE(), ?, 'draft', ?)
+            ", [$invoice_number, $tenant_id, $upgrade_fee, "Kıstelyevm Paket Yükseltme Farkı ({$new_paket})"]);
+        }
+
+        echo "<script>window.location.href='crm/tenant_detail.php?id={$tenant_id}&tab=info&success=upgraded';</script>";
+        exit;
+    }
 }
 
 // Tenant Bilgilerini Çek
@@ -133,7 +192,7 @@ $active_tab = $_GET['tab'] ?? 'info';
             <div id="kt_app_toolbar_container" class="app-container container-fluid d-flex flex-stack">
                 <div class="page-title d-flex flex-column justify-content-center flex-wrap me-3">
                     <h1 class="page-heading d-flex text-dark fw-bold fs-3 flex-column justify-content-center my-0">
-                        Kurum Detayları: <?php echo htmlspecialchars($tenant['company_name']); ?>
+                        Kurum Detayları: <span class="text-uppercase"><?php echo htmlspecialchars($tenant['company_name']); ?></span>
                     </h1>
                     <ul class="breadcrumb breadcrumb-separatorless fw-semibold fs-7 my-0 pt-1">
                         <li class="breadcrumb-item text-muted"><a href="index.php" class="text-muted text-hover-primary">Ana Sayfa</a></li>
@@ -154,13 +213,19 @@ $active_tab = $_GET['tab'] ?? 'info';
             <div id="kt_app_content_container" class="app-container container-fluid">
 
                 <?php if(isset($_GET['success'])): ?>
-                <div class="alert alert-success d-flex align-items-center p-5 mb-5">
-                    <i class="ki-duotone ki-shield-tick fs-2hx text-success me-4"><span class="path1"></span><span class="path2"></span></i>
-                    <div class="d-flex flex-column">
-                        <h4 class="mb-1 text-success">Başarılı</h4>
-                        <span>İşleminiz başarıyla kaydedildi.</span>
-                    </div>
-                </div>
+                <script>
+                document.addEventListener('DOMContentLoaded', function() {
+                    Swal.fire({
+                        text: "İşleminiz başarıyla kaydedildi.",
+                        icon: "success",
+                        buttonsStyling: false,
+                        confirmButtonText: "Tamam",
+                        customClass: {
+                            confirmButton: "btn btn-primary"
+                        }
+                    });
+                });
+                </script>
                 <?php endif; ?>
 
                 <!-- Profil Header -->
@@ -181,11 +246,16 @@ $active_tab = $_GET['tab'] ?? 'info';
                                 <div class="d-flex justify-content-between align-items-start flex-wrap mb-2">
                                     <div class="d-flex flex-column">
                                         <div class="d-flex align-items-center mb-2">
-                                            <span class="text-gray-900 fs-2 fw-bold me-1"><?php echo htmlspecialchars($tenant['company_name']); ?></span>
+                                            <span class="text-gray-900 fs-2 fw-bold me-1 text-uppercase"><?php echo htmlspecialchars($tenant['company_name']); ?></span>
                                             <?php if ($tenant['status'] === 'active'): ?>
                                                 <i class="ki-duotone ki-verify fs-1 text-primary"><span class="path1"></span><span class="path2"></span></i>
                                             <?php endif; ?>
                                         </div>
+                                        <?php if (!empty($tenant['official_name'])): ?>
+                                        <div class="d-flex align-items-center mb-2">
+                                            <span class="text-gray-600 fs-5 fw-semibold text-uppercase"><?php echo htmlspecialchars($tenant['official_name']); ?></span>
+                                        </div>
+                                        <?php endif; ?>
 
                                         <div class="d-flex flex-wrap fw-semibold fs-6 mb-4 pe-2">
                                             <span class="d-flex align-items-center text-gray-400 text-hover-primary me-5 mb-2">
@@ -234,31 +304,65 @@ $active_tab = $_GET['tab'] ?? 'info';
                                 <div class="card-title m-0">
                                     <h3 class="fw-bold m-0">Kurum Detayları</h3>
                                 </div>
+                                <div class="card-toolbar m-0">
+                                    <?php if ($tenant['subscription_type'] === 'contract'): ?>
+                                    <button type="button" class="btn btn-sm btn-primary" data-bs-toggle="modal" data-bs-target="#kt_modal_upgrade_package">
+                                        <i class="ki-duotone ki-delivery fs-2"><span class="path1"></span><span class="path2"></span><span class="path3"></span></i> Paket Değiştir
+                                    </button>
+                                    <?php endif; ?>
+                                </div>
                             </div>
                             <div class="card-body p-9">
                                 <div class="row mb-7">
                                     <label class="col-lg-4 fw-semibold text-muted">Telefon Numarası</label>
-                                    <div class="col-lg-8"><span class="fw-bold fs-6 text-gray-800"><?php echo htmlspecialchars($tenant['company_phone'] ?? '-'); ?></span></div>
+                                    <div class="col-lg-8"><span class="fw-bold fs-6 text-gray-800 text-uppercase"><?php echo htmlspecialchars($tenant['company_phone'] ?? '-'); ?></span></div>
                                 </div>
                                 <div class="row mb-7">
                                     <label class="col-lg-4 fw-semibold text-muted">Sektör / Endüstri</label>
-                                    <div class="col-lg-8"><span class="fw-bold fs-6 text-gray-800"><?php echo htmlspecialchars($tenant['industry'] ?? '-'); ?></span></div>
+                                    <div class="col-lg-8"><span class="fw-bold fs-6 text-gray-800 text-uppercase"><?php echo htmlspecialchars($tenant['industry'] ?? '-'); ?></span></div>
                                 </div>
                                 <div class="row mb-7">
                                     <label class="col-lg-4 fw-semibold text-muted">Adres</label>
-                                    <div class="col-lg-8"><span class="fw-bold fs-6 text-gray-800"><?php echo htmlspecialchars($tenant['company_address'] ?? 'Belirtilmemiş'); ?></span></div>
+                                    <div class="col-lg-8"><span class="fw-bold fs-6 text-gray-800 text-uppercase"><?php echo htmlspecialchars($tenant['billing_address'] ?? 'Belirtilmemiş'); ?></span></div>
                                 </div>
                                 <div class="row mb-7">
                                     <label class="col-lg-4 fw-semibold text-muted">Yetkili Kişi (Contact)</label>
                                     <div class="col-lg-8">
-                                        <span class="fw-bold fs-6 text-gray-800"><?php echo htmlspecialchars($tenant['contact_name'] ?? '-'); ?></span><br>
-                                        <span class="text-muted"><?php echo htmlspecialchars($tenant['contact_email'] ?? ''); ?></span>
+                                        <span class="fw-bold fs-6 text-gray-800 text-uppercase"><?php echo htmlspecialchars($tenant['contact_person'] ?: ($tenant['contact_name'] ?? '-')); ?></span><br>
+                                        <span class="text-muted"><?php echo htmlspecialchars($tenant['company_email'] ?? ''); ?></span>
                                     </div>
                                 </div>
                                 <div class="row mb-7">
                                     <label class="col-lg-4 fw-semibold text-muted">Kayıt Tarihi</label>
                                     <div class="col-lg-8"><span class="fw-bold fs-6 text-gray-800"><?php echo date('d.m.Y H:i', strtotime($tenant['created_at'])); ?></span></div>
                                 </div>
+                                <div class="row mb-7">
+                                    <label class="col-lg-4 fw-semibold text-muted">Abonelik Tipi</label>
+                                    <div class="col-lg-8">
+                                        <span class="fw-bold fs-6 text-gray-800 text-uppercase"><?php echo htmlspecialchars($tenant['subscription_type'] === 'contract' ? 'Sözleşmeli' : 'Deneme Sürümü'); ?></span>
+                                    </div>
+                                </div>
+                                <div class="row mb-7">
+                                    <label class="col-lg-4 fw-semibold text-muted">Müşteri Paketi</label>
+                                    <div class="col-lg-8">
+                                        <span class="fw-bold fs-6 text-gray-800 text-uppercase"><?php echo htmlspecialchars($tenant['musteri_paketi'] ?? '-'); ?></span>
+                                    </div>
+                                </div>
+                                <?php if ($tenant['subscription_type'] === 'contract'): ?>
+                                <div class="row mb-7">
+                                    <label class="col-lg-4 fw-semibold text-muted">Sözleşme Bitiş Tarihi</label>
+                                    <div class="col-lg-8">
+                                        <span class="fw-bold fs-6 text-gray-800"><?php echo !empty($tenant['sozlesme_bitis_tarihi']) ? date('d.m.Y', strtotime($tenant['sozlesme_bitis_tarihi'])) : '-'; ?></span>
+                                    </div>
+                                </div>
+                                <?php else: ?>
+                                <div class="row mb-7">
+                                    <label class="col-lg-4 fw-semibold text-muted">Deneme Bitiş Tarihi</label>
+                                    <div class="col-lg-8">
+                                        <span class="fw-bold fs-6 text-gray-800"><?php echo !empty($tenant['trial_end_date']) ? date('d.m.Y', strtotime($tenant['trial_end_date'])) : '-'; ?></span>
+                                    </div>
+                                </div>
+                                <?php endif; ?>
                                 <div class="row mb-7">
                                     <label class="col-lg-4 fw-semibold text-muted">Sistem İstatistikleri</label>
                                     <div class="col-lg-8">
@@ -615,5 +719,160 @@ $active_tab = $_GET['tab'] ?? 'info';
         </div>
     </div>
 </div>
+
+<!-- Modal: Paket Değiştir -->
+<div class="modal fade" id="kt_modal_upgrade_package" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered mw-650px">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 class="fw-bold">Paket Değiştir / Yükselt</h2>
+                <div class="btn btn-icon btn-sm btn-active-icon-primary" data-bs-dismiss="modal">
+                    <i class="ki-duotone ki-cross fs-1"><span class="path1"></span><span class="path2"></span></i>
+                </div>
+            </div>
+            <div class="modal-body scroll-y mx-5 mx-xl-15 my-7">
+                <form id="kt_modal_upgrade_form" method="POST" action="">
+                    <?= csrfTokenField() ?>
+                    <input type="hidden" name="action" value="upgrade_package">
+                    <input type="hidden" name="tenant_id" id="upgrade_tenant_id" value="<?php echo $tenant_id; ?>">
+                    <input type="hidden" name="upgrade_fee" id="upgrade_fee_input" value="0">
+                    
+                    <div class="d-flex flex-column mb-7 fv-row">
+                        <label class="d-flex align-items-center fs-6 fw-semibold form-label mb-2">
+                            <span class="required">Yeni Paket Seçimi</span>
+                        </label>
+                        <select name="new_paket" id="upgrade_new_paket" class="form-select form-select-solid" data-control="select2" data-hide-search="true" data-placeholder="Paket Seçiniz" required>
+                            <option value=""></option>
+                            <?php 
+                            $all_plans = $db->getRowsAssoc("SELECT * FROM paket_ozellikleri ORDER BY price ASC");
+                            foreach($all_plans as $p): 
+                                $is_current = ($tenant['musteri_paketi'] == $p['plan_display_name']);
+                            ?>
+                                <option value="<?= $p['plan_name'] ?>" <?= $is_current ? 'disabled' : '' ?>>
+                                    <?= htmlspecialchars($p['plan_display_name']) ?>
+                                </option>
+                            <?php endforeach; ?>
+                        </select>
+                    </div>
+
+                    <div id="proration_calculation_result" class="d-none bg-light-primary rounded p-5 mb-7">
+                        <h4 class="text-primary mb-3">Hesaplama Detayları</h4>
+                        <div class="d-flex flex-stack mb-2">
+                            <span class="text-gray-600">Sözleşme Kalan Süre:</span>
+                            <span class="fw-bold text-gray-800"><span id="calc_remaining_days">0</span> Gün</span>
+                        </div>
+                        <div class="d-flex flex-stack mb-2">
+                            <span class="text-gray-600">Eski Paketin Kalan Değeri:</span>
+                            <span class="fw-bold text-gray-800"><span id="calc_old_value">0.00</span> TL</span>
+                        </div>
+                        <div class="d-flex flex-stack mb-2">
+                            <span class="text-gray-600">Yeni Paketin Kalan Süre Maliyeti:</span>
+                            <span class="fw-bold text-gray-800"><span id="calc_new_cost">0.00</span> TL</span>
+                        </div>
+                        <div class="separator border-primary my-3"></div>
+                        <div class="d-flex flex-stack">
+                            <span class="fw-bold fs-5 text-gray-800">Ödenecek Fark (Fatura Tutarı):</span>
+                            <span class="fw-bolder fs-3 text-primary"><span id="calc_upgrade_fee">0.00</span> TL</span>
+                        </div>
+                        <div id="downgrade_warning" class="d-none mt-3 alert alert-warning p-3 mb-0">
+                            Alt pakete geçiş yapıyorsunuz. Fark ücreti yansıtılmayacak ve iade yapılmayacaktır.
+                        </div>
+                    </div>
+
+                    <div class="text-center pt-15">
+                        <button type="reset" class="btn btn-light me-3" data-bs-dismiss="modal">İptal</button>
+                        <button type="submit" id="btn_upgrade_submit" class="btn btn-primary" disabled>
+                            <span class="indicator-label">Değişikliği Onayla ve Fatura Oluştur</span>
+                            <span class="indicator-progress">Lütfen Bekleyin... <span class="spinner-border spinner-border-sm align-middle ms-2"></span></span>
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    var upgradeSelect = document.getElementById('upgrade_new_paket');
+    var resultDiv = document.getElementById('proration_calculation_result');
+    var submitBtn = document.getElementById('btn_upgrade_submit');
+    var downgradeWarning = document.getElementById('downgrade_warning');
+    var upgradeFeeInput = document.getElementById('upgrade_fee_input');
+
+    if(upgradeSelect) {
+        $(upgradeSelect).on('change', function() {
+            var newPaket = this.value;
+            var tenantId = document.getElementById('upgrade_tenant_id').value;
+
+            if(!newPaket) {
+                resultDiv.classList.add('d-none');
+                submitBtn.disabled = true;
+                return;
+            }
+
+            // AJAX call to calculate proration
+            $.ajax({
+                url: 'crm/ajax/calculate_proration.php',
+                type: 'POST',
+                data: {
+                    tenant_id: tenantId,
+                    new_paket: newPaket,
+                    csrf_token: '<?php echo function_exists('getCSRFToken') ? getCSRFToken() : ($_SESSION['csrf_token'] ?? ''); ?>'
+                },
+                dataType: 'json',
+                success: function(res) {
+                    if(res.success) {
+                        document.getElementById('calc_remaining_days').innerText = res.remaining_days;
+                        document.getElementById('calc_old_value').innerText = res.remaining_old_value.toLocaleString('tr-TR', {minimumFractionDigits: 2});
+                        document.getElementById('calc_new_cost').innerText = res.remaining_new_cost.toLocaleString('tr-TR', {minimumFractionDigits: 2});
+                        document.getElementById('calc_upgrade_fee').innerText = res.upgrade_fee.toLocaleString('tr-TR', {minimumFractionDigits: 2});
+                        
+                        upgradeFeeInput.value = res.upgrade_fee;
+
+                        if(res.is_downgrade) {
+                            downgradeWarning.classList.remove('d-none');
+                        } else {
+                            downgradeWarning.classList.add('d-none');
+                        }
+
+                        resultDiv.classList.remove('d-none');
+                        submitBtn.disabled = false;
+                    } else {
+                        Swal.fire({
+                            text: "Hesaplama Hatası: " + res.message,
+                            icon: "error",
+                            buttonsStyling: false,
+                            confirmButtonText: "Tamam, anladım",
+                            customClass: {
+                                confirmButton: "btn btn-primary"
+                            }
+                        });
+                        resultDiv.classList.add('d-none');
+                        submitBtn.disabled = true;
+                    }
+                },
+                error: function(xhr) {
+                    let errorMsg = "Hesaplama sırasında sunucu hatası oluştu.";
+                    if (xhr.responseText) {
+                        errorMsg += " " + xhr.responseText;
+                    }
+                    Swal.fire({
+                        text: errorMsg,
+                        icon: "error",
+                        buttonsStyling: false,
+                        confirmButtonText: "Tamam, anladım",
+                        customClass: {
+                            confirmButton: "btn btn-primary"
+                        }
+                    });
+                    resultDiv.classList.add('d-none');
+                    submitBtn.disabled = true;
+                }
+            });
+        });
+    }
+});
+</script>
 
 <?php require_once '../config/footer.php'; ?>

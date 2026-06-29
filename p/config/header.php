@@ -23,7 +23,15 @@ oturumkontrol();
 // Aktif oturum takibini güncelle (Sistem Geneli Aktif Oturumlar Takibi)
 if (isset($_SESSION['admin_id'])) {
     try {
-        $db->Update("UPDATE oturumlar SET last_activity = NOW(), expires_at = DATE_ADD(NOW(), INTERVAL 1440 MINUTE) WHERE session_id = ?", [session_id()]);
+        $current_sess = session_id();
+        $check_sess = $db->getRow("SELECT session_id FROM oturumlar WHERE session_id = ?", [$current_sess]);
+        if (!$check_sess) {
+            // Oturum DB'den silinmiş (admin tarafından sonlandırılmış)
+            header("Location: /prolynweb/p/logout.php");
+            exit;
+        } else {
+            $db->Update("UPDATE oturumlar SET last_activity = NOW(), expires_at = DATE_ADD(NOW(), INTERVAL 1440 MINUTE) WHERE session_id = ?", [$current_sess]);
+        }
     } catch (Exception $e) {
         // Hata durumunda yoksay
     }

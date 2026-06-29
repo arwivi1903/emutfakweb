@@ -9,13 +9,60 @@ $selectedPlan = $_GET['plan'] ?? '';
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $company_name  = trim($_POST['company_name'] ?? '');
+    $official_name = trim($_POST['official_name'] ?? '');
     $contact_name  = trim($_POST['contact_name'] ?? '');
     $company_email = trim($_POST['company_email'] ?? '');
     $company_phone = trim($_POST['company_phone'] ?? '');
     $admin_password = $_POST['admin_password'] ?? '';
     
-    if (empty($company_name) || empty($contact_name) || empty($company_email) || empty($admin_password)) {
+    $tax_office = trim($_POST['tax_office'] ?? '');
+    $tax_number = trim($_POST['tax_number'] ?? '');
+    $billing_address = trim($_POST['billing_address'] ?? '');
+    
+    $city_id       = (int)($_POST['city_id'] ?? 0);
+    $district_id   = (int)($_POST['district_id'] ?? 0);
+
+    function firma_vno_digits($value) {
+        return preg_replace('/\D+/', '', (string) $value);
+    }
+    
+    function firma_vno_is_valid($value) {
+        $value = firma_vno_digits($value);
+    
+        if ($value === '' || strlen($value) < 10 || strlen($value) > 11) {
+            return false;
+        }
+    
+        if (strlen($value) === 10) {
+            $digits = array_map('intval', str_split($value));
+            $sum = 0;
+            for ($i = 0; $i < 9; $i++) {
+                $v = ($digits[$i] + (9 - $i)) % 10;
+                $vv = ($v * pow(2, 9 - $i)) % 9;
+                if ($v !== 0 && $vv === 0) {
+                    $vv = 9;
+                }
+                $sum += $vv;
+            }
+            $checkDigit = ($sum % 10 === 0) ? 0 : (10 - ($sum % 10));
+            return $checkDigit === $digits[9];
+        }
+    
+        if ($value[0] === '0') {
+            return false;
+        }
+    
+        $digits = array_map('intval', str_split($value));
+        $sumFirst10 = array_sum(array_slice($digits, 0, 10));
+    
+        return ($sumFirst10 % 10) === $digits[10];
+    }
+
+    if (empty($company_name) || empty($official_name) || empty($contact_name) || empty($company_email) || empty($admin_password) || empty($tax_number) || empty($tax_office) || empty($billing_address) || $city_id <= 0 || $district_id <= 0) {
         $message = "Lütfen tüm zorunlu alanları doldurunuz.";
+        $messageType = "danger";
+    } elseif (!firma_vno_is_valid($tax_number)) {
+        $message = "Geçersiz Vergi No veya TC Kimlik No girişi yaptınız.";
         $messageType = "danger";
     } else {
         try {
@@ -85,9 +132,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $stmtGrup = $tenantPdo->prepare("INSERT INTO usergrup (UserGrupID, UserGrupName, UserGrupDesc, UserGrupStatus, permissions) VALUES (1, 'Yönetici', 'Tam Yetkili Yönetici', 1, '{\"all\": true}')");
                 $stmtGrup->execute();
                 
+                $final_city_id = ($city_id > 0) ? $city_id : 0;
+                $final_district_id = ($district_id > 0) ? $district_id : 0;
+
                 // Firma kaydı oluştur
-                $stmtFirm = $tenantPdo->prepare("INSERT INTO firmalar (FirmaID, CustomerID, FirmaAdi, FirmaDetay, FirmaVergi, FirmaVNO, BayiCity, BayiTown, BayiAdres) VALUES (1, 1, ?, 'Ana Firma', 'Belirtilmedi', '0000000000', 'İstanbul', 'Şişli', 'Adres')");
-                $stmtFirm->execute([$company_name]);
+                $stmtFirm = $tenantPdo->prepare("INSERT INTO firmalar (FirmaID, CustomerID, FirmaAdi, FirmaDetay, FirmaVergi, FirmaVNO, BayiCity, BayiTown, BayiAdres) VALUES (1, 0, ?, ?, ?, ?, ?, ?, ?)");
+                $stmtFirm->execute([$company_name, $official_name, $tax_office, $tax_number, $final_city_id, $final_district_id, $billing_address]);
                 $firmaId = $tenantPdo->lastInsertId() ?: 1;
                 
                 // Şube ekle
@@ -101,11 +151,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 // Yönetici kullanıcısını ekle
                 $stmtUser = $tenantPdo->prepare("INSERT INTO users (FirmaID, UserName, UserMail, UserPhone, UserPass, UserAuthority, UserGroupID, BranchID, UserStatus) VALUES (?, ?, ?, ?, ?, 1, 1, ?, 1)");
                 $stmtUser->execute([$firmaId, $contact_name, $company_email, $company_phone, $hashedPassword, $branchId]);
+
+                // Nakit Kasa ekle
+                $stmtKasa = $tenantPdo->prepare("INSERT INTO nakitkasa (FirmaID, NakitKasaTutar) VALUES (?, 0)");
+                $stmtKasa->execute([$firmaId]);
                 
                 // Master DB'ye Kurum kaydı yap
-                $stmtMaster = $pdo->prepare("INSERT INTO kurumlar (customer_code, company_name, company_email, company_phone, database_name, database_password, status, trial_start_date, trial_end_date, contact_name, contact_email, contact_phone, allowed_modules) VALUES (?, ?, ?, ?, ?, ?, 'active', NOW(), DATE_ADD(NOW(), INTERVAL 30 DAY), ?, ?, ?, '[\"core\",\"customer\",\"commercial\",\"appointment\",\"current_account\",\"inventory\",\"accounting\",\"invoice\",\"contract\",\"reports\"]')");
-                $stmtMaster->execute([$customerCode, $company_name, $company_email, $company_phone, $newDbName, $pass, $contact_name, $company_email, $company_phone]);
-                
+                $stmtMaster = $pdo->prepare("INSERT INTO kurumlar (customer_code, company_name, official_name, company_email, company_phone, database_name, database_password, status, trial_start_date, trial_end_date, contact_name, contact_email, contact_phone, tax_office, tax_number, billing_address, city_id, district_id, allowed_modules) VALUES (?, ?, ?, ?, ?, ?, ?, 'active', NOW(), DATE_ADD(NOW(), INTERVAL 30 DAY), ?, ?, ?, ?, ?, ?, ?, ?, '[\"core\",\"customer\",\"commercial\",\"appointment\",\"current_account\",\"inventory\",\"accounting\",\"invoice\",\"contract\",\"reports\"]')");
+                $stmtMaster->execute([$customerCode, $company_name, $official_name, $company_email, $company_phone, $newDbName, $pass, $contact_name, $company_email, $company_phone, $tax_office, $tax_number, $billing_address, $city_id, $district_id]);
+                $customerId = $pdo->lastInsertId() ?: 1;
                 $successData = [
                     'customer_code' => $customerCode,
                     'company_name'  => $company_name,
@@ -118,6 +172,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
     }
 }
+
+// Şehirleri çek
+$stmtCities = $pdo->query("SELECT * FROM prolyn_default.iller ORDER BY sehiradi ASC");
+$iller = $stmtCities->fetchAll(PDO::FETCH_ASSOC);
 ?>
 <!DOCTYPE html>
 <html lang="tr" data-bs-theme="dark">
@@ -299,11 +357,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                                     <div class="row g-8 mb-8">
                                         <div class="col-md-6">
                                             <label class="form-label fs-6 fw-semibold text-gray-300">Şirket / Kurum Adı <span class="text-danger">*</span></label>
-                                            <input type="text" name="company_name" class="form-control form-control-lg glass-input" placeholder="Örn: Limitless Teknoloji" required value="<?= htmlspecialchars($_POST['company_name'] ?? '') ?>">
+                                            <input type="text" name="company_name" class="form-control form-control-lg glass-input text-uppercase" placeholder="Örn: Limitless Teknoloji" required value="<?= htmlspecialchars($_POST['company_name'] ?? '') ?>">
+                                        </div>
+                                        <div class="col-md-6">
+                                            <label class="form-label fs-6 fw-semibold text-gray-300">Resmi Ticaret Unvanı <span class="text-danger">*</span></label>
+                                            <input type="text" name="official_name" class="form-control form-control-lg glass-input text-uppercase" placeholder="Örn: Limitless Teknoloji A.Ş." required value="<?= htmlspecialchars($_POST['official_name'] ?? '') ?>">
                                         </div>
                                         <div class="col-md-6">
                                             <label class="form-label fs-6 fw-semibold text-gray-300">Yönetici Adı Soyadı <span class="text-danger">*</span></label>
-                                            <input type="text" name="contact_name" class="form-control form-control-lg glass-input" placeholder="Örn: Ali Yılmaz" required value="<?= htmlspecialchars($_POST['contact_name'] ?? '') ?>">
+                                            <input type="text" name="contact_name" class="form-control form-control-lg glass-input text-uppercase" placeholder="Örn: Ali Yılmaz" required value="<?= htmlspecialchars($_POST['contact_name'] ?? '') ?>">
                                         </div>
                                     </div>
                                     
@@ -316,6 +378,42 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                                     <div class="mb-8">
                                         <label class="form-label fs-6 fw-semibold text-gray-300">Telefon Numarası</label>
                                         <input type="text" name="company_phone" class="form-control form-control-lg glass-input" placeholder="Örn: 0555 123 4567" value="<?= htmlspecialchars($_POST['company_phone'] ?? '') ?>">
+                                    </div>
+                                    
+                                    <div class="row g-8 mb-8">
+                                        <div class="col-md-6">
+                                            <label class="form-label fs-6 fw-semibold text-gray-300">İl <span class="text-danger">*</span></label>
+                                            <select name="city_id" id="city_id" class="form-select form-select-lg glass-input" required onchange="loadIlceler(this.value)">
+                                                <option value="">İl Seçiniz</option>
+                                                <?php foreach ($iller as $il): ?>
+                                                    <option value="<?php echo $il['iller_id']; ?>" <?= (isset($_POST['city_id']) && $_POST['city_id'] == $il['iller_id']) ? 'selected' : ''; ?>>
+                                                        <?php echo htmlspecialchars($il['sehiradi']); ?>
+                                                    </option>
+                                                <?php endforeach; ?>
+                                            </select>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <label class="form-label fs-6 fw-semibold text-gray-300">İlçe <span class="text-danger">*</span></label>
+                                            <select name="district_id" id="district_id" class="form-select form-select-lg glass-input" required>
+                                                <option value="">Önce İl Seçiniz</option>
+                                            </select>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="row mb-7">
+                                        <div class="col-md-6">
+                                            <label class="form-label fs-6 fw-semibold text-gray-300">Vergi Dairesi <span class="text-danger">*</span></label>
+                                            <input type="text" name="tax_office" class="form-control form-control-lg glass-input text-uppercase" placeholder="Örn: Şişli" value="<?php echo htmlspecialchars($_POST['tax_office'] ?? ''); ?>" required>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <label class="form-label fs-6 fw-semibold text-gray-300">Vergi No / TC Kimlik No <span class="text-danger">*</span></label>
+                                            <input type="text" name="tax_number" class="form-control form-control-lg glass-input" placeholder="10 veya 11 Haneli" value="<?php echo htmlspecialchars($_POST['tax_number'] ?? ''); ?>" maxlength="11" required>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="mb-10">
+                                        <label class="form-label fs-6 fw-semibold text-gray-300">Açık Adres <span class="text-danger">*</span></label>
+                                        <textarea name="billing_address" class="form-control form-control-lg glass-input" placeholder="Mahalle, Cadde, Sokak, Kapı No vb." rows="3" required><?php echo htmlspecialchars($_POST['billing_address'] ?? ''); ?></textarea>
                                     </div>
                                     
                                     <div class="mb-10">
@@ -382,6 +480,52 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         <i class="bi bi-arrow-up-short"></i>
     </button>
 </div>
+
+<script>
+function loadIlceler(cityId) {
+    const districtSelect = document.getElementById('district_id');
+    
+    if (!cityId) {
+        districtSelect.innerHTML = '<option value="">Önce İl Seçiniz</option>';
+        return;
+    }
+    
+    districtSelect.innerHTML = '<option value="">Yükleniyor...</option>';
+    
+    fetch('p/crm/ajax_get_ilceler.php?city_id=' + cityId)
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                let html = '<option value="">İlçe Seçiniz</option>';
+                data.data.forEach(function(ilce) {
+                    html += '<option value="' + ilce.ilce_id + '">' + ilce.ilceadi + '</option>';
+                });
+                districtSelect.innerHTML = html;
+                
+                // Eğer önceden seçili bir ilçe varsa onu geri yükle (post back durumu için)
+                const selectedDistrict = '<?= isset($_POST["district_id"]) ? $_POST["district_id"] : "" ?>';
+                if (selectedDistrict) {
+                    districtSelect.value = selectedDistrict;
+                }
+            } else {
+                districtSelect.innerHTML = '<option value="">İlçe yüklenemedi</option>';
+                console.error('İlçeler yüklenemedi:', data.message);
+            }
+        })
+        .catch(error => {
+            districtSelect.innerHTML = '<option value="">Hata oluştu</option>';
+            console.error('AJAX hatası:', error);
+        });
+}
+
+// Sayfa yüklendiğinde il seçili ise ilçeleri getir
+document.addEventListener("DOMContentLoaded", function() {
+    const citySelect = document.getElementById('city_id');
+    if (citySelect && citySelect.value) {
+        loadIlceler(citySelect.value);
+    }
+});
+</script>
 
 </body>
 </html>
