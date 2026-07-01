@@ -169,7 +169,7 @@ function showAccordion($keywords) {
                 <div class="menu-item pt-5">
                     <div class="menu-content"><span class="menu-heading fw-bold text-uppercase fs-7">Sistem Ayarları</span></div>
                 </div>
-                <div data-kt-menu-trigger="click" class="menu-item menu-accordion <?= showAccordion(['settings', 'settings/api_keys.php', 'plans.php']) ?>">
+                <div data-kt-menu-trigger="click" class="menu-item menu-accordion <?= showAccordion(['settings', 'settings/api_keys.php', 'plans.php', 'settings/app_modules.php']) ?>">
                     <span class="menu-link">
                         <span class="menu-icon"><i class="ki-duotone ki-setting-2 fs-2"><span class="path1"></span><span class="path2"></span></i></span>
                         <span class="menu-title">Yönetim Ayarları</span>
@@ -182,6 +182,7 @@ function showAccordion($keywords) {
                         <div class="menu-item"><a class="menu-link <?= isActive('settings/api_keys.php') ?>" href="settings/api_keys.php"><span class="menu-bullet"><span class="bullet bullet-dot"></span></span><span class="menu-title">API Anahtarları</span></a></div>
                         <div class="menu-item"><a class="menu-link <?= isActive('settings/files.php') ?>" href="settings/files.php"><span class="menu-bullet"><span class="bullet bullet-dot"></span></span><span class="menu-title">Sistem Dosyaları</span></a></div>
                         <div class="menu-item"><a class="menu-link <?= isActive('settings/package_features.php') ?>" href="settings/package_features.php"><span class="menu-bullet"><span class="bullet bullet-dot"></span></span><span class="menu-title">Paket Özellikleri</span></a></div>
+                        <div class="menu-item"><a class="menu-link <?= isActive('settings/app_modules.php') ?>" href="settings/app_modules.php"><span class="menu-bullet"><span class="bullet bullet-dot"></span></span><span class="menu-title">Uygulama Modülleri</span></a></div>
                     </div>
                 </div>
 
