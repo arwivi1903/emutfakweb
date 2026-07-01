@@ -177,7 +177,7 @@ function maskApiKey($key) {
                                             </td>
                                             <td class="text-end">
                                                 <?php if ($key['status'] === 'active'): ?>
-                                                <form action="settings/api_keys.php" method="POST" style="display:inline-block;" onsubmit="return confirm('Bu API anahtarını iptal etmek istediğinize emin misiniz? Bu işlem geri alınamaz ve API çağrıları başarısız olacaktır.');">
+                                                <form action="settings/api_keys.php" method="POST" style="display:inline-block;" onsubmit="event.preventDefault(); Swal.fire({title: 'Emin misiniz?', text: 'Bu API anahtarını iptal etmek istediğinize emin misiniz? Bu işlem geri alınamaz ve API çağrıları başarısız olacaktır.', icon: 'warning', showCancelButton: true, confirmButtonText: 'Evet', cancelButtonText: 'Hayır'}).then((result) => { if(result.isConfirmed) { this.submit(); } });">
                             <?= csrfTokenField() ?>
                                                     <input type="hidden" name="action" value="revoke_api_key">
                                                     <input type="hidden" name="api_key_id" value="<?php echo $key['api_key_id']; ?>">

@@ -24,7 +24,8 @@ $tenant_db = null;
 try {
     $tenant_db = new Database($tenant_info['database_name']);
 } catch (Exception $e) {
-    echo "<script>alert('Müşteri veritabanına bağlanılamadı.'); window.location.href='crm/tenant_detail.php?id={$tenant_id}';</script>";
+    $_SESSION['swal_error'] = "Müşteri veritabanına bağlanılamadı.";
+    echo "<script>window.location.href='crm/tenant_detail.php?id={$tenant_id}';</script>";
     exit;
 }
 

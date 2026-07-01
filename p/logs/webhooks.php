@@ -112,7 +112,7 @@ $webhooks = $db->getRowsAssoc($query);
                                                     </button>
                                                 </form>
                                                 <?php if($wh['last_error']): ?>
-                                                    <button class="btn btn-sm btn-icon btn-light-warning ms-1" title="Hata Detayını Gör" onclick='alert(<?php echo json_encode($wh['last_error'], JSON_HEX_APOS | JSON_HEX_QUOT); ?>)'>
+                                                    <button class="btn btn-sm btn-icon btn-light-warning ms-1" title="Hata Detayını Gör" onclick='Swal.fire({title: "Hata Detayı", text: <?php echo json_encode($wh['last_error'], JSON_HEX_APOS | JSON_HEX_QUOT); ?>, icon: "warning"})'>
                                                         <i class="ki-duotone ki-message-text-2 fs-3"><span class="path1"></span><span class="path2"></span><span class="path3"></span></i>
                                                     </button>
                                                 <?php endif; ?>

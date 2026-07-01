@@ -140,7 +140,7 @@ $templates = $db->getRowsAssoc($query);
                                                     <i class="ki-duotone ki-pencil fs-3"><span class="path1"></span><span class="path2"></span></i>
                                                 </button>
                                                 <!-- Silme -->
-                                                <form action="settings/email_templates.php" method="POST" class="d-inline" onsubmit="return confirm('Bu şablonu silmek istediğinize emin misiniz?');">
+                                                <form action="settings/email_templates.php" method="POST" class="d-inline" onsubmit="event.preventDefault(); Swal.fire({title: 'Emin misiniz?', text: 'Bu şablonu silmek istediğinize emin misiniz?', icon: 'warning', showCancelButton: true, confirmButtonText: 'Evet', cancelButtonText: 'Hayır'}).then((result) => { if(result.isConfirmed) { this.submit(); } });">
                             <?= csrfTokenField() ?>
                                                     <input type="hidden" name="action" value="delete">
                                                     <input type="hidden" name="template_id" value="<?php echo $t['template_id']; ?>">

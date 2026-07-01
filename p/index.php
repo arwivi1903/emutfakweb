@@ -52,7 +52,7 @@ foreach ($allTenants as $t) {
 }
 
 // Son kayıt olan 5 kurum
-$recentTenants = $db->getRows("SELECT customer_id, tenant_alias, company_name, company_email, status, trial_end_date, sozlesme_bitis_tarihi, created_at FROM kurumlar WHERE del_status = 1 AND deleted_at IS NULL ORDER BY customer_id DESC LIMIT 5");
+$recentTenants = $db->getRows("SELECT customer_id, customer_code, tenant_alias, company_name, company_email, status, trial_end_date, sozlesme_bitis_tarihi, created_at FROM kurumlar WHERE del_status = 1 AND deleted_at IS NULL ORDER BY customer_id DESC LIMIT 5");
 
 // Son 5 sistem hatası
 $recentErrors = $db->getRows("SELECT error_id, error_message, severity, created_at FROM sistem_hatalari WHERE del_status = 1 ORDER BY error_id DESC LIMIT 5");
@@ -214,7 +214,7 @@ $recentErrors = $db->getRows("SELECT error_id, error_message, severity, created_
                                                                 </div>
                                                             </div>
                                                         </td>
-                                                        <td><code class="text-gray-700"><?= htmlspecialchars($tenant->tenant_alias ?? '') ?></code></td>
+                                                        <td><code class="text-gray-700"><?= htmlspecialchars(!empty($tenant->tenant_alias) ? $tenant->tenant_alias : strtoupper($tenant->customer_code ?? '')) ?></code></td>
                                                         <td>
                                                             <?php if ($tenant->status === 'active'): ?>
                                                                 <?php if ($isTrialExpired): ?>

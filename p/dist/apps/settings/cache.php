@@ -167,7 +167,7 @@ $commonCacheKeys = [
                                 <p class="text-gray-600 fs-6 mb-5">
                                     Bu işlem tüm cache dosyalarını silecektir. Sonraki sayfa yüklemesi daha yavaş olabilir ancak veriler güncellenecektir.
                                 </p>
-                                <form method="POST" onsubmit="return confirm('Tüm cache temizlenecek. Emin misiniz?');">
+                                <form method="POST" onsubmit="event.preventDefault(); Swal.fire({title: 'Emin misiniz?', text: 'Tüm cache temizlenecek. Emin misiniz?', icon: 'warning', showCancelButton: true, confirmButtonText: 'Evet', cancelButtonText: 'Hayır'}).then((result) => { if(result.isConfirmed) { this.submit(); } });">
                             <?= csrfTokenField() ?>
                                     <input type="hidden" name="action" value="flush_all">
                                     <button type="submit" class="btn btn-danger">

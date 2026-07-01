@@ -141,7 +141,7 @@ $queue = $db->getRowsAssoc($query);
                                                     <i class="ki-duotone ki-eye fs-3"><span class="path1"></span><span class="path2"></span><span class="path3"></span></i>
                                                 </button>
                                                 <?php if($q['status'] === 'failed' || $q['status'] === 'cancelled'): ?>
-                                                <form action="settings/email_queue.php" method="POST" class="d-inline" onsubmit="return confirm('Bu e-postayı tekrar kuyruğa almak istediğinize emin misiniz?');">
+                                                <form action="settings/email_queue.php" method="POST" class="d-inline" onsubmit="event.preventDefault(); Swal.fire({title: 'Emin misiniz?', text: 'Bu e-postayı tekrar kuyruğa almak istediğinize emin misiniz?', icon: 'warning', showCancelButton: true, confirmButtonText: 'Evet', cancelButtonText: 'Hayır'}).then((result) => { if(result.isConfirmed) { this.submit(); } });">
                             <?= csrfTokenField() ?>
                                                     <input type="hidden" name="action" value="retry">
                                                     <input type="hidden" name="queue_id" value="<?php echo $q['queue_id']; ?>">
@@ -151,7 +151,7 @@ $queue = $db->getRowsAssoc($query);
                                                 </form>
                                                 <?php endif; ?>
                                                 <?php if($q['status'] === 'pending'): ?>
-                                                <form action="settings/email_queue.php" method="POST" class="d-inline" onsubmit="return confirm('Bu e-postanın gönderimini iptal etmek istediğinize emin misiniz?');">
+                                                <form action="settings/email_queue.php" method="POST" class="d-inline" onsubmit="event.preventDefault(); Swal.fire({title: 'Emin misiniz?', text: 'Bu e-postanın gönderimini iptal etmek istediğinize emin misiniz?', icon: 'warning', showCancelButton: true, confirmButtonText: 'Evet', cancelButtonText: 'Hayır'}).then((result) => { if(result.isConfirmed) { this.submit(); } });">
                             <?= csrfTokenField() ?>
                                                     <input type="hidden" name="action" value="cancel">
                                                     <input type="hidden" name="queue_id" value="<?php echo $q['queue_id']; ?>">

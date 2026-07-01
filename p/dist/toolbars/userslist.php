@@ -310,7 +310,8 @@ document.addEventListener('DOMContentLoaded', function() {
     };
 
     window.deleteUser = function(userId) {
-        if (confirm('Bu kullanıcıyı silmek istediğinize emin misiniz?')) {
+        Swal.fire({title: 'Emin misiniz?', text: 'Bu kullanıcıyı silmek istediğinize emin misiniz?', icon: 'warning', showCancelButton: true, confirmButtonText: 'Evet', cancelButtonText: 'Hayır'}).then((result) => {
+        if (result.isConfirmed) {
             fetch('/prolynweb/p/dist/api/usersapi.php?action=delete', {
                     method: 'POST',
                     headers: {
@@ -323,17 +324,18 @@ document.addEventListener('DOMContentLoaded', function() {
                 .then(response => response.json())
                 .then(data => {
                     if (data.success) {
-                        alert(data.message);
+                        Swal.fire({ text: data.message, icon: "success", buttonsStyling: false, confirmButtonText: "Tamam", customClass: { confirmButton: "btn btn-primary" } });
                         loadUsers();
                     } else {
-                        alert('Hata: ' + (data.message || 'Bilinmeyen hata'));
+                        Swal.fire({ text: 'Hata: ' + (data.message || 'Bilinmeyen hata'), icon: "error", buttonsStyling: false, confirmButtonText: "Tamam", customClass: { confirmButton: "btn btn-primary" } });
                     }
                 })
                 .catch(error => {
                     console.error('Error:', error);
-                    alert('Hata: Siliş işlemi başarısız oldu');
+                    Swal.fire({ text: 'Hata: Siliş işlemi başarısız oldu', icon: "error", buttonsStyling: false, confirmButtonText: "Tamam", customClass: { confirmButton: "btn btn-primary" } });
                 });
         }
+        });
     };
 
     function showError(message) {

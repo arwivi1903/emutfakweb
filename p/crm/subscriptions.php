@@ -34,25 +34,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && isset($_
             $db->Insert("INSERT INTO yonetici_loglari (admin_id, action_type, table_name, record_id, old_value, new_value, ip_address) 
                          VALUES (?, 'Update', 'abonelikler', ?, ?, ?, ?)", 
                          [$admin_id, $subscription_id, json_encode($old_data), json_encode($new_data), $_SERVER['REMOTE_ADDR']]);
-        } elseif ($action === 'activate') {
-            $db->Update("UPDATE abonelikler SET status = 'active', cancelled_date = NULL WHERE subscription_id = ?", [$subscription_id]);
-            
-            // Tarihçeye ekle
-            $db->Insert("INSERT INTO abonelik_gecmisi (subscription_id, customer_id, old_plan_name, new_plan_name, change_type, reason, changed_by) 
-                         VALUES (?, ?, ?, ?, 'renewal', 'Admin tarafından tekrar aktif edildi', ?)",
-                         [$subscription_id, $old_data['customer_id'], $old_data['plan_name'], $old_data['plan_name'], $admin_id]);
-                         
-            // Log ekle
-            $new_data = $old_data;
-            $new_data['status'] = 'active';
-            $new_data['cancelled_date'] = null;
-            $db->Insert("INSERT INTO yonetici_loglari (admin_id, action_type, table_name, record_id, old_value, new_value, ip_address) 
-                         VALUES (?, 'Update', 'abonelikler', ?, ?, ?, ?)", 
-                         [$admin_id, $subscription_id, json_encode($old_data), json_encode($new_data), $_SERVER['REMOTE_ADDR']]);
         }
     }
     
-    echo "<script>window.location.href='subscriptions.php';</script>";
+    echo "<script>window.location.href='crm/subscriptions.php';</script>";
     exit;
 }
 
@@ -131,6 +116,19 @@ $subscriptions = $db->getRowsAssoc("SELECT a.*, k.company_name FROM abonelikler 
                                             <td>
                                                 <div><i class="ki-duotone ki-calendar text-success fs-7"></i> <?php echo date('d.m.Y', strtotime($sub['start_date'])); ?></div>
                                                 <div><i class="ki-duotone ki-calendar text-danger fs-7"></i> <?php echo date('d.m.Y', strtotime($sub['end_date'])); ?></div>
+                                                <?php
+                                                    $end_date_ts = strtotime($sub['end_date']);
+                                                    $now_ts = time();
+                                                    $diff_days = floor(($end_date_ts - $now_ts) / (60 * 60 * 24));
+                                                    
+                                                    if ($diff_days < 0) {
+                                                        echo "<div class='mt-1'><span class='badge badge-light-danger fw-bold'>Süresi Doldu (" . abs($diff_days) . " gün)</span></div>";
+                                                    } elseif ($diff_days == 0) {
+                                                        echo "<div class='mt-1'><span class='badge badge-light-warning fw-bold'>Bugün Bitiyor</span></div>";
+                                                    } else {
+                                                        echo "<div class='mt-1'><span class='badge badge-light-info fw-bold'>" . $diff_days . " Gün Kaldı</span></div>";
+                                                    }
+                                                ?>
                                             </td>
                                             <td>
                                                 <?php if ($sub['status'] === 'active'): ?>
@@ -142,15 +140,14 @@ $subscriptions = $db->getRowsAssoc("SELECT a.*, k.company_name FROM abonelikler 
                                                 <?php endif; ?>
                                             </td>
                                             <td class="text-end">
-                                                <form action="subscriptions.php" method="POST" style="display:inline-block;">
+                                                <form action="crm/subscriptions.php" method="POST" style="display:inline-block;">
                                                     <?= csrfTokenField() ?>
                                                     <input type="hidden" name="subscription_id" value="<?php echo $sub['subscription_id']; ?>">
                                                     <?php if ($sub['status'] === 'active'): ?>
                                                         <input type="hidden" name="action" value="cancel">
-                                                        <button type="submit" class="btn btn-sm btn-light-danger" onclick="return confirm('Bu aboneliği iptal etmek istediğinize emin misiniz?');">İptal Et</button>
+                                                        <button type="button" class="btn btn-sm btn-light-danger" onclick="Swal.fire({title: 'Emin misiniz?', text: 'Bu aboneliği iptal etmek istediğinize emin misiniz?', icon: 'warning', showCancelButton: true, confirmButtonText: 'Evet', cancelButtonText: 'Hayır'}).then((result) => { if(result.isConfirmed) { this.closest('form').submit(); } });">İptal Et</button>
                                                     <?php else: ?>
-                                                        <input type="hidden" name="action" value="activate">
-                                                        <button type="submit" class="btn btn-sm btn-light-success" onclick="return confirm('Bu aboneliği tekrar aktifleştirmek istediğinize emin misiniz?');">Aktifleştir</button>
+                                                        <button type="button" class="btn btn-sm btn-light-success" onclick="Swal.fire({title: 'Abonelik Yenileme', text: 'Aboneliği aktifleştirmek için yeni paket ve tarih seçimi yapmak üzere müşteri kartına yönlendirileceksiniz. Onaylıyor musunuz?', icon: 'info', showCancelButton: true, confirmButtonText: 'Evet, Yönlendir', cancelButtonText: 'İptal'}).then((result) => { if(result.isConfirmed) { window.location.href = 'crm/tenant_form.php?id=<?php echo $sub['customer_id']; ?>#kt_tenant_subscription'; } });">Aktifleştir</button>
                                                     <?php endif; ?>
                                                 </form>
                                             </td>

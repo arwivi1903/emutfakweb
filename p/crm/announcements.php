@@ -159,11 +159,11 @@ $announcements = $db->getRowsAssoc($query);
                                             </td>
                                             <td class="text-end">
                                                 <!-- Detay modal gösterimi için eklenebilir -->
-                                                <button type="button" class="btn btn-icon btn-light-primary btn-sm me-1" title="İncele" onclick="alert('İçerik: <?php echo htmlspecialchars(addslashes($a['content'])); ?>');">
+                                                <button type="button" class="btn btn-icon btn-light-primary btn-sm me-1" title="İncele" onclick="Swal.fire({title: 'İçerik', html: '<?php echo htmlspecialchars(addslashes(preg_replace('/\s+/', ' ', $a['content']))); ?>', icon: 'info'});">
                                                     <i class="ki-duotone ki-eye fs-3"><span class="path1"></span><span class="path2"></span><span class="path3"></span></i>
                                                 </button>
                                                 <!-- Silme -->
-                                                <form action="crm/announcements.php" method="POST" class="d-inline" onsubmit="return confirm('Bu duyuruyu silmek istediğinize emin misiniz?');">
+                                                <form action="crm/announcements.php" method="POST" class="d-inline" onsubmit="event.preventDefault(); Swal.fire({title: 'Emin misiniz?', text: 'Bu duyuruyu silmek istediğinize emin misiniz?', icon: 'warning', showCancelButton: true, confirmButtonText: 'Evet', cancelButtonText: 'Hayır'}).then((result) => { if(result.isConfirmed) { this.submit(); } });">
                             <?= csrfTokenField() ?>
                                                     <input type="hidden" name="action" value="delete">
                                                     <input type="hidden" name="announcement_id" value="<?php echo $a['announcement_id']; ?>">

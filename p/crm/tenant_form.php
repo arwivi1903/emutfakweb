@@ -134,7 +134,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
     $account_manager_id = !empty($_POST['account_manager_id']) ? (int)$_POST['account_manager_id'] : null;
 
     if (empty($account_manager_id)) {
-        echo "<script>alert('Lütfen bir Temsilci (Admin) seçiniz.'); history.back();</script>";
+        $_SESSION['swal_error'] = "Lütfen bir Temsilci (Admin) seçiniz.";
+        if ($customer_id > 0) {
+            header("Location: tenant_form.php?id=$customer_id");
+        } else {
+            header("Location: tenant_form.php");
+        }
         exit;
     }
 
@@ -158,8 +163,24 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
     $is_new = ($customer_id == 0);
     
     if ($is_new) {
-        $max_db_row = $db->getRowAssoc("SELECT MAX(CAST(SUBSTRING(database_name, 9) AS UNSIGNED)) as max_k FROM kurumlar WHERE database_name LIKE 'prolyn_k%'");
-        $next_k = (!empty($max_db_row['max_k'])) ? (int)$max_db_row['max_k'] + 1 : 1;
+        $stmt_dbs = $db->getRowsAssoc("SHOW DATABASES");
+        $max_k = 0;
+        foreach ($stmt_dbs as $db_row) {
+            $dbName = array_values($db_row)[0];
+            if (preg_match('/^prolyn_k(\d+)$/i', $dbName, $matches)) {
+                $num = (int)$matches[1];
+                if ($num > $max_k) $max_k = $num;
+            }
+        }
+        $stmt_codes = $db->getRowsAssoc("SELECT customer_code FROM kurumlar WHERE customer_code LIKE 'k%'");
+        foreach ($stmt_codes as $code_row) {
+            $code = $code_row['customer_code'];
+            if (preg_match('/^k(\d+)$/i', $code, $matches)) {
+                $num = (int)$matches[1];
+                if ($num > $max_k) $max_k = $num;
+            }
+        }
+        $next_k = $max_k + 1;
         $database_name = 'prolyn_k' . $next_k;
     } else {
         $existing = $db->getRowAssoc("SELECT database_name FROM kurumlar WHERE customer_id = ?", [$customer_id]);
@@ -214,6 +235,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
                 } catch (\Exception $ex) {}
                 $stmt_grup = $pdo_tenant->prepare("UPDATE usergrup SET permissions = '{\"all\": true}' WHERE UserGrupID = 1");
                 $stmt_grup->execute();
+                $grup_id = 1;
 
                 $final_city_id = !empty($city_id) ? $city_id : 0;
                 $final_district_id = !empty($district_id) ? $district_id : 0;
@@ -234,9 +256,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
                 $stmt_kasa->execute([$firma_id]);
                 
                 // users (Yetkili E-Posta / 123456)
-                $default_pass = md5('123456');
-                $stmt_user = $pdo_tenant->prepare("INSERT INTO users (FirmaID, BranchID, UserName, UserMail, UserPhone, UserPass, UserAuthority, UserGroupID, UserStatus) VALUES (?, ?, ?, ?, ?, ?, 1, 1, 1)");
-                $stmt_user->execute([$firma_id, $sube_id, $contact_person, $company_email, $company_phone, $default_pass]);
+                $default_pass = password_hash('123456', PASSWORD_BCRYPT);
+                $stmt_user = $pdo_tenant->prepare("INSERT INTO users (FirmaID, BranchID, UserName, UserMail, UserPhone, UserPass, UserAuthority, UserGroupID, UserStatus) VALUES (?, ?, ?, ?, ?, ?, 1, ?, 1)");
+                $stmt_user->execute([$firma_id, $sube_id, $contact_person, $company_email, $company_phone, $default_pass, $grup_id]);
             }
         } catch (Exception $e) {
             error_log("DB Provisioning failed for $database_name: " . $e->getMessage());
@@ -622,13 +644,17 @@ if (isset($_GET['verify'])) {
                                                 <div class="col-md-12 mb-3">
                                                     <span class="badge badge-light-info fw-bold fs-7">Deneme (Trial) Dönemi</span>
                                                 </div>
+                                                <?php
+                                                    $default_trial_start = date('Y-m-d');
+                                                    $default_trial_end = date('Y-m-d', strtotime('+30 days'));
+                                                ?>
                                                 <div class="col-md-6 fv-row">
                                                     <label class="form-label">Deneme Başlangıç Tarihi</label>
-                                                    <input type="date" name="trial_start_date" class="form-control mb-2" value="<?php echo !empty($tenant['trial_start_date']) ? $tenant['trial_start_date'] : ''; ?>" />
+                                                    <input type="date" name="trial_start_date" class="form-control mb-2" value="<?php echo !empty($tenant['trial_start_date']) ? $tenant['trial_start_date'] : $default_trial_start; ?>" />
                                                 </div>
                                                 <div class="col-md-6 fv-row">
                                                     <label class="form-label">Deneme Bitiş Tarihi</label>
-                                                    <input type="date" name="trial_end_date" class="form-control mb-2" value="<?php echo !empty($tenant['trial_end_date']) ? $tenant['trial_end_date'] : ''; ?>" />
+                                                    <input type="date" name="trial_end_date" class="form-control mb-2" value="<?php echo !empty($tenant['trial_end_date']) ? $tenant['trial_end_date'] : $default_trial_end; ?>" />
                                                 </div>
                                             </div>
                                             
@@ -637,13 +663,17 @@ if (isset($_GET['verify'])) {
                                                     <span class="badge badge-light-success fw-bold fs-7">Sözleşme Dönemi</span>
                                                     <div class="text-muted fs-8 mt-1">Sözleşme başlangıç ve bitiş tarihi girildiğinde, sistem otomatik olarak "abonelikler" tablosunda fatura kaydı oluşturacaktır.</div>
                                                 </div>
+                                                <?php
+                                                    $default_contract_start = date('Y-m-d');
+                                                    $default_contract_end = date('Y-m-d', strtotime('+1 year'));
+                                                ?>
                                                 <div class="col-md-6 fv-row">
                                                     <label class="form-label">Sözleşme Başlangıç Tarihi</label>
-                                                    <input type="date" name="sozlesme_baslangic_tarihi" class="form-control mb-2" value="<?php echo !empty($tenant['sozlesme_baslangic_tarihi']) ? $tenant['sozlesme_baslangic_tarihi'] : ''; ?>" />
+                                                    <input type="date" name="sozlesme_baslangic_tarihi" class="form-control mb-2" value="<?php echo !empty($tenant['sozlesme_baslangic_tarihi']) ? $tenant['sozlesme_baslangic_tarihi'] : $default_contract_start; ?>" />
                                                 </div>
                                                 <div class="col-md-6 fv-row">
                                                     <label class="form-label">Sözleşme Bitiş Tarihi</label>
-                                                    <input type="date" name="sozlesme_bitis_tarihi" class="form-control mb-2" value="<?php echo !empty($tenant['sozlesme_bitis_tarihi']) ? $tenant['sozlesme_bitis_tarihi'] : ''; ?>" />
+                                                    <input type="date" name="sozlesme_bitis_tarihi" class="form-control mb-2" value="<?php echo !empty($tenant['sozlesme_bitis_tarihi']) ? $tenant['sozlesme_bitis_tarihi'] : $default_contract_end; ?>" />
                                                 </div>
                                             </div>
                                         </div>

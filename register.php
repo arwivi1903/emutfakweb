@@ -58,7 +58,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         return ($sumFirst10 % 10) === $digits[10];
     }
 
-    if (empty($company_name) || empty($official_name) || empty($contact_name) || empty($company_email) || empty($admin_password) || empty($tax_number) || empty($tax_office) || empty($billing_address) || $city_id <= 0 || $district_id <= 0) {
+    if (empty($company_name) || empty($official_name) || empty($contact_name) || empty($company_email) || empty($company_phone) || empty($admin_password) || empty($tax_number) || empty($tax_office) || empty($billing_address) || $city_id <= 0 || $district_id <= 0) {
         $message = "Lütfen tüm zorunlu alanları doldurunuz.";
         $messageType = "danger";
     } elseif (!firma_vno_is_valid($tax_number)) {
@@ -66,11 +66,21 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $messageType = "danger";
     } else {
         try {
-            // E-posta adresi kullanımda mı kontrol et
-            $checkEmail = $pdo->prepare("SELECT customer_id FROM kurumlar WHERE company_email = ?");
-            $checkEmail->execute([$company_email]);
-            if ($checkEmail->fetch()) {
-                $message = "Bu e-posta adresiyle daha önce kayıt olunmuş.";
+            // Benzersizlik kontrolü (E-posta, Telefon, Vergi No)
+            $checkUser = $pdo->prepare("SELECT customer_id, company_email, company_phone, tax_number FROM kurumlar WHERE company_email = ? OR (company_phone = ? AND company_phone != '') OR tax_number = ?");
+            $checkUser->execute([$company_email, $company_phone, $tax_number]);
+            $existing = $checkUser->fetch();
+            
+            if ($existing) {
+                if (strcasecmp($existing['company_email'], $company_email) === 0) {
+                    $message = "Bu e-posta adresiyle daha önce kayıt olunmuş.";
+                } elseif ($existing['company_phone'] === $company_phone && !empty($company_phone)) {
+                    $message = "Bu telefon numarasıyla daha önce kayıt olunmuş.";
+                } elseif ($existing['tax_number'] === $tax_number) {
+                    $message = "Bu Vergi No / TC Kimlik No ile daha önce kayıt olunmuş.";
+                } else {
+                    $message = "Bu bilgilerle daha önce kayıt olunmuş.";
+                }
                 $messageType = "danger";
             } else {
                 // Sonraki veri tabanı adını belirle (prolyn_K1, prolyn_K2, vb.)
@@ -86,6 +96,19 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         }
                     }
                 }
+                
+                // Ayrıca kurumlar tablosundaki customer_code değerlerini kontrol edelim
+                $stmtMasterCode = $pdo->query("SELECT customer_code FROM kurumlar WHERE customer_code LIKE 'k%'");
+                $customerCodes = $stmtMasterCode->fetchAll(PDO::FETCH_COLUMN);
+                foreach ($customerCodes as $code) {
+                    if (preg_match('/^k(\d+)$/i', $code, $matches)) {
+                        $num = (int)$matches[1];
+                        if ($num > $maxNum) {
+                            $maxNum = $num;
+                        }
+                    }
+                }
+                
                 $nextNum = $maxNum + 1;
                 $newDbName = "prolyn_k" . $nextNum;
                 $customerCode = "k" . $nextNum;
@@ -128,38 +151,45 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     // Zaten var olabilir
                 }
                 
-                // Default Yetki Grubu ekle
-                $stmtGrup = $tenantPdo->prepare("INSERT INTO usergrup (UserGrupID, UserGrupName, UserGrupDesc, UserGrupStatus, permissions) VALUES (1, 'Yönetici', 'Tam Yetkili Yönetici', 1, '{\"all\": true}')");
+                // Varsayılan Admin grubunu güncelle
+                $stmtGrup = $tenantPdo->prepare("UPDATE usergrup SET permissions = '{\"all\": true}' WHERE UserGrupID = 1");
                 $stmtGrup->execute();
+                $grupId = 1;
                 
                 $final_city_id = ($city_id > 0) ? $city_id : 0;
                 $final_district_id = ($district_id > 0) ? $district_id : 0;
 
-                // Firma kaydı oluştur
-                $stmtFirm = $tenantPdo->prepare("INSERT INTO firmalar (FirmaID, CustomerID, FirmaAdi, FirmaDetay, FirmaVergi, FirmaVNO, BayiCity, BayiTown, BayiAdres) VALUES (1, 0, ?, ?, ?, ?, ?, ?, ?)");
+                // Firma kaydı oluştur (Auto-increment ile yeni ID alır)
+                $stmtFirm = $tenantPdo->prepare("INSERT INTO firmalar (CustomerID, FirmaAdi, FirmaDetay, FirmaVergi, FirmaVNO, BayiCity, BayiTown, BayiAdres) VALUES (0, ?, ?, ?, ?, ?, ?, ?)");
                 $stmtFirm->execute([$company_name, $official_name, $tax_office, $tax_number, $final_city_id, $final_district_id, $billing_address]);
-                $firmaId = $tenantPdo->lastInsertId() ?: 1;
+                $firmaId = $tenantPdo->lastInsertId();
                 
                 // Şube ekle
-                $stmtBranch = $tenantPdo->prepare("INSERT INTO subeler (BranchID, FirmaID, CustomerID, BranchName, BranchShort, BranchStatus) VALUES (1, ?, 1, 'Merkez Şube', 'MRK', 1)");
+                $stmtBranch = $tenantPdo->prepare("INSERT INTO subeler (FirmaID, CustomerID, BranchName, BranchShort, BranchStatus) VALUES (?, 1, 'Merkez Şube', 'MRK', 1)");
                 $stmtBranch->execute([$firmaId]);
-                $branchId = $tenantPdo->lastInsertId() ?: 1;
+                $branchId = $tenantPdo->lastInsertId();
                 
                 // Şifreyi BCRYPT ile hashle
                 $hashedPassword = password_hash($admin_password, PASSWORD_BCRYPT);
                 
                 // Yönetici kullanıcısını ekle
-                $stmtUser = $tenantPdo->prepare("INSERT INTO users (FirmaID, UserName, UserMail, UserPhone, UserPass, UserAuthority, UserGroupID, BranchID, UserStatus) VALUES (?, ?, ?, ?, ?, 1, 1, ?, 1)");
-                $stmtUser->execute([$firmaId, $contact_name, $company_email, $company_phone, $hashedPassword, $branchId]);
+                $stmtUser = $tenantPdo->prepare("INSERT INTO users (FirmaID, UserName, UserMail, UserPhone, UserPass, UserAuthority, UserGroupID, BranchID, UserStatus) VALUES (?, ?, ?, ?, ?, 1, ?, ?, 1)");
+                $stmtUser->execute([$firmaId, $contact_name, $company_email, $company_phone, $hashedPassword, $grupId, $branchId]);
 
                 // Nakit Kasa ekle
                 $stmtKasa = $tenantPdo->prepare("INSERT INTO nakitkasa (FirmaID, NakitKasaTutar) VALUES (?, 0)");
                 $stmtKasa->execute([$firmaId]);
                 
                 // Master DB'ye Kurum kaydı yap
-                $stmtMaster = $pdo->prepare("INSERT INTO kurumlar (customer_code, company_name, official_name, company_email, company_phone, database_name, database_password, status, trial_start_date, trial_end_date, contact_name, contact_email, contact_phone, tax_office, tax_number, billing_address, city_id, district_id, allowed_modules) VALUES (?, ?, ?, ?, ?, ?, ?, 'active', NOW(), DATE_ADD(NOW(), INTERVAL 30 DAY), ?, ?, ?, ?, ?, ?, ?, ?, '[\"core\",\"customer\",\"commercial\",\"appointment\",\"current_account\",\"inventory\",\"accounting\",\"invoice\",\"contract\",\"reports\"]')");
-                $stmtMaster->execute([$customerCode, $company_name, $official_name, $company_email, $company_phone, $newDbName, $pass, $contact_name, $company_email, $company_phone, $tax_office, $tax_number, $billing_address, $city_id, $district_id]);
+                $stmtMaster = $pdo->prepare("INSERT INTO kurumlar (customer_code, company_name, official_name, company_email, company_phone, database_name, database_password, status, trial_start_date, trial_end_date, contact_person, contact_name, contact_email, contact_phone, tax_office, tax_number, billing_address, city_id, district_id, allowed_modules, created_by) VALUES (?, ?, ?, ?, ?, ?, ?, 'active', NOW(), DATE_ADD(NOW(), INTERVAL 30 DAY), ?, ?, ?, ?, ?, ?, ?, ?, ?, '[\"core\",\"customer\",\"commercial\",\"appointment\",\"current_account\",\"inventory\",\"accounting\",\"invoice\",\"contract\",\"reports\"]', 0)");
+                $stmtMaster->execute([$customerCode, $company_name, $official_name, $company_email, $company_phone, $newDbName, $pass, $contact_name, $contact_name, $company_email, $company_phone, $tax_office, $tax_number, $billing_address, $city_id, $district_id]);
                 $customerId = $pdo->lastInsertId() ?: 1;
+                
+                // Abonelikler tablosuna Trial ataması yap
+                $stmtAbonelik = $pdo->prepare("INSERT INTO abonelikler (customer_id, plan_name, num_branches, price_per_month, total_price, billing_cycle, start_date, end_date, status, auto_renew) VALUES (?, ?, 1, 0, 0, 1, NOW(), DATE_ADD(NOW(), INTERVAL 30 DAY), 'Deneme', 0)");
+                $planNameToInsert = !empty($selectedPlan) ? strtolower($selectedPlan) : 'pro';
+                if (!in_array($planNameToInsert, ['basic', 'pro', 'enterprise'])) $planNameToInsert = 'pro';
+                $stmtAbonelik->execute([$customerId, $planNameToInsert]);
                 $successData = [
                     'customer_code' => $customerCode,
                     'company_name'  => $company_name,
@@ -317,22 +347,56 @@ $iller = $stmtCities->fetchAll(PDO::FETCH_ASSOC);
                                     </div>
                                 </div>
                                 
-                                <div class="bg-black bg-opacity-40 rounded p-8 mb-8 text-start border border-gray-800">
-                                    <h5 class="text-white mb-6 fs-4">Giriş Bilgileriniz</h5>
-                                    
-                                    <div class="d-flex align-items-center mb-4">
-                                        <div class="w-120px text-gray-500">Kurum Kodu</div>
-                                        <div class="fw-bolder fs-5 text-white bg-dark px-3 py-1 rounded border border-gray-700"><?= htmlspecialchars($successData['customer_code']) ?></div>
+                                <div class="card bg-black bg-opacity-40 border-0 rounded-4 shadow-sm mb-8 text-start" style="backdrop-filter: blur(10px); border: 1px solid rgba(255, 255, 255, 0.08) !important;">
+                                    <div class="card-header border-0 pt-8 pb-4 px-8">
+                                        <h5 class="text-white mb-0 fs-3 fw-bolder d-flex align-items-center">
+                                            <i class="ki-duotone ki-key fs-1 text-primary me-3"><span class="path1"></span><span class="path2"></span></i> Giriş Bilgileriniz
+                                        </h5>
+                                        <div class="text-gray-400 fs-7 mt-2">Sisteme giriş yaparken aşağıdaki bilgileri kullanacaksınız.</div>
                                     </div>
-                                    
-                                    <div class="d-flex align-items-center mb-4">
-                                        <div class="w-120px text-gray-500">E-posta</div>
-                                        <div class="fw-bolder fs-5 text-white"><?= htmlspecialchars($successData['email']) ?></div>
-                                    </div>
-                                    
-                                    <div class="d-flex align-items-center">
-                                        <div class="w-120px text-gray-500">Seçilen Plan</div>
-                                        <div class="fw-bold fs-5 text-primary"><?= htmlspecialchars(!empty($selectedPlan) ? ucfirst($selectedPlan) : 'Pro') ?></div>
+                                    <div class="card-body p-8 pt-2">
+                                        <div class="d-flex flex-column gap-4">
+                                            
+                                            <!-- Kurum Kodu -->
+                                            <div class="d-flex align-items-center p-4 rounded-3" style="background: rgba(255,255,255,0.02); border: 1px dashed rgba(255,255,255,0.1);">
+                                                <div class="w-45px h-45px d-flex align-items-center justify-content-center rounded-circle me-4" style="background: rgba(80, 205, 137, 0.1);">
+                                                    <i class="ki-duotone ki-briefcase fs-2" style="color: #50cd89;"><span class="path1"></span><span class="path2"></span></i>
+                                                </div>
+                                                <div class="flex-grow-1">
+                                                    <div class="text-gray-500 fs-7 fw-semibold mb-1">Kurum Kodu</div>
+                                                    <div class="text-white fs-3 fw-bolder text-uppercase" style="letter-spacing: 1px;"><?= htmlspecialchars($successData['customer_code']) ?></div>
+                                                </div>
+                                                <div>
+                                                    <span class="badge fw-bolder px-3 py-2 fs-7" style="background: rgba(80, 205, 137, 0.15); color: #50cd89; border: 1px solid rgba(80, 205, 137, 0.3);">AKTİF</span>
+                                                </div>
+                                            </div>
+
+                                            <!-- E-posta -->
+                                            <div class="d-flex align-items-center p-4 rounded-3" style="background: rgba(255,255,255,0.02); border: 1px dashed rgba(255,255,255,0.1);">
+                                                <div class="w-45px h-45px d-flex align-items-center justify-content-center rounded-circle me-4" style="background: rgba(0, 158, 247, 0.1);">
+                                                    <i class="ki-duotone ki-sms fs-2" style="color: #009ef7;"><span class="path1"></span><span class="path2"></span></i>
+                                                </div>
+                                                <div class="flex-grow-1">
+                                                    <div class="text-gray-500 fs-7 fw-semibold mb-1">Yönetici E-posta</div>
+                                                    <div class="text-white fs-5 fw-bold"><?= htmlspecialchars($successData['email']) ?></div>
+                                                </div>
+                                            </div>
+
+                                            <!-- Plan -->
+                                            <div class="d-flex align-items-center p-4 rounded-3" style="background: rgba(255,255,255,0.02); border: 1px dashed rgba(255,255,255,0.1);">
+                                                <div class="w-45px h-45px d-flex align-items-center justify-content-center rounded-circle me-4" style="background: rgba(241, 65, 108, 0.1);">
+                                                    <i class="ki-duotone ki-crown fs-2" style="color: #f1416c;"><span class="path1"></span><span class="path2"></span></i>
+                                                </div>
+                                                <div class="flex-grow-1">
+                                                    <div class="text-gray-500 fs-7 fw-semibold mb-1">Seçilen Plan</div>
+                                                    <div class="text-white fs-5 fw-bold"><?= htmlspecialchars(!empty($selectedPlan) ? ucfirst($selectedPlan) : 'Pro') ?></div>
+                                                </div>
+                                                <div>
+                                                    <span class="badge fw-bolder px-3 py-2 fs-7" style="background: rgba(241, 65, 108, 0.15); color: #f1416c; border: 1px solid rgba(241, 65, 108, 0.3);">30 GÜN DENEME</span>
+                                                </div>
+                                            </div>
+                                            
+                                        </div>
                                     </div>
                                 </div>
                                 
@@ -376,8 +440,8 @@ $iller = $stmtCities->fetchAll(PDO::FETCH_ASSOC);
                                     </div>
                                     
                                     <div class="mb-8">
-                                        <label class="form-label fs-6 fw-semibold text-gray-300">Telefon Numarası</label>
-                                        <input type="text" name="company_phone" class="form-control form-control-lg glass-input" placeholder="Örn: 0555 123 4567" value="<?= htmlspecialchars($_POST['company_phone'] ?? '') ?>">
+                                        <label class="form-label fs-6 fw-semibold text-gray-300">Telefon Numarası <span class="text-danger">*</span></label>
+                                        <input type="text" name="company_phone" class="form-control form-control-lg glass-input" placeholder="Örn: 0555 123 4567" value="<?= htmlspecialchars($_POST['company_phone'] ?? '') ?>" required>
                                     </div>
                                     
                                     <div class="row g-8 mb-8">

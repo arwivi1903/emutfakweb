@@ -139,7 +139,7 @@ $files = $db->getRowsAssoc($query);
                                                     <i class="ki-duotone ki-file-down fs-3"><span class="path1"></span><span class="path2"></span></i>
                                                 </a>
                                                 <!-- Sil Butonu Formu -->
-                                                <form action="settings/files.php" method="POST" class="d-inline" onsubmit="return confirm('Bu dosya kaydını silmek istediğinize emin misiniz? FİZİKSEL DOSYA DA SİLİNEBİLİR!');">
+                                                <form action="settings/files.php" method="POST" class="d-inline" onsubmit="event.preventDefault(); Swal.fire({title: 'Emin misiniz?', text: 'Bu dosya kaydını silmek istediğinize emin misiniz? FİZİKSEL DOSYA DA SİLİNEBİLİR!', icon: 'warning', showCancelButton: true, confirmButtonText: 'Evet', cancelButtonText: 'Hayır'}).then((result) => { if(result.isConfirmed) { this.submit(); } });">
                             <?= csrfTokenField() ?>
                                                     <input type="hidden" name="action" value="delete_file">
                                                     <input type="hidden" name="file_id" value="<?php echo $f['id']; ?>">

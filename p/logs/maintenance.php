@@ -123,9 +123,9 @@ $logs = $db->getRowsAssoc($query);
                                                     <input type="hidden" name="log_id" value="<?php echo $log['id']; ?>">
                                                     <?php if ($log['status'] === 'scheduled' || $log['status'] === 'in_progress'): ?>
                                                         <input type="hidden" name="action" value="complete">
-                                                        <button type="submit" class="btn btn-sm btn-light-success" onclick="return confirm('Tamamlandı olarak işaretlemek istediğinize emin misiniz?');">Tamamla</button>
+                                                        <button type="button" class="btn btn-sm btn-light-success" onclick="Swal.fire({title: 'Emin misiniz?', text: 'Tamamlandı olarak işaretlemek istediğinize emin misiniz?', icon: 'warning', showCancelButton: true, confirmButtonText: 'Evet', cancelButtonText: 'Hayır'}).then((result) => { if(result.isConfirmed) { let f = this.closest('form'); f.querySelector('input[name=action]').value = 'complete'; f.submit(); } });">Tamamla</button>
                                                         
-                                                        <button type="submit" name="action" value="cancel" class="btn btn-sm btn-light-danger" onclick="return confirm('İptal etmek istediğinize emin misiniz?');">İptal Et</button>
+                                                        <button type="button" class="btn btn-sm btn-light-danger" onclick="Swal.fire({title: 'Emin misiniz?', text: 'İptal etmek istediğinize emin misiniz?', icon: 'warning', showCancelButton: true, confirmButtonText: 'Evet', cancelButtonText: 'Hayır'}).then((result) => { if(result.isConfirmed) { let f = this.closest('form'); f.querySelector('input[name=action]').value = 'cancel'; f.submit(); } });">İptal Et</button>
                                                     <?php else: ?>
                                                         <span class="text-muted">İşlem Yok</span>
                                                     <?php endif; ?>

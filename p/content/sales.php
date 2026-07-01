@@ -134,7 +134,7 @@ $contents = $db->getRowsAssoc("SELECT * FROM satis_icerigi ORDER BY section ASC,
                                                 <button class="btn btn-sm btn-icon btn-light-primary me-1" onclick='editContent(<?php echo json_encode($item, JSON_HEX_APOS | JSON_HEX_QUOT); ?>)'>
                                                     <i class="ki-duotone ki-pencil fs-3"><span class="path1"></span><span class="path2"></span></i>
                                                 </button>
-                                                <form action="content/sales.php" method="POST" style="display:inline-block;" onsubmit="return confirm('Silmek istediğinize emin misiniz?');">
+                                                <form action="content/sales.php" method="POST" style="display:inline-block;" onsubmit="event.preventDefault(); Swal.fire({title: 'Emin misiniz?', text: 'Silmek istediğinize emin misiniz?', icon: 'warning', showCancelButton: true, confirmButtonText: 'Evet', cancelButtonText: 'Hayır'}).then((result) => { if(result.isConfirmed) { this.submit(); } });">
                             <?= csrfTokenField() ?>
                                                     <input type="hidden" name="action" value="delete_content">
                                                     <input type="hidden" name="sales_id" value="<?php echo $item['sales_id']; ?>">
