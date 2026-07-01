@@ -214,7 +214,12 @@ $recentErrors = $db->getRows("SELECT error_id, error_message, severity, created_
                                                                 </div>
                                                             </div>
                                                         </td>
-                                                        <td><code class="text-gray-700"><?= htmlspecialchars(!empty($tenant->tenant_alias) ? $tenant->tenant_alias : strtoupper($tenant->customer_code ?? '')) ?></code></td>
+                                                        <?php 
+                                                            $codeParts = [];
+                                                            if (!empty($tenant->customer_code)) $codeParts[] = strtoupper($tenant->customer_code);
+                                                            if (!empty($tenant->tenant_alias)) $codeParts[] = $tenant->tenant_alias;
+                                                        ?>
+                                                        <td><code class="text-gray-700"><?= htmlspecialchars(implode(' / ', $codeParts)) ?></code></td>
                                                         <td>
                                                             <?php if ($tenant->status === 'active'): ?>
                                                                 <?php if ($isTrialExpired): ?>

@@ -87,7 +87,7 @@ $sessions = $db->getRowsAssoc($query);
                                         <th class="min-w-250px">Kullanıcı (İsim / E-posta / Firma)</th>
                                         <th>Giriş Türü</th>
                                         <th>IP & Cihaz</th>
-                                        <th>Son Hareket</th>
+                                        <th>Durum & Son Hareket</th>
                                         <th>Bitiş (Expires)</th>
                                         <th class="text-end">İşlemler</th>
                                     </tr>
@@ -121,20 +121,37 @@ $sessions = $db->getRowsAssoc($query);
                                                 </div>
                                             </td>
                                             <td>
-                                                <?php echo date('d.m.Y H:i:s', strtotime($sess['last_activity'])); ?>
+                                                <?php 
+                                                    $last_activity_time = strtotime($sess['last_activity']);
+                                                    $is_active = (time() - $last_activity_time) <= 900; // 15 dakika
+                                                ?>
+                                                <div class="d-flex flex-column">
+                                                    <span><?php echo date('d.m.Y H:i:s', $last_activity_time); ?></span>
+                                                    <div class="mt-1">
+                                                        <?php if ($is_active): ?>
+                                                            <span class="badge badge-light-success">Çevrimiçi</span>
+                                                        <?php else: ?>
+                                                            <span class="badge badge-light-secondary">Çevrimdışı</span>
+                                                        <?php endif; ?>
+                                                    </div>
+                                                </div>
                                             </td>
                                             <td>
                                                 <?php echo $sess['expires_at'] != '0000-00-00 00:00:00' ? date('d.m.Y H:i:s', strtotime($sess['expires_at'])) : 'Süresiz'; ?>
                                             </td>
                                             <td class="text-end">
-                                                <form action="logs/sessions.php" method="POST" style="display:inline-block;">
-                            <?= csrfTokenField() ?>
-                                                    <input type="hidden" name="action" value="kill_session">
-                                                    <input type="hidden" name="session_id" value="<?php echo htmlspecialchars($sess['session_id']); ?>">
-                                                    <button type="button" class="btn btn-sm btn-light-danger" onclick="confirmKillSession(this);">
-                                                        <i class="ki-duotone ki-trash fs-3"><span class="path1"></span><span class="path2"></span><span class="path3"></span><span class="path4"></span><span class="path5"></span></i> Sonlandır
-                                                    </button>
-                                                </form>
+                                                <?php if ($is_active): ?>
+                                                    <form action="logs/sessions.php" method="POST" style="display:inline-block;">
+                                                        <?= csrfTokenField() ?>
+                                                        <input type="hidden" name="action" value="kill_session">
+                                                        <input type="hidden" name="session_id" value="<?php echo htmlspecialchars($sess['session_id']); ?>">
+                                                        <button type="button" class="btn btn-sm btn-light-danger" onclick="confirmKillSession(this);">
+                                                            <i class="ki-duotone ki-trash fs-3"><span class="path1"></span><span class="path2"></span><span class="path3"></span><span class="path4"></span><span class="path5"></span></i> Sonlandır
+                                                        </button>
+                                                    </form>
+                                                <?php else: ?>
+                                                    <span class="text-muted fs-8 text-uppercase">İşlem Yok</span>
+                                                <?php endif; ?>
                                             </td>
                                         </tr>
                                         <?php endforeach; ?>
