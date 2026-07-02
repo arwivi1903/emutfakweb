@@ -15,6 +15,32 @@ function showAccordion($keywords) {
     }
     return '';
 }
+
+$sidebarResetRequestPending = 0;
+$sidebarResetQueuePending = 0;
+$sidebarResetTokenOpen = 0;
+
+try {
+    if (isset($db) && method_exists($db, 'tableExists') && $db->tableExists('sifre_sifirlama_talepleri')) {
+        $sidebarResetRequestPending = (int)$db->getColumn(
+            "SELECT COUNT(*) FROM sifre_sifirlama_talepleri WHERE request_status IN ('pending', 'in_review', 'matched')"
+        );
+    }
+    if (isset($db) && method_exists($db, 'tableExists') && $db->tableExists('mail_kuyrugu')) {
+        $sidebarResetQueuePending = (int)$db->getColumn(
+            "SELECT COUNT(*) FROM mail_kuyrugu WHERE status IN ('pending', 'queued')"
+        );
+    }
+    if (isset($db) && method_exists($db, 'tableExists') && $db->tableExists('sifre_sifirlama')) {
+        $sidebarResetTokenOpen = (int)$db->getColumn(
+            "SELECT COUNT(*) FROM sifre_sifirlama WHERE used = 0 AND expires_at >= NOW()"
+        );
+    }
+} catch (Throwable $e) {
+    $sidebarResetRequestPending = 0;
+    $sidebarResetQueuePending = 0;
+    $sidebarResetTokenOpen = 0;
+}
 ?>
 <div class="app-sidebar-menu overflow-hidden flex-column-fluid">
     <div id="kt_app_sidebar_menu_wrapper" class="app-sidebar-wrapper">
@@ -169,7 +195,7 @@ function showAccordion($keywords) {
                 <div class="menu-item pt-5">
                     <div class="menu-content"><span class="menu-heading fw-bold text-uppercase fs-7">Sistem Ayarları</span></div>
                 </div>
-                <div data-kt-menu-trigger="click" class="menu-item menu-accordion <?= showAccordion(['settings', 'settings/api_keys.php', 'plans.php', 'settings/app_modules.php']) ?>">
+                <div data-kt-menu-trigger="click" class="menu-item menu-accordion <?= showAccordion(['settings', 'settings/api_keys.php', 'plans.php', 'settings/app_modules.php', 'settings/password_reset.php']) ?>">
                     <span class="menu-link">
                         <span class="menu-icon"><i class="ki-duotone ki-setting-2 fs-2"><span class="path1"></span><span class="path2"></span></i></span>
                         <span class="menu-title">Yönetim Ayarları</span>
@@ -178,6 +204,7 @@ function showAccordion($keywords) {
                     <div class="menu-sub menu-sub-accordion">
                         <div class="menu-item"><a class="menu-link <?= isActive('plans.php') ?>" href="plans.php"><span class="menu-bullet"><span class="bullet bullet-dot"></span></span><span class="menu-title">SaaS Paketleri (Matris)</span></a></div>
                         <div class="menu-item"><a class="menu-link <?= isActive('settings/admins.php') ?>" href="settings/admins.php"><span class="menu-bullet"><span class="bullet bullet-dot"></span></span><span class="menu-title">Yöneticiler</span></a></div>
+                        <div class="menu-item"><a class="menu-link <?= isActive('settings/password_reset.php') ?>" href="settings/password_reset.php"><span class="menu-bullet"><span class="bullet bullet-dot"></span></span><span class="menu-title">Şifre Talep Havuzu (<?= (int)$sidebarResetRequestPending ?>)</span></a></div>
                         <div class="menu-item"><a class="menu-link <?= isActive('settings/roles.php') ?>" href="settings/roles.php"><span class="menu-bullet"><span class="bullet bullet-dot"></span></span><span class="menu-title">Roller ve Yetkiler</span></a></div>
                         <div class="menu-item"><a class="menu-link <?= isActive('settings/api_keys.php') ?>" href="settings/api_keys.php"><span class="menu-bullet"><span class="bullet bullet-dot"></span></span><span class="menu-title">API Anahtarları</span></a></div>
                         <div class="menu-item"><a class="menu-link <?= isActive('settings/files.php') ?>" href="settings/files.php"><span class="menu-bullet"><span class="bullet bullet-dot"></span></span><span class="menu-title">Sistem Dosyaları</span></a></div>
@@ -186,13 +213,14 @@ function showAccordion($keywords) {
                     </div>
                 </div>
 
-                <div data-kt-menu-trigger="click" class="menu-item menu-accordion <?= showAccordion(['email_templates.php', 'email_queue.php']) ?>">
+                <div data-kt-menu-trigger="click" class="menu-item menu-accordion <?= showAccordion(['email_templates.php', 'email_queue.php', 'dist/apps/settings/general.php']) ?>">
                     <span class="menu-link">
                         <span class="menu-icon"><i class="ki-duotone ki-sms fs-2"><span class="path1"></span><span class="path2"></span></i></span>
                         <span class="menu-title">E-posta Yönetimi</span>
                         <span class="menu-arrow"></span>
                     </span>
                     <div class="menu-sub menu-sub-accordion">
+                        <div class="menu-item"><a class="menu-link <?= isActive('dist/apps/settings/general.php') ?>" href="dist/apps/settings/general.php"><span class="menu-bullet"><span class="bullet bullet-dot"></span></span><span class="menu-title">Mail Ayarları (SMTP)</span></a></div>
                         <div class="menu-item"><a class="menu-link <?= isActive('settings/email_templates.php') ?>" href="settings/email_templates.php"><span class="menu-bullet"><span class="bullet bullet-dot"></span></span><span class="menu-title">E-posta Şablonları</span></a></div>
                         <div class="menu-item"><a class="menu-link <?= isActive('settings/email_queue.php') ?>" href="settings/email_queue.php"><span class="menu-bullet"><span class="bullet bullet-dot"></span></span><span class="menu-title">E-posta Kuyruğu</span></a></div>
                     </div>
@@ -215,11 +243,11 @@ function showAccordion($keywords) {
                         <div class="menu-item"><a class="menu-link <?= isActive('logs/maintenance.php') ?>" href="logs/maintenance.php"><span class="menu-bullet"><span class="bullet bullet-dot"></span></span><span class="menu-title">Bakım Logları</span></a></div>
                         <div class="menu-item"><a class="menu-link <?= isActive('logs/system_errors.php') ?>" href="logs/system_errors.php"><span class="menu-bullet"><span class="bullet bullet-dot"></span></span><span class="menu-title">Sistem Hataları</span></a></div>
                         <div class="menu-item"><a class="menu-link <?= isActive('logs/system_events.php') ?>" href="logs/system_events.php"><span class="menu-bullet"><span class="bullet bullet-dot"></span></span><span class="menu-title">Sistem Olayları</span></a></div>
-                        <div class="menu-item"><a class="menu-link <?= isActive('logs/password_resets.php') ?>" href="logs/password_resets.php"><span class="menu-bullet"><span class="bullet bullet-dot"></span></span><span class="menu-title">Şifre Sıfırlama Logları</span></a></div>
+                        <div class="menu-item"><a class="menu-link <?= isActive('logs/password_resets.php') ?>" href="logs/password_resets.php"><span class="menu-bullet"><span class="bullet bullet-dot"></span></span><span class="menu-title">Şifre Sıfırlama Logları (<?= (int)$sidebarResetTokenOpen ?>)</span></a></div>
                         <div class="menu-item"><a class="menu-link <?= isActive('logs/webhooks.php') ?>" href="logs/webhooks.php"><span class="menu-bullet"><span class="bullet bullet-dot"></span></span><span class="menu-title">Webhook Tanımları</span></a></div>
                         <div class="menu-item"><a class="menu-link <?= isActive('logs/webhook_logs.php') ?>" href="logs/webhook_logs.php"><span class="menu-bullet"><span class="bullet bullet-dot"></span></span><span class="menu-title">Webhook İstek Geçmişi</span></a></div>
                         <div class="menu-item"><a class="menu-link <?= isActive('logs/notifications.php') ?>" href="logs/notifications.php"><span class="menu-bullet"><span class="bullet bullet-dot"></span></span><span class="menu-title">Uygulama Bildirimleri</span></a></div>
-                        <div class="menu-item"><a class="menu-link <?= isActive('logs/notification_queue.php') ?>" href="logs/notification_queue.php"><span class="menu-bullet"><span class="bullet bullet-dot"></span></span><span class="menu-title">Bildirim Kuyruğu</span></a></div>
+                        <div class="menu-item"><a class="menu-link <?= isActive('logs/notification_queue.php') ?>" href="logs/notification_queue.php"><span class="menu-bullet"><span class="bullet bullet-dot"></span></span><span class="menu-title">Bildirim Kuyruğu (<?= (int)$sidebarResetQueuePending ?>)</span></a></div>
                     </div>
                 </div>
 

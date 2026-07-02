@@ -1,7 +1,7 @@
 <?php
 /**
  * Prolyn Admin Panel - Files Management
- * prolynweb/p/settings/files.php
+ * Prolyn/p/settings/files.php
  */
 
 require_once '../config/header.php';

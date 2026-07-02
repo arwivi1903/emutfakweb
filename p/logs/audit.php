@@ -1,7 +1,7 @@
 <?php
 /**
  * Prolyn Admin Panel - System Audit Logs
- * prolynweb/p/logs/audit.php
+ * Prolyn/p/logs/audit.php
  */
 
 require_once '../config/header.php';

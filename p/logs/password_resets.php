@@ -1,7 +1,7 @@
 <?php
 /**
  * Prolyn Admin Panel - Password Resets Log
- * prolynweb/p/logs/password_resets.php
+ * Prolyn/p/logs/password_resets.php
  */
 
 require_once '../config/header.php';

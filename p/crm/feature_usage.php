@@ -1,7 +1,7 @@
 <?php
 /**
  * Prolyn Admin Panel - CRM Feature Usage Tracking
- * prolynweb/p/crm/feature_usage.php
+ * Prolyn/p/crm/feature_usage.php
  */
 
 require_once '../config/header.php';

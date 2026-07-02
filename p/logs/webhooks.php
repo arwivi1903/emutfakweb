@@ -1,7 +1,7 @@
 <?php
 /**
  * Prolyn Admin Panel - Webhooks Management
- * prolynweb/p/logs/webhooks.php
+ * Prolyn/p/logs/webhooks.php
  */
 
 require_once '../config/header.php';

@@ -1,7 +1,7 @@
 <?php
 /**
  * Prolyn Admin Panel - Email Templates Management
- * prolynweb/p/settings/email_templates.php
+ * Prolyn/p/settings/email_templates.php
  */
 
 require_once '../config/header.php';

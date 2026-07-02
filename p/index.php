@@ -1,7 +1,7 @@
 <?php
 /**
  * Prolyn Admin Panel - Dashboard
- * prolynweb/p/index.php
+ * Prolyn/p/index.php
  */
 
 require_once 'config/header.php';
@@ -56,6 +56,45 @@ $recentTenants = $db->getRows("SELECT customer_id, customer_code, tenant_alias, 
 
 // Son 5 sistem hatası
 $recentErrors = $db->getRows("SELECT error_id, error_message, severity, created_at FROM sistem_hatalari WHERE del_status = 1 ORDER BY error_id DESC LIMIT 5");
+
+$resetRequestPending = 0;
+$resetQueuePending = 0;
+$resetTokenOpen = 0;
+$recentResetRequests = [];
+
+try {
+    if (method_exists($db, 'tableExists') && $db->tableExists('sifre_sifirlama_talepleri')) {
+        $resetRequestPending = (int)$db->getColumn(
+            "SELECT COUNT(*) FROM sifre_sifirlama_talepleri WHERE request_status IN ('pending', 'in_review', 'matched')"
+        );
+
+        $recentResetRequests = $db->getRowsAssoc(
+            "SELECT t.request_id, t.kurum_kodu, t.request_email, t.request_status, t.mail_queue_status, t.created_at,
+                    k.company_name
+             FROM sifre_sifirlama_talepleri t
+             LEFT JOIN kurumlar k ON k.customer_id = t.customer_id
+             ORDER BY t.request_id DESC
+             LIMIT 8"
+        );
+    }
+
+    if (method_exists($db, 'tableExists') && $db->tableExists('mail_kuyrugu')) {
+        $resetQueuePending = (int)$db->getColumn(
+            "SELECT COUNT(*) FROM mail_kuyrugu WHERE status IN ('pending', 'queued')"
+        );
+    }
+
+    if (method_exists($db, 'tableExists') && $db->tableExists('sifre_sifirlama')) {
+        $resetTokenOpen = (int)$db->getColumn(
+            "SELECT COUNT(*) FROM sifre_sifirlama WHERE used = 0 AND expires_at >= NOW()"
+        );
+    }
+} catch (Throwable $e) {
+    $resetRequestPending = 0;
+    $resetQueuePending = 0;
+    $resetTokenOpen = 0;
+    $recentResetRequests = [];
+}
 
 ?>
 
@@ -162,6 +201,109 @@ $recentErrors = $db->getRows("SELECT error_id, error_message, severity, created_
                 </div>
 
                 <!-- Main Grid -->
+                <div class="row g-6 g-xl-9 mb-6">
+                    <div class="col-xl-4">
+                        <div class="card card-flush h-100 border border-dashed border-warning">
+                            <div class="card-header pt-5">
+                                <div class="card-title d-flex flex-column">
+                                    <span class="fs-2hx fw-bold text-warning me-2 lh-1 ls-n2"><?= $resetRequestPending ?></span>
+                                    <span class="text-gray-500 pt-1 fw-semibold fs-6">Şifre Talebi (Bekleyen)</span>
+                                </div>
+                            </div>
+                            <div class="card-body d-flex align-items-end pt-0 pb-5">
+                                <a href="settings/password_reset.php" class="btn btn-sm btn-light-warning fw-bold">Talep Havuzuna Git</a>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="col-xl-4">
+                        <div class="card card-flush h-100 border border-dashed border-primary">
+                            <div class="card-header pt-5">
+                                <div class="card-title d-flex flex-column">
+                                    <span class="fs-2hx fw-bold text-primary me-2 lh-1 ls-n2"><?= $resetQueuePending ?></span>
+                                    <span class="text-gray-500 pt-1 fw-semibold fs-6">Mail Kuyruğu (Reset)</span>
+                                </div>
+                            </div>
+                            <div class="card-body d-flex align-items-end pt-0 pb-5">
+                                <a href="logs/notification_queue.php" class="btn btn-sm btn-light-primary fw-bold">Kuyruğu Gör</a>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="col-xl-4">
+                        <div class="card card-flush h-100 border border-dashed border-success">
+                            <div class="card-header pt-5">
+                                <div class="card-title d-flex flex-column">
+                                    <span class="fs-2hx fw-bold text-success me-2 lh-1 ls-n2"><?= $resetTokenOpen ?></span>
+                                    <span class="text-gray-500 pt-1 fw-semibold fs-6">Açık Sıfırlama Tokenı</span>
+                                </div>
+                            </div>
+                            <div class="card-body d-flex align-items-end pt-0 pb-5">
+                                <a href="logs/password_resets.php" class="btn btn-sm btn-light-success fw-bold">Token Logları</a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="row g-6 g-xl-9 mb-6">
+                    <div class="col-12">
+                        <div class="card card-flush shadow-sm">
+                            <div class="card-header pt-7">
+                                <h3 class="card-title align-items-start flex-column">
+                                    <span class="card-label fw-bold text-gray-800 fs-3">Son Şifre Sıfırlama Talepleri</span>
+                                    <span class="text-gray-400 mt-1 fw-semibold fs-7">Kurum kodu/alias, email ve talep durumu</span>
+                                </h3>
+                                <div class="card-toolbar">
+                                    <a href="settings/password_reset.php" class="btn btn-sm btn-light-warning fw-bold">Talep Yönetimi</a>
+                                </div>
+                            </div>
+                            <div class="card-body pt-4">
+                                <div class="table-responsive">
+                                    <table class="table align-middle table-row-dashed fs-7 gy-4">
+                                        <thead>
+                                            <tr class="text-start text-gray-400 fw-bold fs-7 text-uppercase">
+                                                <th>ID</th>
+                                                <th>Kurum</th>
+                                                <th>Email</th>
+                                                <th>Durum</th>
+                                                <th>Kuyruk</th>
+                                                <th>Tarih</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody class="fw-semibold text-gray-700">
+                                            <?php if (empty($recentResetRequests)): ?>
+                                                <tr><td colspan="6" class="text-center text-muted py-7">Henüz talep kaydı yok.</td></tr>
+                                            <?php else: ?>
+                                                <?php foreach ($recentResetRequests as $req): ?>
+                                                    <?php
+                                                        $st = (string)($req['request_status'] ?? 'pending');
+                                                        $stClass = 'badge-light-secondary';
+                                                        if ($st === 'matched') $stClass = 'badge-light-success';
+                                                        if ($st === 'pending' || $st === 'in_review') $stClass = 'badge-light-warning';
+                                                        if ($st === 'completed') $stClass = 'badge-light-primary';
+                                                        if ($st === 'email_not_found' || $st === 'kurum_not_found' || $st === 'rejected') $stClass = 'badge-light-danger';
+                                                    ?>
+                                                    <tr>
+                                                        <td>#<?= (int)($req['request_id'] ?? 0) ?></td>
+                                                        <td>
+                                                            <div class="fw-bold"><?= htmlspecialchars((string)($req['company_name'] ?: '-')) ?></div>
+                                                            <div class="text-muted">Kod/Alias: <?= htmlspecialchars((string)($req['kurum_kodu'] ?? '-')) ?></div>
+                                                        </td>
+                                                        <td><?= htmlspecialchars((string)($req['request_email'] ?? '-')) ?></td>
+                                                        <td><span class="badge <?= $stClass ?>"><?= htmlspecialchars($st) ?></span></td>
+                                                        <td><span class="badge badge-light-info"><?= htmlspecialchars((string)($req['mail_queue_status'] ?? 'pending')) ?></span></td>
+                                                        <td><?= htmlspecialchars((string)($req['created_at'] ?? '-')) ?></td>
+                                                    </tr>
+                                                <?php endforeach; ?>
+                                            <?php endif; ?>
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
                 <div class="row g-6 g-xl-9">
                     <!-- Left: Recent Tenants -->
                     <div class="col-xl-8">

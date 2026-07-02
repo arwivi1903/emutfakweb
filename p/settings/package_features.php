@@ -1,7 +1,7 @@
 <?php
 /**
  * Prolyn Admin Panel - Package Features Management
- * prolynweb/p/settings/package_features.php
+ * Prolyn/p/settings/package_features.php
  */
 
 require_once '../config/header.php';

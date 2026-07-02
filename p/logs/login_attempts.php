@@ -1,7 +1,7 @@
 <?php
 /**
  * Prolyn Admin Panel - Login Attempts Management
- * prolynweb/p/logs/login_attempts.php
+ * Prolyn/p/logs/login_attempts.php
  */
 
 require_once '../config/header.php';

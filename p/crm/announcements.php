@@ -1,7 +1,7 @@
 <?php
 /**
  * Prolyn Admin Panel - Announcements Management
- * prolynweb/p/crm/announcements.php
+ * Prolyn/p/crm/announcements.php
  */
 
 require_once '../config/header.php';

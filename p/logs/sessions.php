@@ -1,7 +1,7 @@
 <?php
 /**
  * Prolyn Admin Panel - Active Sessions Management
- * prolynweb/p/logs/sessions.php
+ * Prolyn/p/logs/sessions.php
  */
 
 require_once '../config/header.php';

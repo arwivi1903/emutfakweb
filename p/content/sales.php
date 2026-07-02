@@ -1,7 +1,7 @@
 <?php
 /**
  * Prolyn Admin Panel - Sales Content Management
- * prolynweb/p/content/sales.php
+ * Prolyn/p/content/sales.php
  */
 
 require_once '../config/header.php';

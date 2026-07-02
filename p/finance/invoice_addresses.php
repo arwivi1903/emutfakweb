@@ -1,7 +1,7 @@
 <?php
 /**
  * Prolyn Admin Panel - Invoice Addresses Management
- * prolynweb/p/finance/invoice_addresses.php
+ * Prolyn/p/finance/invoice_addresses.php
  */
 
 require_once '../config/header.php';

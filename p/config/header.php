@@ -40,20 +40,68 @@ if (isset($_SESSION['admin_id'])) {
 // meta ayarları çekme
 $metatag = $db->getrow("SELECT * FROM setting");
 
+$headerNotifications = [];
+$headerUnreadCount = 0;
+$headerAdminId = (int)($_SESSION['admin_id'] ?? 0);
+$headerResetRequestPending = 0;
+$headerResetQueuePending = 0;
+$headerResetTokenOpen = 0;
+
+try {
+    if ($headerAdminId > 0 && method_exists($db, 'tableExists') && $db->tableExists('bildirimler')) {
+        $headerNotifications = $db->getRowsAssoc(
+            "SELECT notification_id, title, message, type, action_url, created_at
+             FROM bildirimler
+             WHERE admin_id = ? AND is_read = 0
+             ORDER BY notification_id DESC
+             LIMIT 10",
+            [$headerAdminId]
+        );
+        $headerUnreadCount = count($headerNotifications);
+    }
+} catch (Throwable $e) {
+    $headerNotifications = [];
+    $headerUnreadCount = 0;
+}
+
+try {
+    if (method_exists($db, 'tableExists') && $db->tableExists('sifre_sifirlama_talepleri')) {
+        $headerResetRequestPending = (int)$db->getColumn(
+            "SELECT COUNT(*) FROM sifre_sifirlama_talepleri WHERE request_status IN ('pending', 'in_review', 'matched')"
+        );
+    }
+
+    if (method_exists($db, 'tableExists') && $db->tableExists('mail_kuyrugu')) {
+        $headerResetQueuePending = (int)$db->getColumn(
+            "SELECT COUNT(*) FROM mail_kuyrugu WHERE status IN ('pending', 'queued')"
+        );
+    }
+
+    if (method_exists($db, 'tableExists') && $db->tableExists('sifre_sifirlama')) {
+        $headerResetTokenOpen = (int)$db->getColumn(
+            "SELECT COUNT(*) FROM sifre_sifirlama WHERE used = 0 AND expires_at >= NOW()"
+        );
+    }
+} catch (Throwable $e) {
+    $headerResetRequestPending = 0;
+    $headerResetQueuePending = 0;
+    $headerResetTokenOpen = 0;
+}
+
 ?>
 
 <!DOCTYPE html>
 <html lang="tr">
 <head>
     <base href="/prolynweb/p/" />
-    <title>Prolyn.Net ERP</title>
+    <title>Prolyn ERP</title>
     <meta charset="utf-8" />
     <meta name="description" content="" />
     <meta name="keywords" content="" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta property="og:locale" content="tr_TR" />
     <meta property="og:type" content="article" />
-    <meta property="og:title" content="Prolyn.Net ERP" />
+    <meta property="og:title" content="Prolyn ERP" />
     <meta property="og:url" content="" />
     <meta property="og:site_name" content="" />
     <link rel="canonical" href="" />
@@ -3421,9 +3469,26 @@ target="_blank">
                                                         <i class="ki-duotone ki-shield-search fs-4 me-3 text-success"><span class="path1"></span><span class="path2"></span></i>
                                                         Veritabanı Kontrolü
                                                     </a>
-                                                    <a href="logs/notification_queue.php" class="d-flex align-items-center text-gray-700 text-hover-primary py-2 fs-6">
-                                                        <i class="ki-duotone ki-message-text-2 fs-4 me-3 text-warning"><span class="path1"></span><span class="path2"></span></i>
-                                                        Sms & E-posta Kuyruğu
+                                                    <a href="settings/password_reset.php" class="d-flex align-items-center justify-content-between text-gray-700 text-hover-primary py-2 fs-6">
+                                                        <span class="d-flex align-items-center">
+                                                            <i class="ki-duotone ki-key fs-4 me-3 text-danger"><span class="path1"></span><span class="path2"></span></i>
+                                                            Şifre Talep Havuzu
+                                                        </span>
+                                                        <span class="badge badge-light-warning"><?= (int)$headerResetRequestPending ?></span>
+                                                    </a>
+                                                    <a href="logs/password_resets.php" class="d-flex align-items-center justify-content-between text-gray-700 text-hover-primary py-2 fs-6">
+                                                        <span class="d-flex align-items-center">
+                                                            <i class="ki-duotone ki-shield-tick fs-4 me-3 text-success"><span class="path1"></span><span class="path2"></span></i>
+                                                            Açık Sıfırlama Tokenları
+                                                        </span>
+                                                        <span class="badge badge-light-success"><?= (int)$headerResetTokenOpen ?></span>
+                                                    </a>
+                                                    <a href="logs/notification_queue.php" class="d-flex align-items-center justify-content-between text-gray-700 text-hover-primary py-2 fs-6">
+                                                        <span class="d-flex align-items-center">
+                                                            <i class="ki-duotone ki-sms fs-4 me-3 text-primary"><span class="path1"></span><span class="path2"></span></i>
+                                                            Mail Kuyruğu (Reset)
+                                                        </span>
+                                                        <span class="badge badge-light-primary"><?= (int)$headerResetQueuePending ?></span>
                                                     </a>
                                                 </div>
                                             </div>
@@ -3445,7 +3510,7 @@ target="_blank">
                                     </i>
                                     <span class="badge badge-circle badge-danger position-absolute top-0 start-100 translate-middle" 
                                           id="notification-badge" 
-                                          style="display: none;">0</span>
+                                          style="<?= $headerUnreadCount > 0 ? 'display: inline-flex;' : 'display: none;' ?>"><?= $headerUnreadCount ?></span>
                                 </div>
                                 
                                 <div class="menu menu-sub menu-sub-dropdown menu-column w-350px w-lg-375px" data-kt-menu="true">
@@ -3453,7 +3518,7 @@ target="_blank">
                                          style="background-image:url('dist/assets/media/misc/menu-header-bg.jpg')">
                                         <h3 class="text-white fw-semibold px-9 mt-10 mb-6">
                                             Bildirimler
-                                            <span class="fs-8 opacity-75 ps-3" id="notification-count-text">0 yeni</span>
+                                            <span class="fs-8 opacity-75 ps-3" id="notification-count-text"><?= $headerUnreadCount ?> yeni</span>
                                         </h3>
                                         <ul class="nav nav-line-tabs nav-line-tabs-2x nav-stretch fw-semibold px-9">
                                             <li class="nav-item">
@@ -3465,11 +3530,35 @@ target="_blank">
                                     <div class="tab-content">
                                         <div class="tab-pane fade show active" id="kt_topbar_notifications_1" role="tabpanel">
                                             <div class="scroll-y mh-325px my-5 px-8" id="notification-list">
-                                                <div class="text-center py-10">
-                                                    <div class="spinner-border text-primary" role="status">
-                                                        <span class="visually-hidden">Yükleniyor...</span>
-                                                    </div>
-                                                </div>
+                                                <?php if ($headerUnreadCount === 0): ?>
+                                                    <div class="text-center text-muted py-8" id="notification-empty">Yeni bildirim yok.</div>
+                                                <?php else: ?>
+                                                    <?php foreach ($headerNotifications as $notif): ?>
+                                                        <?php
+                                                            $notifType = $notif['type'] ?? 'info';
+                                                            $notifBadgeClass = 'badge-light-primary';
+                                                            if ($notifType === 'warning') {
+                                                                $notifBadgeClass = 'badge-light-warning';
+                                                            } elseif ($notifType === 'error') {
+                                                                $notifBadgeClass = 'badge-light-danger';
+                                                            } elseif ($notifType === 'success') {
+                                                                $notifBadgeClass = 'badge-light-success';
+                                                            }
+                                                        ?>
+                                                        <div class="d-flex flex-column border-bottom border-gray-200 py-4" data-notification-id="<?= (int)$notif['notification_id'] ?>">
+                                                            <div class="d-flex align-items-center justify-content-between mb-1">
+                                                                <span class="fw-bold text-gray-800"><?= htmlspecialchars((string)$notif['title']) ?></span>
+                                                                <span class="badge <?= $notifBadgeClass ?>"><?= htmlspecialchars(strtoupper((string)$notifType)) ?></span>
+                                                            </div>
+                                                            <span class="text-muted fs-7 mb-2"><?= htmlspecialchars((string)$notif['message']) ?></span>
+                                                            <div class="d-flex align-items-center justify-content-between">
+                                                                <span class="text-muted fs-8"><?= date('d.m.Y H:i', strtotime((string)$notif['created_at'])) ?></span>
+                                                                <button type="button" class="btn btn-sm btn-light-primary py-1 px-2 mark-notification-read-btn">Okundu</button>
+                                                            </div>
+                                                        </div>
+                                                    <?php endforeach; ?>
+                                                <?php endif; ?>
+                                                <div class="text-center text-muted py-8" id="notification-empty" style="display: none;">Yeni bildirim yok.</div>
                                             </div>
                                             
                                             <div class="py-3 text-center border-top">
@@ -3482,6 +3571,149 @@ target="_blank">
                                     </div>
                                 </div>
                             </div>
+
+                            <script>
+                            (function () {
+                                const badge = document.getElementById('notification-badge');
+                                const countText = document.getElementById('notification-count-text');
+                                const list = document.getElementById('notification-list');
+                                const empty = document.getElementById('notification-empty');
+                                const markAllBtn = document.getElementById('mark-all-read-btn');
+                                if (!badge || !countText || !list || !markAllBtn) return;
+
+                                function escapeHtml(text) {
+                                    const div = document.createElement('div');
+                                    div.textContent = text == null ? '' : String(text);
+                                    return div.innerHTML;
+                                }
+
+                                function typeBadgeClass(type) {
+                                    if (type === 'warning') return 'badge-light-warning';
+                                    if (type === 'error') return 'badge-light-danger';
+                                    if (type === 'success') return 'badge-light-success';
+                                    return 'badge-light-primary';
+                                }
+
+                                function formatDate(value) {
+                                    const date = new Date(value);
+                                    if (Number.isNaN(date.getTime())) return '';
+                                    const pad = (n) => String(n).padStart(2, '0');
+                                    return pad(date.getDate()) + '.' + pad(date.getMonth() + 1) + '.' + date.getFullYear() + ' ' + pad(date.getHours()) + ':' + pad(date.getMinutes());
+                                }
+
+                                function updateBadge(count) {
+                                    if (count > 0) {
+                                        badge.style.display = 'inline-flex';
+                                        badge.textContent = String(count);
+                                    } else {
+                                        badge.style.display = 'none';
+                                        badge.textContent = '0';
+                                    }
+                                    countText.textContent = String(count) + ' yeni';
+                                    if (empty) {
+                                        empty.style.display = count > 0 ? 'none' : 'block';
+                                    }
+                                }
+
+                                function renderNotifications(items) {
+                                    const rows = items.map((item) => {
+                                        const type = item.type || 'info';
+                                        return ''
+                                            + '<div class="d-flex flex-column border-bottom border-gray-200 py-4" data-notification-id="' + Number(item.notification_id || 0) + '">'
+                                            + '  <div class="d-flex align-items-center justify-content-between mb-1">'
+                                            + '    <span class="fw-bold text-gray-800">' + escapeHtml(item.title || '') + '</span>'
+                                            + '    <span class="badge ' + typeBadgeClass(type) + '">' + escapeHtml(String(type).toUpperCase()) + '</span>'
+                                            + '  </div>'
+                                            + '  <span class="text-muted fs-7 mb-2">' + escapeHtml(item.message || '') + '</span>'
+                                            + '  <div class="d-flex align-items-center justify-content-between">'
+                                            + '    <span class="text-muted fs-8">' + escapeHtml(formatDate(item.created_at)) + '</span>'
+                                            + '    <button type="button" class="btn btn-sm btn-light-primary py-1 px-2 mark-notification-read-btn">Okundu</button>'
+                                            + '  </div>'
+                                            + '</div>';
+                                    });
+
+                                    list.querySelectorAll('[data-notification-id]').forEach((el) => el.remove());
+                                    if (rows.length > 0) {
+                                        list.insertAdjacentHTML('afterbegin', rows.join(''));
+                                    }
+                                    updateBadge(rows.length);
+                                }
+
+                                async function fetchNotifications() {
+                                    try {
+                                        const response = await fetch('dist/api/notifications_api.php?action=get_unread', {
+                                            method: 'GET',
+                                            credentials: 'same-origin'
+                                        });
+                                        if (!response.ok) return;
+                                        const data = await response.json();
+                                        if (Array.isArray(data)) {
+                                            renderNotifications(data);
+                                        }
+                                    } catch (e) {
+                                        // Sessiz gec
+                                    }
+                                }
+
+                                async function markNotificationRead(notificationId) {
+                                    const form = new URLSearchParams();
+                                    form.append('action', 'mark_read');
+                                    form.append('notification_id', String(notificationId));
+
+                                    const response = await fetch('dist/api/notifications_api.php', {
+                                        method: 'POST',
+                                        headers: {
+                                            'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8'
+                                        },
+                                        credentials: 'same-origin',
+                                        body: form.toString()
+                                    });
+
+                                    if (!response.ok) return false;
+                                    const data = await response.json();
+                                    return !!(data && data.success);
+                                }
+
+                                list.addEventListener('click', async function (event) {
+                                    const btn = event.target.closest('.mark-notification-read-btn');
+                                    if (!btn) return;
+                                    const row = btn.closest('[data-notification-id]');
+                                    if (!row) return;
+
+                                    const id = Number(row.getAttribute('data-notification-id') || '0');
+                                    if (!id) return;
+
+                                    btn.disabled = true;
+                                    const ok = await markNotificationRead(id);
+                                    if (ok) {
+                                        row.remove();
+                                        updateBadge(list.querySelectorAll('[data-notification-id]').length);
+                                    } else {
+                                        btn.disabled = false;
+                                    }
+                                });
+
+                                markAllBtn.addEventListener('click', async function (event) {
+                                    event.preventDefault();
+                                    const ids = Array.from(list.querySelectorAll('[data-notification-id]'))
+                                        .map((el) => Number(el.getAttribute('data-notification-id') || '0'))
+                                        .filter((n) => n > 0);
+
+                                    if (ids.length === 0) {
+                                        updateBadge(0);
+                                        return;
+                                    }
+
+                                    markAllBtn.classList.add('disabled');
+                                    await Promise.all(ids.map((id) => markNotificationRead(id)));
+                                    list.querySelectorAll('[data-notification-id]').forEach((el) => el.remove());
+                                    updateBadge(0);
+                                    markAllBtn.classList.remove('disabled');
+                                });
+
+                                setInterval(fetchNotifications, 30000);
+                            })();
+                            </script>
 
                             <!-- kullanıcı menüsü  -->
                             <div class="app-navbar-item ms-1 ms-md-4" id="kt_header_user_menu_toggle">

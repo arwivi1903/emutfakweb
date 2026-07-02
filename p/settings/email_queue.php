@@ -1,7 +1,7 @@
 <?php
 /**
  * Prolyn Admin Panel - Email Queue Management
- * prolynweb/p/settings/email_queue.php
+ * Prolyn/p/settings/email_queue.php
  */
 
 require_once '../config/header.php';
@@ -12,22 +12,28 @@ require_once '../config/sidebar.php';
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if (isset($_POST['action']) && $_POST['action'] === 'retry') {
         $id = (int)$_POST['queue_id'];
-        // Status pending yap, attempts sıfırla veya arttır
-        $db->Update("UPDATE eposta_kuyrugu SET status = 'pending', attempts = 0, last_error = NULL, updated_at = NOW() WHERE queue_id = ?", [$id]);
+        $db->Update("UPDATE mail_kuyrugu SET status = 'pending', attempts = 0, last_error = NULL, processed_at = NULL WHERE queue_id = ?", [$id]);
         echo "<script>window.location.href='settings/email_queue.php?success=retry';</script>";
         exit;
     }
     
     if (isset($_POST['action']) && $_POST['action'] === 'cancel') {
         $id = (int)$_POST['queue_id'];
-        $db->Update("UPDATE eposta_kuyrugu SET status = 'cancelled', updated_at = NOW() WHERE queue_id = ?", [$id]);
+        $db->Update("UPDATE mail_kuyrugu SET status = 'cancelled', processed_at = NOW() WHERE queue_id = ?", [$id]);
         echo "<script>window.location.href='settings/email_queue.php?success=cancel';</script>";
         exit;
     }
 }
 
+// Reset taleplerinde mail kuyrugu durumu tamamlanmis olarak tutulur.
+$db->Update(
+    "UPDATE mail_kuyrugu
+     SET status = 'completed', processed_at = IFNULL(processed_at, NOW())
+     WHERE status IN ('pending', 'queued') AND source = 'password_reset_request'"
+);
+
 // Kuyruğu Çek
-$query = "SELECT * FROM eposta_kuyrugu ORDER BY created_at DESC LIMIT 500";
+$query = "SELECT * FROM mail_kuyrugu ORDER BY created_at DESC LIMIT 500";
 $queue = $db->getRowsAssoc($query);
 ?>
 
@@ -82,9 +88,9 @@ $queue = $db->getRowsAssoc($query);
                             <table class="table align-middle table-row-dashed fs-6 gy-5" id="kt_queue_table">
                                 <thead>
                                     <tr class="text-start text-gray-400 fw-bold fs-7 text-uppercase gs-0">
-                                        <th>Alıcı Bilgileri</th>
+                                        <th>Alıcı</th>
                                         <th>Konu (Subject)</th>
-                                        <th>Öncelik</th>
+                                        <th>Kaynak</th>
                                         <th>Deneme</th>
                                         <th>Durum</th>
                                         <th>Tarihler</th>
@@ -96,29 +102,23 @@ $queue = $db->getRowsAssoc($query);
                                         <?php foreach ($queue as $q): ?>
                                         <tr>
                                             <td>
-                                                <div class="text-gray-800 fw-bold"><?php echo htmlspecialchars($q['to_name'] ?? '-'); ?></div>
-                                                <div class="text-muted fs-7"><?php echo htmlspecialchars($q['to_email']); ?></div>
+                                                <div class="text-gray-800 fw-bold"><?php echo htmlspecialchars($q['recipient'] ?? '-'); ?></div>
                                             </td>
                                             <td>
-                                                <span class="text-gray-800 fw-bold mb-1 d-block"><?php echo htmlspecialchars($q['subject']); ?></span>
-                                                <span class="badge badge-light-secondary fs-8">Şablon: <?php echo htmlspecialchars($q['template_key'] ?? 'Özel (Yok)'); ?></span>
+                                                <span class="text-gray-800 fw-bold mb-1 d-block"><?php echo htmlspecialchars($q['subject'] ?? '-'); ?></span>
+                                                <span class="badge badge-light-secondary fs-8">Kanal: <?php echo htmlspecialchars($q['channel'] ?? 'email'); ?></span>
                                             </td>
                                             <td>
-                                                <?php 
-                                                    $pri_class = 'badge-light-info';
-                                                    if ($q['priority'] == 'high') $pri_class = 'badge-light-warning';
-                                                    elseif ($q['priority'] == 'urgent') $pri_class = 'badge-light-danger';
-                                                ?>
-                                                <span class="badge <?php echo $pri_class; ?> text-uppercase"><?php echo htmlspecialchars($q['priority']); ?></span>
+                                                <span class="badge badge-light-info text-uppercase"><?php echo htmlspecialchars($q['source'] ?? 'unknown'); ?></span>
                                             </td>
                                             <td>
-                                                <span class="badge badge-light"><?php echo $q['attempts']; ?> / <?php echo $q['max_attempts']; ?></span>
+                                                <span class="badge badge-light"><?php echo (int)($q['attempts'] ?? 0); ?></span>
                                             </td>
                                             <td>
                                                 <?php 
                                                     $status_class = 'badge-light-primary';
                                                     if ($q['status'] == 'pending') $status_class = 'badge-light-warning';
-                                                    elseif ($q['status'] == 'sent') $status_class = 'badge-light-success';
+                                                    elseif ($q['status'] == 'sent' || $q['status'] == 'completed') $status_class = 'badge-light-success';
                                                     elseif ($q['status'] == 'failed') $status_class = 'badge-light-danger';
                                                     elseif ($q['status'] == 'cancelled') $status_class = 'badge-light-dark';
                                                 ?>
@@ -130,8 +130,8 @@ $queue = $db->getRowsAssoc($query);
                                             <td>
                                                 <div class="d-flex flex-column">
                                                     <span class="fs-8 text-muted">Kayıt: <?php echo date('d.m.Y H:i', strtotime($q['created_at'])); ?></span>
-                                                    <?php if($q['sent_at']): ?>
-                                                    <span class="fs-8 text-success">Gön.: <?php echo date('d.m.Y H:i', strtotime($q['sent_at'])); ?></span>
+                                                    <?php if(!empty($q['processed_at'])): ?>
+                                                    <span class="fs-8 text-success">İşl.: <?php echo date('d.m.Y H:i', strtotime($q['processed_at'])); ?></span>
                                                     <?php endif; ?>
                                                 </div>
                                             </td>
@@ -144,7 +144,7 @@ $queue = $db->getRowsAssoc($query);
                                                 <form action="settings/email_queue.php" method="POST" class="d-inline" onsubmit="event.preventDefault(); Swal.fire({title: 'Emin misiniz?', text: 'Bu e-postayı tekrar kuyruğa almak istediğinize emin misiniz?', icon: 'warning', showCancelButton: true, confirmButtonText: 'Evet', cancelButtonText: 'Hayır'}).then((result) => { if(result.isConfirmed) { this.submit(); } });">
                             <?= csrfTokenField() ?>
                                                     <input type="hidden" name="action" value="retry">
-                                                    <input type="hidden" name="queue_id" value="<?php echo $q['queue_id']; ?>">
+                                                    <input type="hidden" name="queue_id" value="<?php echo (int)($q['queue_id'] ?? 0); ?>">
                                                     <button type="submit" class="btn btn-icon btn-light-warning btn-sm" title="Tekrar Dene">
                                                         <i class="ki-duotone ki-arrows-circle fs-3"><span class="path1"></span><span class="path2"></span></i>
                                                     </button>
@@ -154,7 +154,7 @@ $queue = $db->getRowsAssoc($query);
                                                 <form action="settings/email_queue.php" method="POST" class="d-inline" onsubmit="event.preventDefault(); Swal.fire({title: 'Emin misiniz?', text: 'Bu e-postanın gönderimini iptal etmek istediğinize emin misiniz?', icon: 'warning', showCancelButton: true, confirmButtonText: 'Evet', cancelButtonText: 'Hayır'}).then((result) => { if(result.isConfirmed) { this.submit(); } });">
                             <?= csrfTokenField() ?>
                                                     <input type="hidden" name="action" value="cancel">
-                                                    <input type="hidden" name="queue_id" value="<?php echo $q['queue_id']; ?>">
+                                                    <input type="hidden" name="queue_id" value="<?php echo (int)($q['queue_id'] ?? 0); ?>">
                                                     <button type="submit" class="btn btn-icon btn-light-danger btn-sm" title="İptal Et">
                                                         <i class="ki-duotone ki-cross-circle fs-3"><span class="path1"></span><span class="path2"></span></i>
                                                     </button>
@@ -223,9 +223,9 @@ $queue = $db->getRowsAssoc($query);
 
 <script>
 function viewContent(data) {
-    document.getElementById('view_to').innerText = (data.to_name ? data.to_name + ' ' : '') + '<' + data.to_email + '>';
-    document.getElementById('view_subject').innerText = data.subject;
-    document.getElementById('view_body_html').textContent = data.body_html || data.body_text || 'İçerik Yok';
+    document.getElementById('view_to').innerText = data.recipient || '-';
+    document.getElementById('view_subject').innerText = data.subject || '-';
+    document.getElementById('view_body_html').textContent = data.message || 'İçerik Yok';
     
     var errorContainer = document.getElementById('view_error_container');
     if (data.last_error && data.status === 'failed') {

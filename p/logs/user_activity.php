@@ -1,7 +1,7 @@
 <?php
 /**
  * Prolyn Admin Panel - User Activity Logs
- * prolynweb/p/logs/user_activity.php
+ * Prolyn/p/logs/user_activity.php
  */
 
 require_once '../config/header.php';

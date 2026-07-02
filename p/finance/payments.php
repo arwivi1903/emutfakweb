@@ -1,7 +1,7 @@
 <?php
 /**
  * Prolyn Admin Panel - Payments Management
- * prolynweb/p/finance/payments.php
+ * Prolyn/p/finance/payments.php
  */
 
 require_once '../config/header.php';

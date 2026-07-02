@@ -1,7 +1,7 @@
 <?php
 /**
  * Prolyn Admin Panel - Packages & Modules Matrix
- * prolynweb/p/plans.php
+ * Prolyn/p/plans.php
  */
 
 require_once 'config/header.php';

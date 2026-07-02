@@ -1,7 +1,7 @@
 <?php
 /**
  * Prolyn Admin Panel - In-App Notifications (Uygulama Bildirimleri)
- * prolynweb/p/logs/notifications.php
+ * Prolyn/p/logs/notifications.php
  */
 
 require_once '../config/header.php';

@@ -1,7 +1,7 @@
 <?php
 /**
  * Prolyn Admin Panel - Tenant Detail Management
- * prolynweb/p/crm/tenant_detail.php
+ * Prolyn/p/crm/tenant_detail.php
  */
 
 require_once '../config/header.php';

@@ -1,7 +1,7 @@
 <?php
 /**
  * Prolyn Admin Panel - Support Ticket Detail (Sohbet Ekranı)
- * prolynweb/p/crm/ticket_detail.php
+ * Prolyn/p/crm/ticket_detail.php
  */
 
 require_once '../config/header.php';

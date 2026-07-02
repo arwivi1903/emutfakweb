@@ -11,10 +11,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
     if ($_POST['action'] === 'add_module') {
         $module_key = trim($_POST['module_key']);
         $module_name = trim($_POST['module_name']);
+        $comment = trim($_POST['comment'] ?? '');
         $status = isset($_POST['status']) ? 1 : 0;
         
-        $db->Insert("INSERT INTO app_modules (module_key, module_name, status, created_at) VALUES (?, ?, ?, NOW())", 
-            [$module_key, $module_name, $status]);
+        $db->Insert("INSERT INTO app_modules (module_key, module_name, `comment`, status, created_at) VALUES (?, ?, ?, ?, NOW())", 
+            [$module_key, $module_name, $comment, $status]);
             
         echo "<script>window.location.href='app_modules.php?success=1';</script>";
         exit;
@@ -23,10 +24,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
         $id = (int)$_POST['id'];
         $module_key = trim($_POST['module_key']);
         $module_name = trim($_POST['module_name']);
+        $comment = trim($_POST['comment'] ?? '');
         $status = isset($_POST['status']) ? 1 : 0;
         
-        $db->Update("UPDATE app_modules SET module_key = ?, module_name = ?, status = ? WHERE id = ?", 
-            [$module_key, $module_name, $status, $id]);
+        $db->Update("UPDATE app_modules SET module_key = ?, module_name = ?, `comment` = ?, status = ? WHERE id = ?", 
+            [$module_key, $module_name, $comment, $status, $id]);
             
         echo "<script>window.location.href='app_modules.php?success=2';</script>";
         exit;
@@ -87,6 +89,7 @@ $modules = $db->getRowsAssoc("SELECT * FROM app_modules ORDER BY id ASC");
                                         <th class="min-w-100px">ID</th>
                                         <th class="min-w-150px">Modül Key (Anahtar)</th>
                                         <th class="min-w-200px">Modül Adı (Açıklama)</th>
+                                        <th class="min-w-250px">Comment / Not</th>
                                         <th class="min-w-100px">Durum</th>
                                         <th class="text-end min-w-100px">İşlemler</th>
                                     </tr>
@@ -101,6 +104,9 @@ $modules = $db->getRowsAssoc("SELECT * FROM app_modules ORDER BY id ASC");
                                             </td>
                                             <td>
                                                 <span class="text-gray-800 fw-bold d-block fs-6"><?= htmlspecialchars($f['module_name']) ?></span>
+                                            </td>
+                                            <td>
+                                                <span class="text-gray-600 d-block fs-7"><?= nl2br(htmlspecialchars($f['comment'] ?? '')) ?></span>
                                             </td>
                                             <td>
                                                 <?php if($f['status']): ?>
@@ -141,6 +147,10 @@ $modules = $db->getRowsAssoc("SELECT * FROM app_modules ORDER BY id ASC");
                                                             <div class="fv-row mb-7">
                                                                 <label class="required fs-6 fw-semibold mb-2">Modül Adı (Kullanıcıların Göreceği İsim)</label>
                                                                 <input type="text" class="form-control form-control-solid" name="module_name" value="<?= htmlspecialchars($f['module_name']) ?>" required />
+                                                            </div>
+                                                            <div class="fv-row mb-7">
+                                                                <label class="fs-6 fw-semibold mb-2">Comment / Not</label>
+                                                                <textarea class="form-control form-control-solid" name="comment" rows="3"><?= htmlspecialchars($f['comment'] ?? '') ?></textarea>
                                                             </div>
                                                             <div class="fv-row mb-7">
                                                                 <label class="form-check form-switch form-check-custom form-check-solid">
@@ -217,6 +227,10 @@ $modules = $db->getRowsAssoc("SELECT * FROM app_modules ORDER BY id ASC");
                                         <label class="required fs-6 fw-semibold mb-2">Modül Adı (Kullanıcıların Göreceği İsim)</label>
                                         <input type="text" class="form-control form-control-solid" name="module_name" required />
                                     </div>
+                                                            <div class="fv-row mb-7">
+                                                                <label class="fs-6 fw-semibold mb-2">Comment / Not</label>
+                                                                <textarea class="form-control form-control-solid" name="comment" rows="3" placeholder="Modül için kısa teknik not veya açıklama"></textarea>
+                                                            </div>
                                     <div class="fv-row mb-7">
                                         <label class="form-check form-switch form-check-custom form-check-solid">
                                             <input class="form-check-input" type="checkbox" name="status" checked />

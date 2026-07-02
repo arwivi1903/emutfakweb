@@ -1,7 +1,7 @@
 <?php
 /**
  * Admin Panel Login Sayfası
- * prolynweb/p/login.php
+ * Prolyn/p/login.php
  */
 
 // Session başlat
@@ -44,7 +44,7 @@ if (isset($_GET['islem'])) {
     <base href="/prolynweb/p/"/>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>Prolyn.Net ERP - Giriş</title>
+    <title>Prolyn ERP - Giriş</title>
     <link rel="shortcut icon" href="dist/assets/media/logos/favicon.ico" />
     <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Inter:300,400,500,600,700" />
     <link href="dist/assets/plugins/global/plugins.bundle.css" rel="stylesheet" type="text/css" />
@@ -73,79 +73,199 @@ if (isset($_GET['islem'])) {
 
     <div class="d-flex flex-column flex-root" id="kt_app_root">
         <style>
-            body { background-image: url('dist/assets/media/auth/bg4.jpg'); }
-            [data-bs-theme="dark"] body { background-image: url('dist/assets/media/auth/bg4-dark.jpg'); }
+            body {
+                background:
+                    radial-gradient(circle at 15% 20%, rgba(59, 130, 246, 0.22), transparent 28%),
+                    radial-gradient(circle at 85% 18%, rgba(16, 185, 129, 0.18), transparent 24%),
+                    radial-gradient(circle at 50% 100%, rgba(14, 165, 233, 0.14), transparent 34%),
+                    linear-gradient(180deg, #07111f 0%, #0b1220 38%, #101827 100%);
+                min-height: 100vh;
+            }
+            .login-shell {
+                position: relative;
+                overflow: hidden;
+            }
+            .login-shell::before,
+            .login-shell::after {
+                content: '';
+                position: absolute;
+                border-radius: 999px;
+                pointer-events: none;
+                filter: blur(8px);
+            }
+            .login-shell::before {
+                width: 380px;
+                height: 380px;
+                left: -160px;
+                top: -140px;
+                background: rgba(59, 130, 246, 0.14);
+            }
+            .login-shell::after {
+                width: 320px;
+                height: 320px;
+                right: -130px;
+                bottom: -120px;
+                background: rgba(34, 197, 94, 0.10);
+            }
+            .auth-shell {
+                position: relative;
+                z-index: 1;
+            }
+            .auth-card {
+                background: rgba(8, 15, 31, 0.84);
+                border: 1px solid rgba(255, 255, 255, 0.08);
+                box-shadow: 0 28px 90px rgba(0, 0, 0, 0.42);
+                overflow: hidden;
+            }
+            .auth-card::before {
+                content: '';
+                display: block;
+                height: 6px;
+                background: linear-gradient(90deg, #2563eb 0%, #10b981 50%, #0ea5e9 100%);
+            }
+            .brand-mark {
+                width: 56px;
+                height: 56px;
+                border-radius: 18px;
+                display: inline-flex;
+                align-items: center;
+                justify-content: center;
+                background: linear-gradient(135deg, #0f172a 0%, #1d4ed8 100%);
+                color: #fff;
+                font-weight: 800;
+                font-size: 1.2rem;
+                letter-spacing: 0.04em;
+                box-shadow: 0 10px 24px rgba(37, 99, 235, 0.28);
+            }
+            .hero-badge {
+                border: 1px solid rgba(37, 99, 235, 0.16);
+                background: rgba(37, 99, 235, 0.14);
+                color: #dbeafe;
+            }
+            .surface-soft {
+                background: rgba(255, 255, 255, 0.04);
+                border: 1px solid rgba(255, 255, 255, 0.08);
+            }
+            .text-soft {
+                color: rgba(226, 232, 240, 0.82) !important;
+            }
+            .text-muted-soft {
+                color: rgba(148, 163, 184, 0.95) !important;
+            }
+            .login-divider {
+                border-color: rgba(255, 255, 255, 0.08) !important;
+            }
+            .login-surface {
+                background:
+                    radial-gradient(circle at top right, rgba(37, 99, 235, 0.18), transparent 26%),
+                    linear-gradient(180deg, rgba(10, 16, 31, 0.96) 0%, rgba(8, 15, 31, 0.96) 100%);
+            }
+            .prolyn-chip {
+                display: inline-flex;
+                align-items: center;
+                justify-content: center;
+                min-width: 112px;
+                padding: 0.7rem 1rem;
+                border-radius: 999px;
+                background: rgba(255, 255, 255, 0.06);
+                color: #e2e8f0;
+                border: 1px solid rgba(255, 255, 255, 0.08);
+                font-size: 0.75rem;
+                font-weight: 700;
+                letter-spacing: 0.08em;
+                text-transform: uppercase;
+            }
+            .prolyn-auth-input {
+                background: #ffffff !important;
+                color: #0f172a !important;
+                caret-color: #0f172a;
+                -webkit-text-fill-color: #0f172a;
+            }
+            .prolyn-auth-input::placeholder {
+                color: #94a3b8;
+                opacity: 1;
+            }
+            .prolyn-auth-input:-webkit-autofill,
+            .prolyn-auth-input:-webkit-autofill:hover,
+            .prolyn-auth-input:-webkit-autofill:focus,
+            .prolyn-auth-input:-webkit-autofill:active {
+                -webkit-box-shadow: 0 0 0 1000px #ffffff inset !important;
+                -webkit-text-fill-color: #0f172a !important;
+                caret-color: #0f172a;
+                transition: background-color 9999s ease-out 0s;
+            }
         </style>
-        <div class="d-flex flex-column flex-column-fluid flex-lg-row">
-            <!-- Sol Taraf -->
-            <div class="d-flex flex-center w-lg-50 pt-15 pt-lg-0 px-10">
-                <div class="d-flex flex-center flex-lg-start flex-column">
-                    <a href="index.php" class="mb-7">
-                        <img alt="Logo" src="dist/assets/media/logos/custom-3.svg" />
-                    </a>
-                    <h2 class="text-white fw-normal m-0">İşletmeniz için tasarlanmış marka</h2>
-                </div>
-            </div>
+        <div class="d-flex flex-column flex-root auth-shell login-shell">
+            <div class="d-flex flex-column flex-column-fluid py-10 py-lg-14">
+                <div class="container">
+                    <div class="row justify-content-center">
+                        <div class="col-12 col-xl-6 col-xxl-5">
+                            <div class="auth-card rounded-5 login-surface">
+                                <div class="p-10 p-lg-14">
+                                    <div class="d-flex align-items-center justify-content-between mb-10">
+                                        <div class="d-flex align-items-center gap-4">
+                                            <div class="brand-mark">P</div>
+                                            <div>
+                                                <div class="text-white fw-bolder fs-2 mb-1">Prolyn</div>
+                                                <div class="text-muted-soft fw-semibold fs-7">Ana admin girişi</div>
+                                            </div>
+                                        </div>
+                                        <span class="prolyn-chip">Secure Access</span>
+                                    </div>
 
-            <!-- Sağ Taraf - Login Formu -->
-            <div class="d-flex flex-column-fluid flex-lg-row-auto justify-content-center justify-content-lg-end p-12 p-lg-20">
-                <div class="bg-body d-flex flex-column align-items-stretch flex-center rounded-4 w-md-600px p-20">
-                    <div class="d-flex flex-center flex-column flex-column-fluid px-lg-10 pb-15 pb-lg-20">
-                        
-                        <!-- Hata/Başarı Mesajı -->
-                        <?php if ($message): ?>
-                            <div class="alert alert-<?php echo htmlspecialchars($messageType); ?> mb-10" role="alert">
-                                <div class="d-flex">
-                                    <div class="flex-grow-1">
-                                        <h4 class="mb-1 text-<?php echo htmlspecialchars($messageType); ?>">
-                                            <?php echo htmlspecialchars($message); ?>
-                                        </h4>
+                                    <div class="mb-10">
+                                        <h1 class="text-white fw-bolder fs-1 fs-lg-2qx mb-3">Hoş geldiniz</h1>
+                                        <p class="text-soft fs-6 fs-lg-5 mb-0">Prolyn ana yönetim paneline güvenli şekilde giriş yapın.</p>
+                                    </div>
+
+                                    <?php if ($message): ?>
+                                        <div class="alert alert-<?php echo htmlspecialchars($messageType); ?> mb-8" role="alert">
+                                            <div class="d-flex align-items-center">
+                                                <div class="flex-grow-1">
+                                                    <h4 class="mb-1 text-<?php echo htmlspecialchars($messageType); ?>"><?php echo htmlspecialchars($message); ?></h4>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    <?php endif; ?>
+
+                                    <form class="form w-100" method="POST" action="config/islem.php">
+                                        <?= csrfTokenField() ?>
+                                        <div class="fv-row mb-6">
+                                            <label class="form-label fw-bold text-white fs-6 mb-2">E-posta</label>
+                                            <input type="email" name="email" class="form-control form-control-solid form-control-lg border-0 prolyn-auth-input" placeholder="Mail adresinizi giriniz" required autocomplete="off" />
+                                        </div>
+
+                                        <div class="fv-row mb-3">
+                                            <label class="form-label fw-bold text-white fs-6 mb-2">Şifre</label>
+                                            <input type="password" name="password" class="form-control form-control-solid form-control-lg border-0 prolyn-auth-input" placeholder="Şifrenizi giriniz" required autocomplete="off" />
+                                        </div>
+
+                                        <div class="d-grid mt-8">
+                                            <button type="submit" class="btn btn-primary btn-lg fw-bold py-4">
+                                                Giriş Yap
+                                            </button>
+                                        </div>
+                                    </form>
+
+                                    <div class="mt-8 pt-8 border-top login-divider">
+                                        <div class="row g-3 text-center text-white fw-semibold fs-7">
+                                            <div class="col-4">
+                                                <div class="px-3 py-3 rounded-3 surface-soft text-white">Hızlı</div>
+                                            </div>
+                                            <div class="col-4">
+                                                <div class="px-3 py-3 rounded-3 surface-soft text-white">Güvenli</div>
+                                            </div>
+                                            <div class="col-4">
+                                                <div class="px-3 py-3 rounded-3 surface-soft text-white">Kurumsal</div>
+                                            </div>
+                                        </div>
+                                        <div class="text-center text-muted-soft fs-7 mt-8">
+                                            Yetkiniz yoksa sistem yöneticinizle iletişime geçin.
+                                        </div>
                                     </div>
                                 </div>
                             </div>
-                        <?php endif; ?>
-
-                        <!-- Login Başlığı -->
-                        <div class="text-center mb-11">
-                            <h1 class="text-dark fw-bolder mb-3">Prolyn Admin Paneli</h1>
-                            <div class="text-gray-400 fw-semibold fs-6">Giriş Yapınız</div>
                         </div>
-
-                        <!-- Login Formu -->
-                        <form class="form w-100" method="POST" action="config/islem.php">
-                            <?= csrfTokenField() ?>
-                            <!-- Email -->
-                            <div class="fv-row mb-8">
-                                <label class="form-label fw-bold text-dark fs-6 mb-2">Email</label>
-                                <input 
-                                    type="email" 
-                                    name="email" 
-                                    class="form-control bg-light border-0" 
-                                    placeholder="admin@prolyn.com"
-                                    required 
-                                    autocomplete="off" />
-                            </div>
-
-                            <!-- Şifre -->
-                            <div class="fv-row mb-3">
-                                <label class="form-label fw-bold text-dark fs-6 mb-2">Şifre</label>
-                                <input 
-                                    type="password" 
-                                    name="password" 
-                                    class="form-control bg-light border-0" 
-                                    placeholder="Şifrenizi Giriniz"
-                                    required 
-                                    autocomplete="off" />
-                            </div>
-
-                            <!-- Giriş Yap Butonu -->
-                            <div class="d-grid mb-10">
-                                <button type="submit" class="btn btn-primary btn-lg">
-                                    <span class="indicator-label fw-bold">Giriş Yap</span>
-                                </button>
-                            </div>
-                        </form>
-
                     </div>
                 </div>
             </div>

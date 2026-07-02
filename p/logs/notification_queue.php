@@ -1,7 +1,7 @@
 <?php
 /**
  * Prolyn Admin Panel - Notification Queue (Bildirim Kuyruğu)
- * prolynweb/p/logs/notification_queue.php
+ * Prolyn/p/logs/notification_queue.php
  */
 
 require_once '../config/header.php';

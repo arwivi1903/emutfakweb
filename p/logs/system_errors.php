@@ -1,7 +1,7 @@
 <?php
 /**
  * Prolyn Admin Panel - System Errors Log
- * prolynweb/p/logs/system_errors.php
+ * Prolyn/p/logs/system_errors.php
  */
 
 require_once '../config/header.php';

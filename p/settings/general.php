@@ -1,7 +1,7 @@
 <?php
 /**
  * Prolyn Admin Panel - General System Settings
- * prolynweb/p/settings/general.php
+ * Prolyn/p/settings/general.php
  */
 
 require_once '../config/header.php';

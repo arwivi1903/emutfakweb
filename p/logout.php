@@ -1,7 +1,7 @@
 <?php
 /**
  * Admin Paneli Çıkış Sayfası
- * prolynweb/p/logout.php
+ * Prolyn/p/logout.php
  * 
  * Güvenli oturum kapatma işlemini gerçekleştirir
  */

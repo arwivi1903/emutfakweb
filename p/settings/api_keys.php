@@ -1,7 +1,7 @@
 <?php
 /**
  * Prolyn Admin Panel - API Keys Management
- * prolynweb/p/settings/api_keys.php
+ * Prolyn/p/settings/api_keys.php
  */
 
 require_once '../config/header.php';

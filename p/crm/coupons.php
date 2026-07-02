@@ -1,7 +1,7 @@
 <?php
 /**
  * Prolyn Admin Panel - Coupons Management
- * prolynweb/p/crm/coupons.php
+ * Prolyn/p/crm/coupons.php
  */
 
 require_once '../config/header.php';

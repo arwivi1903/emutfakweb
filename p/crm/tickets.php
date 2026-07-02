@@ -1,7 +1,7 @@
 <?php
 /**
  * Prolyn Admin Panel - Support Tickets List
- * prolynweb/p/crm/tickets.php
+ * Prolyn/p/crm/tickets.php
  */
 
 require_once '../config/header.php';

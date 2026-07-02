@@ -1,7 +1,7 @@
 <?php
 /**
  * Prolyn Admin Panel - Subscriptions Management
- * prolynweb/p/crm/subscriptions.php
+ * Prolyn/p/crm/subscriptions.php
  */
 
 require_once '../config/header.php';
