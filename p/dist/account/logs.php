@@ -8,13 +8,7 @@ if (isset($_GET['export']) && (int)$_GET['export'] === 1) {
     start_secure_session();
     oturumkontrol();
 
-    $logs = $db->getRows(
-        "SELECT log_id, log_type, log_description, log_status, admin_id, ip_address, user_agent, request_method, request_path, created_at 
-         FROM yonetici_loglari 
-         WHERE admin_id = ? 
-         ORDER BY created_at DESC",
-        [$_SESSION['admin_id'] ?? 0]
-    );
+    $logs = unified_logs_fetch((int)($_SESSION['admin_id'] ?? 0), 1000, true);
 
     $filename = 'logs-' . date('Ymd-His') . '.csv';
     header('Content-Type: text/csv; charset=UTF-8');
@@ -24,10 +18,10 @@ if (isset($_GET['export']) && (int)$_GET['export'] === 1) {
     echo "\xEF\xBB\xBF";
 
     $out = fopen('php://output', 'w');
-    fputcsv($out, ['Tip', 'Açıklama', 'İstek Yöntemi', 'İstek Yolu', 'Durum', 'Tarih', 'IP', 'User Agent', 'LogID']);
+    fputcsv($out, ['Kaynak DB', 'Tip', 'Açıklama', 'İstek Yöntemi', 'İstek Yolu', 'Durum', 'Tarih', 'IP', 'User Agent', 'LogID']);
 
     foreach ($logs as $log) {
-        $typeLabel = match($log->log_type) {
+            $typeLabel = match((int)$log->log_type) {
             1 => 'Hata',
             2 => 'Uyarı',
             3 => 'Başarılı',
@@ -39,6 +33,7 @@ if (isset($_GET['export']) && (int)$_GET['export'] === 1) {
         $statusLabel = ucfirst($log->log_status ?? 'info');
 
         fputcsv($out, [
+                $log->source_db ?? '-',
             $typeLabel,
             $log->log_description ?? '-',
             $log->request_method ?? 'GET',
@@ -141,6 +136,7 @@ require_once '../../config/sidebar.php';
                                 id="kt_table_customers_logs">
                                 <thead class="border-gray-200 fs-6 fw-semibold bg-lighten">
                                     <tr>
+                                        <th class="min-w-120px">Kaynak</th>
                                         <th class="min-w-100px">Tip</th>
                                         <th class="min-w-200px">Açıklama</th>
                                         <th class="min-w-150px">İstek</th>
@@ -150,28 +146,7 @@ require_once '../../config/sidebar.php';
                                 </thead>
                                 <tbody>
 									<?php
-									// Giriş denemesi için admin bilgilerini al
-									$logcek = $db->getRows("SELECT
-                                                                log_id,
-                                                                log_type,
-                                                                log_description,
-                                                                log_status,
-                                                                admin_id,
-                                                                ip_address,
-                                                                user_agent,
-                                                                request_method,
-                                                                request_path,
-                                                                old_value,
-                                                                new_value,
-                                                                entity_type,
-                                                                entity_id,
-                                                                additional_data,
-                                                                created_at 
-                                                            FROM
-                                                                yonetici_loglari 
-                                                            WHERE
-                                                                admin_id = ? 
-                                                            ORDER BY created_at DESC", [$_SESSION['admin_id'] ?? 0]);
+									$logcek = unified_logs_fetch((int)($_SESSION['admin_id'] ?? 0), 500, true);
 
 									foreach ($logcek as $log) {
                                         // Badge rengini log_type'a göre belirle
@@ -194,6 +169,9 @@ require_once '../../config/sidebar.php';
                                         };
 									?>
                                     <tr>
+                                        <td class="min-w-120px">
+                                            <span class="badge badge-light-dark"><?php echo htmlspecialchars($log->source_db ?? '-'); ?></span>
+                                        </td>
                                         <td class="min-w-100px">
                                             <div class="badge <?php echo $badgeClass; ?>">
                                             <?php 
@@ -238,7 +216,7 @@ require_once '../../config/sidebar.php';
     document.addEventListener('DOMContentLoaded', function () {
         if (typeof window.initDataTable === 'function') {
             window.initDataTable('#kt_table_customers_logs', {
-                order: [[4, 'desc']],
+                order: [[5, 'desc']],
                 stateSave: true
             });
         }

@@ -31,9 +31,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && isset($_
             // Log ekle
             $new_data = $old_data;
             $new_data['status'] = 'cancelled';
-            $db->Insert("INSERT INTO yonetici_loglari (admin_id, action_type, table_name, record_id, old_value, new_value, ip_address) 
-                         VALUES (?, 'Update', 'abonelikler', ?, ?, ?, ?)", 
-                         [$admin_id, $subscription_id, json_encode($old_data), json_encode($new_data), $_SERVER['REMOTE_ADDR']]);
+            xlog('UPDATE', 'Abonelik iptal edildi', $subscription_id, $admin_id, $db, $old_data, $new_data, 'abonelikler');
         }
     }
     

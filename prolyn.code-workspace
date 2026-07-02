@@ -1,13 +1,7 @@
 {
-	"folders": [
-		{
-			"path": "../prolyn"
-		},
-		{
-			"path": "."
-		}
-	],
-	"settings": {
-		"liveServer.settings.multiRootWorkspaceName": "prolyn"
-	}
+    "folders": [
+        {
+            "path": "."
+        }
+    ]
 }

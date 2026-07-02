@@ -39,3 +39,13 @@ Sistem, birden fazla müşterinin (restoran, catering vb.) aboneliklerini, ödem
 - **Soft Delete:** Müşteri silerken veriyi kalıcı silmek yerine `deleted_at` sütununu kullanın.
 - **Güvenlik:** `database_password` gibi alanlar uygulama tarafında şifrelenerek saklanmalıdır.
 - **Performans:** Log tabloları (`audit_logs`) çok hızlı büyür; yıllık olarak arşivlenmelidir.
+
+## ✅ Güncel Depo Notu (2026-07-02)
+- Test/scratch/ara çıktı amaçlı dosyalar repodan temizlenmiştir.
+- `p/database/` altındaki SQL dump dosyaları (`prolyn_*.sql`) repodan kaldırılmıştır.
+- Veritabanı şeması için artık versiyonlu migration veya harici yedek deposu yaklaşımı önerilir.
+
+## 🔁 Önerilen DB İşletim Pratiği
+1.  **Şema Yönetimi:** Üretim şemasını dump dosyasıyla değil migration dosyalarıyla sürümlendirin.
+2.  **Yedekleme:** SQL dump'ları repository dışında (ör. güvenli obje depolama) saklayın.
+3.  **Geri Dönüş Testi:** Her yedekten geri yükleme testi yapıldığını kayda alın.

@@ -165,8 +165,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $firmaId = $tenantPdo->lastInsertId();
                 
                 // Şube ekle
-                $stmtBranch = $tenantPdo->prepare("INSERT INTO subeler (FirmaID, CustomerID, BranchName, BranchShort, BranchStatus) VALUES (?, 1, 'Merkez Şube', 'MRK', 1)");
-                $stmtBranch->execute([$firmaId]);
+                $branchName = !empty($company_name) ? $company_name : 'Merkez Şube';
+                $stmtBranch = $tenantPdo->prepare("INSERT INTO subeler (FirmaID, CustomerID, BranchName, BranchResmi, BranchArea, BranchDesc, BranchPhone, BranchAuthorized, BranchStatus, BranchMail, BranchAdres, BranchShort) VALUES (?, 0, ?, ?, ?, ?, ?, 1, 1, ?, ?, 'MRK')");
+                $stmtBranch->execute([$firmaId, $branchName, $branchName, $final_city_id, $branchName, $company_phone, $company_email, $billing_address]);
                 $branchId = $tenantPdo->lastInsertId();
                 
                 // Şifreyi BCRYPT ile hashle
@@ -180,9 +181,68 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $stmtKasa = $tenantPdo->prepare("INSERT INTO nakitkasa (FirmaID, NakitKasaTutar) VALUES (?, 0)");
                 $stmtKasa->execute([$firmaId]);
                 
-                // Master DB'ye Kurum kaydı yap
-                $stmtMaster = $pdo->prepare("INSERT INTO kurumlar (customer_code, company_name, official_name, company_email, company_phone, database_name, database_password, status, trial_start_date, trial_end_date, contact_person, contact_name, contact_email, contact_phone, tax_office, tax_number, billing_address, city_id, district_id, allowed_modules, created_by) VALUES (?, ?, ?, ?, ?, ?, ?, 'active', NOW(), DATE_ADD(NOW(), INTERVAL 30 DAY), ?, ?, ?, ?, ?, ?, ?, ?, ?, '[\"core\",\"customer\",\"commercial\",\"appointment\",\"current_account\",\"inventory\",\"accounting\",\"invoice\",\"contract\",\"reports\"]', 0)");
-                $stmtMaster->execute([$customerCode, $company_name, $official_name, $company_email, $company_phone, $newDbName, $pass, $contact_name, $contact_name, $company_email, $company_phone, $tax_office, $tax_number, $billing_address, $city_id, $district_id]);
+                // Master DB'de kolonlar farklı sürümlerde değişebildiği için dinamik INSERT kur.
+                $masterColumnsStmt = $pdo->query("SHOW COLUMNS FROM kurumlar");
+                $masterColumns = [];
+                foreach ($masterColumnsStmt->fetchAll(PDO::FETCH_ASSOC) as $columnInfo) {
+                    $masterColumns[$columnInfo['Field']] = true;
+                }
+
+                $allowedModulesJson = '["core","customer","commercial","appointment","current_account","inventory","accounting","invoice","contract","reports"]';
+                $masterValueMap = [
+                    'customer_code' => $customerCode,
+                    'company_name' => $company_name,
+                    'official_name' => $official_name,
+                    'company_email' => $company_email,
+                    'company_phone' => $company_phone,
+                    'database_name' => $newDbName,
+                    'database_password' => $pass,
+                    'status' => 'active',
+                    'contact_person' => $contact_name,
+                    'contact_name' => $contact_name,
+                    'contact_email' => $company_email,
+                    'contact_phone' => $company_phone,
+                    'tax_office' => $tax_office,
+                    'tax_number' => $tax_number,
+                    'billing_address' => $billing_address,
+                    'city_id' => $city_id,
+                    'district_id' => $district_id,
+                    'allowed_modules' => $allowedModulesJson,
+                    'created_by' => 0,
+                ];
+                $masterExprMap = [
+                    'trial_start_date' => 'NOW()',
+                    'trial_end_date' => 'DATE_ADD(NOW(), INTERVAL 30 DAY)',
+                ];
+
+                $masterInsertCols = [];
+                $masterInsertVals = [];
+                $masterBindVals = [];
+
+                foreach ($masterValueMap as $col => $val) {
+                    if (!isset($masterColumns[$col])) {
+                        continue;
+                    }
+                    $masterInsertCols[] = "`$col`";
+                    $masterInsertVals[] = '?';
+                    $masterBindVals[] = $val;
+                }
+
+                foreach ($masterExprMap as $col => $expr) {
+                    if (!isset($masterColumns[$col])) {
+                        continue;
+                    }
+                    $masterInsertCols[] = "`$col`";
+                    $masterInsertVals[] = $expr;
+                }
+
+                if (empty($masterInsertCols)) {
+                    throw new Exception("Kurumlar tablosu için geçerli kayıt kolonları bulunamadı.");
+                }
+
+                $masterSql = "INSERT INTO kurumlar (" . implode(', ', $masterInsertCols) . ") VALUES (" . implode(', ', $masterInsertVals) . ")";
+                $stmtMaster = $pdo->prepare($masterSql);
+                $stmtMaster->execute($masterBindVals);
                 $customerId = $pdo->lastInsertId() ?: 1;
                 
                 // Abonelikler tablosuna Trial ataması yap

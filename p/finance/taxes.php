@@ -42,10 +42,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['action'])) {
                         'is_active' => $is_active
                     ];
 
-                    $db->Insert(
-                        "INSERT INTO yonetici_loglari (log_type, log_description, log_status, admin_id, ip_address, user_agent, entity_type, entity_id, old_value, new_value) VALUES (2, 'Vergi oranı güncellendi', 'success', ?, ?, ?, 'vergi_oranlari', ?, ?, ?)", 
-                        [$logAdminId, $ip, $ua, $tax_id, json_encode($oldData, JSON_UNESCAPED_UNICODE), json_encode($newData, JSON_UNESCAPED_UNICODE)]
-                    );
+                    xlog('UPDATE', 'Vergi oranı güncellendi', $tax_id, $logAdminId, $db, $oldData, $newData, 'vergi_oranlari');
                     $success_msg = "Vergi oranı başarıyla güncellendi.";
                 } else {
                     $sql = "INSERT INTO vergi_oranlari (tax_name, tax_percent, is_default, is_active, created_at) VALUES (?, ?, ?, ?, NOW())";
@@ -58,10 +55,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['action'])) {
                         'is_active' => $is_active
                     ];
 
-                    $db->Insert(
-                        "INSERT INTO yonetici_loglari (log_type, log_description, log_status, admin_id, ip_address, user_agent, entity_type, entity_id, new_value) VALUES (1, 'Yeni vergi oranı eklendi', 'success', ?, ?, ?, 'vergi_oranlari', ?, ?)", 
-                        [$logAdminId, $ip, $ua, $new_id, json_encode($newData, JSON_UNESCAPED_UNICODE)]
-                    );
+                    xlog('INSERT', 'Yeni vergi oranı eklendi', $new_id, $logAdminId, $db, null, $newData, 'vergi_oranlari');
                     $success_msg = "Vergi oranı başarıyla eklendi.";
                 }
                 

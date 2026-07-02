@@ -67,8 +67,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['action'])) {
                         $newData['extra_roles'] = [];
                     }
 
-                    // Log Kaydı
-                    $db->Insert("INSERT INTO yonetici_loglari (log_type, log_description, log_status, admin_id, ip_address, user_agent, entity_type, entity_id, old_value, new_value) VALUES (2, 'Yönetici bilgileri güncellendi', 'success', ?, ?, ?, 'yoneticiler', ?, ?, ?)", [$logAdminId, $ip, $ua, $admin_id, json_encode($oldData, JSON_UNESCAPED_UNICODE), json_encode($newData, JSON_UNESCAPED_UNICODE)]);
+                    xlog('UPDATE', 'Yönetici bilgileri güncellendi', $admin_id, $logAdminId, $db, $oldData, $newData, 'yoneticiler');
 
                     $success_msg = "Yönetici başarıyla güncellendi.";
                 } else {
@@ -97,15 +96,13 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['action'])) {
                             $newData['extra_roles'] = [];
                         }
 
-                        // Log Kaydı
-                        $db->Insert("INSERT INTO yonetici_loglari (log_type, log_description, log_status, admin_id, ip_address, user_agent, entity_type, entity_id, new_value) VALUES (1, 'Yeni yönetici eklendi', 'success', ?, ?, ?, 'yoneticiler', ?, ?)", [$logAdminId, $ip, $ua, $new_admin_id, json_encode($newData, JSON_UNESCAPED_UNICODE)]);
+                        xlog('INSERT', 'Yeni yönetici eklendi', $new_admin_id, $logAdminId, $db, null, $newData, 'yoneticiler');
                         $success_msg = "Yönetici başarıyla eklendi.";
                     }
                 }
             } catch (Exception $e) {
                 $error_msg = "İşlem sırasında bir hata oluştu: " . $e->getMessage();
-                // Hata logu
-                $db->Insert("INSERT INTO yonetici_loglari (log_type, log_description, log_status, admin_id, ip_address, user_agent) VALUES (3, ?, 'error', ?, ?, ?)", ["Yönetici işlemi hatası: ".$e->getMessage(), $logAdminId, $ip, $ua]);
+                xlog('ERROR', 'Yönetici işlemi hatası: ' . $e->getMessage(), $admin_id > 0 ? $admin_id : null, $logAdminId, $db, null, null, 'yoneticiler');
             }
         } else {
             $error_msg = "Kullanıcı adı ve E-posta zorunludur.";

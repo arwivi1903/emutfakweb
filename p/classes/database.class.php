@@ -20,6 +20,7 @@ class Database
   private $lastError=null;
   private $debugMode=false;
   private $inTransaction=false;
+  private $isAuditLogging=false;
 
   private function ConnectDB(){
     // Veritabanı bağlantısı
@@ -57,12 +58,15 @@ class Database
     //bağlantıyı aç - multi-tenant desteği
     if ($dbName !== null) {
       $this->MYSQL_DB = $dbName;
+    } elseif (!empty($_SESSION['database_name'])) {
+      $this->MYSQL_DB = (string)$_SESSION['database_name'];
     }
     $this->ConnectDB();
   }
   
   private function myQuery($query,$params=null){
     //diğer metodlardaki tekrarlı verileri bitirmek için kullanılan metod
+    $originalQuery = $query;
     
     // YENİ: Soft Delete (Silmeleri Engelle, Pasife Çek)
     $trimmed_query = trim($query);
@@ -81,10 +85,95 @@ class Database
         $this->stmt=$this->pdo->prepare($query);
         $this->stmt->execute($params);
       }
+
+      $affectedRows = $this->stmt ? $this->stmt->rowCount() : 0;
+      $this->autoLogMutation($originalQuery, $affectedRows);
+
       return $this->stmt;
     }catch(PDOException $e){
       $this->logError("Query hatası: " . $query . " - " . $e->getMessage());
       throw new Exception("Veritabanı sorgusu başarısız.");
+    }
+  }
+
+  private function getMutationOperation($query){
+    if(!is_string($query)){
+      return null;
+    }
+    $trimmed = trim($query);
+    if ($trimmed === '') {
+      return null;
+    }
+
+    if (preg_match('/^(INSERT|UPDATE|DELETE|REPLACE)\b/i', $trimmed, $matches)) {
+      return strtoupper($matches[1]);
+    }
+
+    return null;
+  }
+
+  private function extractMutationTable($query, $operation){
+    $patterns = [
+      'INSERT' => '/^INSERT\s+INTO\s+`?([a-zA-Z0-9_]+)`?/i',
+      'REPLACE' => '/^REPLACE\s+INTO\s+`?([a-zA-Z0-9_]+)`?/i',
+      'UPDATE' => '/^UPDATE\s+`?([a-zA-Z0-9_]+)`?/i',
+      'DELETE' => '/^DELETE\s+FROM\s+`?([a-zA-Z0-9_]+)`?/i',
+    ];
+
+    if (!isset($patterns[$operation])) {
+      return null;
+    }
+
+    if (preg_match($patterns[$operation], trim((string)$query), $matches)) {
+      return strtolower($matches[1]);
+    }
+
+    return null;
+  }
+
+  private function shouldSkipAuditTable($tableName){
+    if (!$tableName) {
+      return true;
+    }
+
+    $skipTables = [
+      'log', 'lognew', 'logtypes', 'logtypesnew',
+      'yonetici_loglari', 'yonetici_loglari_yedek', 'admin_logs',
+      'aktivite_loglari', 'denetim_loglari', 'kullanici_aktivite_loglari',
+      'webhook_loglari', 'bakim_loglari'
+    ];
+
+    return in_array(strtolower($tableName), $skipTables, true);
+  }
+
+  private function autoLogMutation($query, $affectedRows = 0){
+    if ($this->isAuditLogging) {
+      return;
+    }
+
+    $operation = $this->getMutationOperation($query);
+    if ($operation === null) {
+      return;
+    }
+
+    $tableName = $this->extractMutationTable($query, $operation);
+    if ($this->shouldSkipAuditTable($tableName)) {
+      return;
+    }
+
+    if (!function_exists('xlog')) {
+      return;
+    }
+
+    $details = 'Tablo: ' . $tableName . ', Etkilenen satır: ' . (int)$affectedRows;
+
+    try {
+      $this->isAuditLogging = true;
+      xlog($operation, $details, null, null, $this, null, null, $tableName);
+    } catch (Exception $e) {
+      $this->logError('Audit log hatası: ' . $e->getMessage());
+    } finally {
+      $this->isAuditLogging = false;
     }
   }
 

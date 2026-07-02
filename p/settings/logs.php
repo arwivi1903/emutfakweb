@@ -148,15 +148,48 @@ $logs = $db->getRows("
                                             <?php endif; ?>
                                         </td>
                                         <td>
-                                            <?php if ($log->log_type == 1): ?>
-                                                <span class="badge badge-light-primary">Create</span>
-                                            <?php elseif ($log->log_type == 2): ?>
-                                                <span class="badge badge-light-info">Update</span>
-                                            <?php elseif ($log->log_type == 3): ?>
-                                                <span class="badge badge-light-danger">Delete</span>
-                                            <?php else: ?>
-                                                <span class="badge badge-light">Giriş/Diğer</span>
-                                            <?php endif; ?>
+                                            <?php
+                                                $descText = (string)($log->log_description ?? '');
+                                                $actionFromDesc = '';
+                                                if (preg_match('/^(INSERT|UPDATE|DELETE|CREATE|LOGIN|LOGOUT|ERROR|WARNING|INFO|DEBUG)\b/i', $descText, $m)) {
+                                                    $actionFromDesc = strtoupper($m[1]);
+                                                }
+
+                                                $actionLabel = '';
+                                                $actionBadge = 'badge-light';
+
+                                                if ($actionFromDesc !== '') {
+                                                    $actionLabel = $actionFromDesc;
+                                                    $actionBadge = match ($actionFromDesc) {
+                                                        'DELETE' => 'badge-light-danger',
+                                                        'UPDATE' => 'badge-light-info',
+                                                        'INSERT', 'CREATE' => 'badge-light-primary',
+                                                        'ERROR' => 'badge-light-danger',
+                                                        'WARNING' => 'badge-light-warning',
+                                                        'LOGIN', 'LOGOUT' => 'badge-light-success',
+                                                        'DEBUG' => 'badge-light-dark',
+                                                        default => 'badge-light-success',
+                                                    };
+                                                } else {
+                                                    $actionLabel = match ((int)$log->log_type) {
+                                                        1 => 'Hata',
+                                                        2 => 'Uyarı',
+                                                        3 => 'İşlem',
+                                                        4 => 'Bilgi',
+                                                        5 => 'Debug',
+                                                        default => 'Diğer',
+                                                    };
+                                                    $actionBadge = match ((int)$log->log_type) {
+                                                        1 => 'badge-light-danger',
+                                                        2 => 'badge-light-warning',
+                                                        3 => 'badge-light-success',
+                                                        4 => 'badge-light-info',
+                                                        5 => 'badge-light-dark',
+                                                        default => 'badge-light',
+                                                    };
+                                                }
+                                            ?>
+                                            <span class="badge <?= $actionBadge ?>"><?= htmlspecialchars($actionLabel) ?></span>
                                         </td>
                                         <td>
                                             <?= htmlspecialchars($log->log_description) ?>

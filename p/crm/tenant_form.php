@@ -247,8 +247,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
                 if (!$firma_id) $firma_id = 1;
                 
                 // subeler (CustomerID = 0)
-                $stmt_sube = $pdo_tenant->prepare("INSERT INTO subeler (FirmaID, CustomerID, BranchName, BranchStatus) VALUES (?, 0, 'Merkez', 1)");
-                $stmt_sube->execute([$firma_id]);
+                $branch_name = !empty($company_name) ? $company_name : 'Merkez';
+                $stmt_sube = $pdo_tenant->prepare("INSERT INTO subeler (FirmaID, CustomerID, BranchName, BranchResmi, BranchArea, BranchDesc, BranchPhone, BranchAuthorized, BranchStatus, BranchMail, BranchAdres) VALUES (?, 0, ?, ?, ?, ?, ?, 1, 1, ?, ?)");
+                $stmt_sube->execute([$firma_id, $branch_name, $branch_name, $final_city_id, $branch_name, $company_phone, $company_email, $billing_address]);
                 $sube_id = $pdo_tenant->lastInsertId();
                 
                 // nakitkasa

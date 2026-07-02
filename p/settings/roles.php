@@ -50,7 +50,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['action'])) {
                         $newData['permissions'] = [];
                     }
 
-                    $db->Insert("INSERT INTO yonetici_loglari (log_type, log_description, log_status, admin_id, ip_address, user_agent, entity_type, entity_id, old_value, new_value) VALUES (2, 'Rol güncellendi', 'success', ?, ?, ?, 'roller', ?, ?, ?)", [$logAdminId, $ip, $ua, $role_id, json_encode($oldData, JSON_UNESCAPED_UNICODE), json_encode($newData, JSON_UNESCAPED_UNICODE)]);
+                    xlog('UPDATE', 'Rol güncellendi', $role_id, $logAdminId, $db, $oldData, $newData, 'roller');
                     $success_msg = "Rol ve yetkileri başarıyla güncellendi.";
                 } else {
                     $sql = "INSERT INTO roller (name, description, created_at) VALUES (?, ?, NOW())";
@@ -75,7 +75,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['action'])) {
                         $newData['permissions'] = [];
                     }
 
-                    $db->Insert("INSERT INTO yonetici_loglari (log_type, log_description, log_status, admin_id, ip_address, user_agent, entity_type, entity_id, new_value) VALUES (1, 'Yeni rol eklendi', 'success', ?, ?, ?, 'roller', ?, ?)", [$logAdminId, $ip, $ua, $role_id, json_encode($newData, JSON_UNESCAPED_UNICODE)]);
+                    xlog('INSERT', 'Yeni rol eklendi', $role_id, $logAdminId, $db, null, $newData, 'roller');
                     $success_msg = "Rol ve yetkileri başarıyla eklendi.";
                 }
                 
