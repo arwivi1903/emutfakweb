@@ -1,0 +1,30 @@
+# Ortam değişkenleri - ASLA commit edilmez
+.env
+
+# OS / editor
+.DS_Store
+.vscode/
+.idea/
+*.swp
+*~
+
+# Loglar
+*.log
+error_log
+p/logs/*.log
+
+# Geçici / cache
+tmp/
+temp/
+p/cache/*
+!p/cache/.gitignore
+
+# Yedek / dump
+*.bak
+*.backup
+*.sql
+*.sql.gz
+dump.sql
+
+# Rate-limit / runtime state
+p/config/rate_limit/

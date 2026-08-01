@@ -1,4 +1,85 @@
-<?php require_once 'db.php'; ?>
+<?php
+require_once __DIR__ . '/env.php';
+require_once 'db.php'; // $pdo, $appSettings
+
+if (session_status() === PHP_SESSION_NONE) {
+    session_start();
+}
+if (empty($_SESSION['contact_csrf'])) {
+    $_SESSION['contact_csrf'] = bin2hex(random_bytes(32));
+}
+
+$contactMsg = '';
+$contactType = '';
+
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    $name    = trim($_POST['name'] ?? '');
+    $email   = trim($_POST['email'] ?? '');
+    $subject = trim($_POST['subject'] ?? '');
+    $body    = trim($_POST['message'] ?? '');
+    $hp      = $_POST['website'] ?? '';
+
+    if (empty($_POST['csrf_token']) || !hash_equals($_SESSION['contact_csrf'], (string)$_POST['csrf_token'])) {
+        $contactMsg = 'Oturum doğrulaması başarısız. Sayfayı yenileyip tekrar deneyin.';
+        $contactType = 'danger';
+    } elseif (!empty($hp)) {
+        // Honeypot dolu → bot
+        $contactMsg = 'İstek reddedildi.';
+        $contactType = 'danger';
+    } elseif ($name === '' || $subject === '' || $body === '' || !filter_var($email, FILTER_VALIDATE_EMAIL)) {
+        $contactMsg = 'Lütfen tüm alanları doğru şekilde doldurun.';
+        $contactType = 'danger';
+    } elseif (mb_strlen($body) > 5000 || mb_strlen($subject) > 255 || mb_strlen($name) > 191) {
+        $contactMsg = 'Girdiğiniz metin çok uzun.';
+        $contactType = 'danger';
+    } else {
+        try {
+            // Mesaj tablosu (yoksa oluştur)
+            $pdo->exec("CREATE TABLE IF NOT EXISTS iletisim_mesajlari (
+                id INT AUTO_INCREMENT PRIMARY KEY,
+                ad VARCHAR(191) NOT NULL,
+                email VARCHAR(191) NOT NULL,
+                konu VARCHAR(255) NOT NULL,
+                mesaj TEXT NOT NULL,
+                ip VARCHAR(45) DEFAULT NULL,
+                user_agent VARCHAR(255) DEFAULT NULL,
+                status VARCHAR(20) NOT NULL DEFAULT 'new',
+                created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                INDEX idx_status (status),
+                INDEX idx_created (created_at)
+            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci");
+
+            $ins = $pdo->prepare("INSERT INTO iletisim_mesajlari (ad, email, konu, mesaj, ip, user_agent) VALUES (?, ?, ?, ?, ?, ?)");
+            $ins->execute([
+                $name, $email, $subject, $body,
+                $_SERVER['REMOTE_ADDR'] ?? null,
+                mb_substr($_SERVER['HTTP_USER_AGENT'] ?? '', 0, 255)
+            ]);
+
+            // Bildirim e-postasını kuyruğa ekle (mail worker gönderecek). Best-effort.
+            $notifyTo = prolynweb_env('MAIL_FROM', 'noreply@prolyn.net');
+            try {
+                $mailSubject = 'Yeni İletişim Mesajı: ' . $subject;
+                $mailBody = "Ad: {$name}\nE-posta: {$email}\nKonu: {$subject}\n\n{$body}";
+                $pdo->prepare("INSERT INTO mail_kuyrugu (channel, recipient, subject, message, status, attempts, created_at) VALUES ('email', ?, ?, ?, 'pending', 0, NOW())")
+                    ->execute([$notifyTo, $mailSubject, $mailBody]);
+            } catch (\Throwable $qe) {
+                // mail_kuyrugu tablosu yoksa yoksay; mesaj yine DB'ye kaydedildi.
+                error_log('[contact] mail kuyruk hatası: ' . $qe->getMessage());
+            }
+
+            // CSRF yenile
+            $_SESSION['contact_csrf'] = bin2hex(random_bytes(32));
+            $contactMsg = 'Mesajınız başarıyla alındı. En kısa sürede size dönüş yapacağız.';
+            $contactType = 'success';
+        } catch (\Throwable $e) {
+            error_log('[contact] ' . $e->getMessage());
+            $contactMsg = 'Mesajınız gönderilemedi. Lütfen daha sonra tekrar deneyin.';
+            $contactType = 'danger';
+        }
+    }
+}
+?>
 <!DOCTYPE html>
 <html lang="tr" data-bs-theme="dark">
 <head>
@@ -113,24 +194,34 @@
                     <div class="col-lg-8 animate-fade-in-up delay-200">
                         <div class="glass-card p-10 h-100">
                             <h3 class="text-white fs-2 fw-bold mb-8">Mesaj Gönderin</h3>
-                            <form action="#" method="POST" onsubmit="event.preventDefault(); alert('Mesajınız başarıyla gönderildi (Demo)');">
+                            <?php if (!empty($contactMsg)): ?>
+                                <div class="alert alert-<?= htmlspecialchars($contactType) ?> p-5 mb-8">
+                                    <?= htmlspecialchars($contactMsg) ?>
+                                </div>
+                            <?php endif; ?>
+                            <form action="contact.php" method="POST" autocomplete="off">
+                                <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($_SESSION['contact_csrf'], ENT_QUOTES, 'UTF-8') ?>">
+                                <div style="position:absolute;left:-9999px;top:-9999px;" aria-hidden="true">
+                                    <label>Web Siteniz</label>
+                                    <input type="text" name="website" tabindex="-1" autocomplete="off">
+                                </div>
                                 <div class="row g-8 mb-8">
                                     <div class="col-md-6">
                                         <label class="form-label fs-6 fw-semibold text-gray-300">Adınız Soyadınız</label>
-                                        <input type="text" class="form-control glass-input form-control-lg" placeholder="Örn: Ali Yılmaz" required>
+                                        <input type="text" name="name" class="form-control glass-input form-control-lg" placeholder="Örn: Ali Yılmaz" maxlength="191" value="<?= htmlspecialchars($_POST['name'] ?? '') ?>" required>
                                     </div>
                                     <div class="col-md-6">
                                         <label class="form-label fs-6 fw-semibold text-gray-300">E-posta Adresiniz</label>
-                                        <input type="email" class="form-control glass-input form-control-lg" placeholder="ornek@sirket.com" required>
+                                        <input type="email" name="email" class="form-control glass-input form-control-lg" placeholder="ornek@sirket.com" value="<?= htmlspecialchars($_POST['email'] ?? '') ?>" required>
                                     </div>
                                 </div>
                                 <div class="mb-8">
                                     <label class="form-label fs-6 fw-semibold text-gray-300">Konu</label>
-                                    <input type="text" class="form-control glass-input form-control-lg" placeholder="Neden ulaşıyorsunuz?" required>
+                                    <input type="text" name="subject" class="form-control glass-input form-control-lg" placeholder="Neden ulaşıyorsunuz?" maxlength="255" value="<?= htmlspecialchars($_POST['subject'] ?? '') ?>" required>
                                 </div>
                                 <div class="mb-10">
                                     <label class="form-label fs-6 fw-semibold text-gray-300">Mesajınız</label>
-                                    <textarea class="form-control glass-input form-control-lg" rows="6" placeholder="Nasıl yardımcı olabiliriz?" required></textarea>
+                                    <textarea name="message" class="form-control glass-input form-control-lg" rows="6" maxlength="5000" placeholder="Nasıl yardımcı olabiliriz?" required></textarea>
                                 </div>
                                 <div class="text-end">
                                     <button type="submit" class="btn btn-primary-glow px-10 py-4 fs-5 fw-bold">Mesajı Gönder</button>

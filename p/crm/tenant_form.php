@@ -7,6 +7,7 @@
 require_once '../config/header.php';
 Auth::requireModule('manage_tenants');
 require_once '../config/sidebar.php';
+require_once __DIR__ . '/../functions/provision.php';
 
 $id = isset($_GET['id']) ? (int)$_GET['id'] : 0;
 $tenant = [];
@@ -43,18 +44,23 @@ if (!empty($tenant['city_id'])) {
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['action'] === 'save_tenant') {
     $customer_id    = isset($_POST['customer_id']) ? (int)$_POST['customer_id'] : 0;
 
+    $toUpperText = static function ($value) {
+        $value = trim((string) $value);
+        return function_exists('mb_strtoupper') ? mb_strtoupper($value, 'UTF-8') : strtoupper($value);
+    };
+
     // Genel
-    $company_name   = trim($_POST['company_name']);
-    $official_name  = trim($_POST['official_name'] ?? '');
+    $company_name   = $toUpperText($_POST['company_name']);
+    $official_name  = $toUpperText($_POST['official_name'] ?? '');
     $company_email  = trim($_POST['company_email']);
     $company_phone  = trim($_POST['company_phone']);
-    $industry       = trim($_POST['industry']);
-    $contact_person = trim($_POST['contact_person'] ?? '');
+    $industry       = $toUpperText($_POST['industry']);
+    $contact_person = $toUpperText($_POST['contact_person'] ?? '');
 
     // Finans
-    $tax_office = trim($_POST['tax_office'] ?? '');
+    $tax_office = $toUpperText($_POST['tax_office'] ?? '');
     $tax_number = trim($_POST['tax_number'] ?? '');
-    $billing_address = trim($_POST['billing_address'] ?? '');
+    $billing_address = $toUpperText($_POST['billing_address'] ?? '');
     $city_id = !empty($_POST['city_id']) ? (int)$_POST['city_id'] : null;
     $district_id = !empty($_POST['district_id']) ? (int)$_POST['district_id'] : null;
 
@@ -129,7 +135,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
     }
 
     // Teknik
-    $tenant_alias = trim($_POST['tenant_alias'] ?? '');
+    $tenant_alias = $toUpperText($_POST['tenant_alias'] ?? '');
     $status         = $_POST['status'] ?? 'active';
     $account_manager_id = !empty($_POST['account_manager_id']) ? (int)$_POST['account_manager_id'] : null;
 
@@ -143,20 +149,67 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
         exit;
     }
 
-    // Modüller Haritası
-    $plan_map = [
-        'Başlangıç' => 'basic',
-        'Pro' => 'pro',
-        'Kurumsal' => 'enterprise'
-    ];
-    $plan_name = $plan_map[$musteri_paketi] ?? 'basic';
+    /**
+     * musteri_paketi -> paket_ozellikleri.plan_name
+     * Esnek eşleştirme: büyük/küçük harf, boşluk ve "... Paketi" eki önemsizdir.
+     * Birebir eşleşme aranırsa 'Pro Paketi' gibi bir değer sessizce 'basic'e
+     * düşüyor ve müşteri satın aldığı modülleri göremiyordu.
+     */
+    if (!function_exists('prolyn_plan_adi_coz')) {
+        function prolyn_plan_adi_coz(string $paket): ?string {
+            $t = mb_strtolower(trim($paket), 'UTF-8');
+            if ($t === '') { return null; }
+            $eslesme = [
+                'basic'      => ['basic', 'başlangıç', 'baslangic', 'başlangic', 'baslangıç'],
+                'pro'        => ['pro', 'profesyonel', 'profosyonel'],
+                'enterprise' => ['enterprise', 'kurumsal'],
+            ];
+            foreach ($eslesme as $plan => $adaylar) {
+                foreach ($adaylar as $a) {
+                    if (mb_strpos($t, $a) !== false) { return $plan; }
+                }
+            }
+            return null;
+        }
+    }
+    $plan_name = prolyn_plan_adi_coz($musteri_paketi) ?? 'basic';
 
-    $module_map = [
-        'basic' => '["core", "customer", "appointment", "reports"]',
-        'pro' => '["core", "customer", "appointment", "reports", "commercial", "inventory", "accounting"]',
-        'enterprise' => '["core", "customer", "appointment", "reports", "commercial", "inventory", "accounting", "invoice", "contract"]'
+    /**
+     * Paket -> modül eşlemesi.
+     *
+     * TEK KAYNAK: prolyn_master.paket_ozellikleri tablosu (Panel > Paketler
+     * ekranından yönetilir). Burada sabit bir harita tutulursa panelden yapılan
+     * her değişiklik, müşteri kaydı her güncellendiğinde sessizce geri alınır —
+     * "Yetkisiz Erişim" hatalarının kaynağı buydu.
+     *
+     * Aşağıdaki dizi yalnızca ACİL DURUM yedeğidir: paket_ozellikleri satırı
+     * yoksa veya boşsa devreye girer.
+     */
+    $fallback_map = [
+        'basic'      => ["core", "customer", "appointment", "reports", "current_account", "contract"],
+        'pro'        => ["core", "customer", "appointment", "reports", "current_account", "contract", "commercial", "inventory", "accounting", "bank", "statistics", "invoice"],
+        'enterprise' => ["core", "customer", "appointment", "reports", "current_account", "contract", "commercial", "inventory", "accounting", "bank", "statistics", "invoice", "planning"]
     ];
-    $allowed_modules = $module_map[$plan_name];
+
+    $allowed_modules = null;
+    try {
+        $planRow = $db->getRowAssoc(
+            "SELECT allowed_modules FROM paket_ozellikleri WHERE plan_name = ? LIMIT 1",
+            [$plan_name]
+        );
+        if ($planRow && !empty($planRow['allowed_modules'])) {
+            $decoded = json_decode($planRow['allowed_modules'], true);
+            if (is_array($decoded) && count($decoded) > 0) {
+                $allowed_modules = json_encode(array_values($decoded), JSON_UNESCAPED_UNICODE);
+            }
+        }
+    } catch (Throwable $e) {
+        // paket_ozellikleri okunamadi -> yedek haritaya dusulur
+    }
+
+    if ($allowed_modules === null) {
+        $allowed_modules = json_encode($fallback_map[$plan_name] ?? $fallback_map['basic'], JSON_UNESCAPED_UNICODE);
+    }
 
     // Veritabanı adı belirleme
     $database_name = '';
@@ -203,80 +256,64 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
             (company_name, official_name, company_email, company_phone, database_name, database_password, industry, status, subscription_type, trial_start_date, trial_end_date,
              musteri_paketi, contact_person, tax_office, tax_number, billing_address, city_id, district_id, account_manager_id, tenant_alias, sozlesme_baslangic_tarihi, sozlesme_bitis_tarihi, allowed_modules, contact_name, contact_email, contact_phone)
             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-        ", [$company_name, $official_name, $company_email, $company_phone, $database_name, 'RootPass1903!', $industry, $status, $subscription_type, $trial_start_date, $trial_end_date,
+        ", [$company_name, $official_name, $company_email, $company_phone, '', '', $industry, $status, $subscription_type, $trial_start_date, $trial_end_date,
             $musteri_paketi, $contact_person, $tax_office, $tax_number, $billing_address, $city_id, $district_id, $account_manager_id, $tenant_alias, $sozlesme_baslangic_tarihi, $sozlesme_bitis_tarihi, $allowed_modules, $contact_person, $company_email, $company_phone]);
 
         // Yeni oluşturulan müşterinin müşteri kodunu güncelle (örn: k27)
         $db->Update("UPDATE kurumlar SET customer_code = CONCAT('k', customer_id) WHERE customer_id = ?", [$customer_id]);
 
 
-        // VERITABANI OTOMATIK KURULUM (PROVISIONING)
-        try {
-            $pdo_master = new PDO('mysql:host=127.0.0.1;charset=utf8mb4', 'root', 'RootPass1903!');
-            $pdo_master->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
-            
-            // 1. DB Yarat
-            $pdo_master->exec("CREATE DATABASE `$database_name` CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci");
-            
-            // 2. Default schema'yı içeri aktar
-            $sql_file = __DIR__ . '/../database/prolyn_default.sql';
-            if (file_exists($sql_file)) {
-                $mysql_path = file_exists("/Applications/XAMPP/bin/mysql") ? "/Applications/XAMPP/bin/mysql" : "mysql";
-                $cmd = sprintf("%s -u root -p'RootPass1903!' %s < %s", $mysql_path, escapeshellarg($database_name), escapeshellarg($sql_file));
-                shell_exec($cmd);
-                
-                // 3. Tablolara varsayılan verileri bas
-                $pdo_tenant = new PDO("mysql:host=127.0.0.1;dbname=$database_name;charset=utf8mb4", 'root', 'RootPass1903!');
-                $pdo_tenant->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
-                
-                // usergrup yetkilerini güncelle (Grup veritabanından kopyalandı)
-                try {
-                    $pdo_tenant->exec("ALTER TABLE usergrup ADD COLUMN permissions JSON DEFAULT NULL");
-                } catch (\Exception $ex) {}
-                $stmt_grup = $pdo_tenant->prepare("UPDATE usergrup SET permissions = '{\"all\": true}' WHERE UserGrupID = 1");
-                $stmt_grup->execute();
-                $grup_id = 1;
+        // VERITABANI OTOMATIK KURULUM (PROVISIONING) - ortak güvenli provisioner
+        // DB adı customer_id'den türetilir (yarış durumu yok): prolyn_k{customer_id}
+        $prov = provision_tenant([
+            'customer_id'     => (int)$customer_id,
+            'company_name'    => $company_name,
+            'official_name'   => $official_name,
+            'tax_office'      => $tax_office,
+            'tax_number'      => $tax_number,
+            'city_id'         => (int)($city_id ?? 0),
+            'district_id'     => (int)($district_id ?? 0),
+            'billing_address' => $billing_address,
+            'company_phone'   => $company_phone,
+            'admin_name'      => $contact_person,
+            'admin_email'     => $company_email,
+            'admin_password'  => '123456', // manuel eklemede varsayılan; müşteri ilk girişte değiştirmeli
+        ]);
 
-                $final_city_id = !empty($city_id) ? $city_id : 0;
-                $final_district_id = !empty($district_id) ? $district_id : 0;
-
-                // firmalar (ID = 1 olması beklenir, CustomerID = 0)
-                $stmt_firma = $pdo_tenant->prepare("INSERT INTO firmalar (FirmaAdi, FirmaDetay, FirmaVergi, FirmaVNO, BayiCity, BayiTown, BayiAdres, CustomerID) VALUES (?, ?, ?, ?, ?, ?, ?, 0)");
-                $stmt_firma->execute([$company_name, $official_name, $tax_office, $tax_number, $final_city_id, $final_district_id, $billing_address]);
-                $firma_id = $pdo_tenant->lastInsertId();
-                if (!$firma_id) $firma_id = 1;
-                
-                // subeler (CustomerID = 0)
-                $branch_name = !empty($company_name) ? $company_name : 'Merkez';
-                $stmt_sube = $pdo_tenant->prepare("INSERT INTO subeler (FirmaID, CustomerID, BranchName, BranchResmi, BranchArea, BranchDesc, BranchPhone, BranchAuthorized, BranchStatus, BranchMail, BranchAdres) VALUES (?, 0, ?, ?, ?, ?, ?, 1, 1, ?, ?)");
-                $stmt_sube->execute([$firma_id, $branch_name, $branch_name, $final_city_id, $branch_name, $company_phone, $company_email, $billing_address]);
-                $sube_id = $pdo_tenant->lastInsertId();
-                
-                // nakitkasa
-                $stmt_kasa = $pdo_tenant->prepare("INSERT INTO nakitkasa (FirmaID, NakitKasaTutar) VALUES (?, 0)");
-                $stmt_kasa->execute([$firma_id]);
-                
-                // users (Yetkili E-Posta / 123456)
-                $default_pass = password_hash('123456', PASSWORD_BCRYPT);
-                $stmt_user = $pdo_tenant->prepare("INSERT INTO users (FirmaID, BranchID, UserName, UserMail, UserPhone, UserPass, UserAuthority, UserGroupID, UserStatus) VALUES (?, ?, ?, ?, ?, ?, 1, ?, 1)");
-                $stmt_user->execute([$firma_id, $sube_id, $contact_person, $company_email, $company_phone, $default_pass, $grup_id]);
-            }
-        } catch (Exception $e) {
-            error_log("DB Provisioning failed for $database_name: " . $e->getMessage());
+        if ($prov['success']) {
+            $database_name = $prov['database_name'];
+            // Her zaman: DB adı + parola
+            $db->Update(
+                "UPDATE kurumlar SET database_name = ?, database_password = ? WHERE customer_id = ?",
+                [$prov['database_name'], $prov['database_password'], $customer_id]
+            );
+            // database_user kolonu yoksa sessizce geçer (Database sınıfı hatayı yutar).
+            // Kolon için: migrate_tenant_users.php veya ALTER TABLE kurumlar ADD database_user VARCHAR(64).
+            $db->Update(
+                "UPDATE kurumlar SET database_user = ? WHERE customer_id = ?",
+                [$prov['database_user'], $customer_id]
+            );
+        } else {
+            error_log("DB Provisioning failed for customer_id={$customer_id}: " . ($prov['error'] ?? 'bilinmeyen'));
+            $_SESSION['swal_error'] = "Kurum kaydı oluşturuldu ancak veritabanı kurulumu başarısız oldu. Lütfen tekrar deneyin veya sistem yöneticisine başvurun.";
         }
     }
 
-    // Fiyatları Veritabanından Dinamik Al
-    $paket_fiyatlari = $db->getRowsAssoc("SELECT plan_name, price FROM paket_ozellikleri");
-    $price_map = [];
+    // Fiyat ve şube hakkını paketten dinamik al (TEK KAYNAK: paket_ozellikleri)
+    $paket_fiyatlari = $db->getRowsAssoc("SELECT * FROM paket_ozellikleri");
+    $price_map    = [];
+    $branches_map = [];
+    $yillik_map   = [];
     foreach ($paket_fiyatlari as $pf) {
-        $price_map[$pf['plan_name']] = (float)$pf['price'];
+        $price_map[$pf['plan_name']]    = (float)$pf['price'];
+        $branches_map[$pf['plan_name']] = array_key_exists('max_branches', $pf) ? (int)$pf['max_branches'] : 0;
+        $yillik_map[$pf['plan_name']]   = array_key_exists('yillik_indirim', $pf) ? (int)$pf['yillik_indirim'] : 0;
     }
 
-    $branches_map = ['basic' => 1, 'pro' => 2, 'enterprise' => 5];
-
     $price_per_month = $price_map[$plan_name] ?? 0;
-    $num_branches = $branches_map[$plan_name];
+    // 0 = sınırsız. Eskiden burada sabit ['basic'=>1,'pro'=>2,'enterprise'=>5]
+    // haritası vardı ve panelde girilen şube limitiyle çelişiyordu.
+    $num_branches    = $branches_map[$plan_name] ?? 0;
 
     $existing_sub = $db->getRowAssoc("SELECT subscription_id FROM abonelikler WHERE customer_id = ? AND del_status = 1 ORDER BY subscription_id DESC LIMIT 1", [$customer_id]);
 
@@ -309,7 +346,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
             if ($interval->d > 15) $months++;
             if ($months == 0) $months = 1;
 
-            $total_price = $price_per_month * $months;
+            /* ── YILLIK ÖDEME İNDİRİMİ ─────────────────────────────────
+               12 ay ve üzeri sözleşmelerde paketin `yillik_indirim`
+               yüzdesi toplam tutara uygulanır (varsayılan %20).
+               `price_per_month` liste fiyatı olarak kalır; indirim
+               `total_price` üzerinde görünür.                          */
+            $yillik_indirim_yuzde = $months >= 12 ? (int)($yillik_map[$plan_name] ?? 0) : 0;
+            if ($yillik_indirim_yuzde < 0)   { $yillik_indirim_yuzde = 0; }
+            if ($yillik_indirim_yuzde > 100) { $yillik_indirim_yuzde = 100; }
+
+            $liste_tutari = $price_per_month * $months;
+            $total_price  = round($liste_tutari * (1 - $yillik_indirim_yuzde / 100), 2);
 
             if ($existing_sub) {
                 $db->Update("
@@ -334,7 +381,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
 if (isset($_GET['verify'])) {
     $verify_id = (int)$_GET['verify'];
     $dbFirma = $db->getRow("
-        SELECT k.*, a.plan_name, a.price_per_month, a.num_branches, a.billing_cycle, a.start_date, a.end_date
+        SELECT k.*, a.plan_name, a.price_per_month, a.total_price, a.num_branches, a.billing_cycle, a.start_date, a.end_date
         FROM kurumlar k
         LEFT JOIN abonelikler a ON k.customer_id = a.customer_id
         WHERE k.customer_id = ? LIMIT 1
@@ -397,6 +444,18 @@ if (isset($_GET['verify'])) {
                                             <tr><td class="fw-bold text-gray-600">Şube Sayısı:</td><td><?= htmlspecialchars($dbFirma->num_branches) ?></td></tr>
                                             <tr><td class="fw-bold text-gray-600">Periyot:</td><td><?= htmlspecialchars($dbFirma->billing_cycle) ?> Ay</td></tr>
                                             <tr><td class="fw-bold text-gray-600">Aylık Tutar:</td><td><?= number_format((float)$dbFirma->price_per_month, 2, ',', '.') ?> TL</td></tr>
+                                            <?php
+                                                $ay        = (int)$dbFirma->billing_cycle;
+                                                $listeTut  = (float)$dbFirma->price_per_month * $ay;
+                                                $odenecek  = (float)$dbFirma->total_price;
+                                                $indirimTL = $listeTut - $odenecek;
+                                                $indirimYuzde = $listeTut > 0 ? round($indirimTL / $listeTut * 100) : 0;
+                                            ?>
+                                            <?php if ($indirimTL > 0.009): ?>
+                                            <tr><td class="fw-bold text-gray-600">Liste Tutarı:</td><td class="text-muted"><s><?= number_format($listeTut, 2, ',', '.') ?> TL</s></td></tr>
+                                            <tr><td class="fw-bold text-gray-600">Yıllık Ödeme İndirimi:</td><td><span class="badge badge-light-success fs-6">%<?= $indirimYuzde ?> · -<?= number_format($indirimTL, 2, ',', '.') ?> TL</span></td></tr>
+                                            <?php endif; ?>
+                                            <tr><td class="fw-bold text-gray-600">Toplam Tutar:</td><td class="fw-bold text-dark"><?= number_format($odenecek, 2, ',', '.') ?> TL</td></tr>
                                             <tr><td class="fw-bold text-gray-600">Başlangıç - Bitiş:</td><td><?= date('d.m.Y', strtotime($dbFirma->start_date)) ?> - <?= date('d.m.Y', strtotime($dbFirma->end_date)) ?></td></tr>
                                         </table>
                                         <?php else: ?>
@@ -422,6 +481,42 @@ if (isset($_GET['verify'])) {
         require_once '../config/footer.php';
         exit;
     }
+}
+
+/* ── Paket seçenekleri: etiketler paket_ozellikleri'nden üretilir ──────
+   Eskiden bu açılır liste sabit metinliydi ("Pro (25 Kullanıcı) - 999 ₺/Ay")
+   ve Panel > Paketler'de girilen gerçek fiyat/limitle çelişiyordu.        */
+$paketSecenekleri = [];
+try {
+    $paketSatirlari = $db->getRowsAssoc("SELECT * FROM paket_ozellikleri ORDER BY price ASC");
+    foreach ($paketSatirlari as $ps) {
+        $gorunenAd = trim((string)($ps['plan_display_name'] ?? '')) !== ''
+            ? (string)$ps['plan_display_name']
+            : (string)$ps['plan_name'];
+
+        $kul  = array_key_exists('max_total_users', $ps) ? (int)$ps['max_total_users'] : 0;
+        $sube = array_key_exists('max_branches', $ps) ? (int)$ps['max_branches'] : 0;
+        $fiyat = (float)($ps['price'] ?? 0);
+
+        $parcalar = [];
+        $parcalar[] = $kul  > 0 ? $kul . ' Kullanıcı'  : 'Sınırsız Kullanıcı';
+        $parcalar[] = $sube > 0 ? $sube . ' Şube'      : 'Sınırsız Şube';
+
+        $paketSecenekleri[] = [
+            'deger'  => $gorunenAd,
+            'etiket' => $gorunenAd . ' (' . implode(', ', $parcalar) . ') - '
+                        . number_format($fiyat, 2, ',', '.') . ' ₺/Ay',
+        ];
+    }
+} catch (Throwable $e) {
+    // paket_ozellikleri okunamazsa açılır liste boş kalır; aşağıda yedek kullanılır
+}
+if (empty($paketSecenekleri)) {
+    $paketSecenekleri = [
+        ['deger' => 'Başlangıç', 'etiket' => 'Başlangıç'],
+        ['deger' => 'Pro',       'etiket' => 'Pro'],
+        ['deger' => 'Kurumsal',  'etiket' => 'Kurumsal'],
+    ];
 }
 ?>
 
@@ -624,10 +719,11 @@ if (isset($_GET['verify'])) {
                                                     <label class="required form-label">Müşteri Paketi</label>
                                                     <select class="form-select mb-2" name="musteri_paketi_contract" id="musteri_paketi_contract" data-control="select2">
                                                         <option value="">Seçiniz</option>
-                                                        <option value="Başlangıç" <?php echo ($tenant['musteri_paketi'] ?? '') === 'Başlangıç' ? 'selected' : ''; ?>>Başlangıç (5 Kullanıcı) - 499 ₺/Ay</option>
-                                                        <option value="Pro" <?php echo ($tenant['musteri_paketi'] ?? '') === 'Pro' ? 'selected' : ''; ?>>Pro (25 Kullanıcı) - 999 ₺/Ay</option>
-                                                        <option value="Kurumsal" <?php echo ($tenant['musteri_paketi'] ?? '') === 'Kurumsal' ? 'selected' : ''; ?>>Kurumsal (Sınırsız) - 2.499 ₺/Ay</option>
+                                                        <?php foreach ($paketSecenekleri as $ps): ?>
+                                                        <option value="<?= htmlspecialchars($ps['deger'], ENT_QUOTES, 'UTF-8') ?>" <?php echo ($tenant['musteri_paketi'] ?? '') === $ps['deger'] ? 'selected' : ''; ?>><?= htmlspecialchars($ps['etiket'], ENT_QUOTES, 'UTF-8') ?></option>
+                                                        <?php endforeach; ?>
                                                     </select>
+                                                    <div class="text-muted fs-7 mt-1">Fiyat ve limitler Panel &gt; Paketler ekranından gelir.</div>
                                                 </div>
                                                 <div class="col-md-6 fv-row" id="trial_package_wrapper" style="<?php echo $sub_type == 'trial' ? 'display:block;' : 'display:none;'; ?>">
                                                     <label class="required form-label">Müşteri Paketi</label>

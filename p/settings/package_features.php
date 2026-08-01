@@ -12,11 +12,16 @@ require_once '../config/sidebar.php';
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['action'] === 'update_plan') {
     $feature_id = (int)$_POST['feature_id'];
     
+    if (function_exists('checkCSRF')) { checkCSRF(); }
+
+    /* NOT: `price` ve `max_total_users` BİLEREK yazılmaz.
+       Bu iki alan Panel > Paketler (plans.php) ekranından yönetilir; ikisi de
+       yazınca iki ekran birbirinin değerini eziyordu. Formda salt-okunur
+       gösterilir. Aynı sebeple `max_branches`, `yillik_indirim` ve
+       `allowed_modules` da bu sorguya dâhil değildir. */
     $params = [
         $_POST['plan_display_name'],
-        (float)$_POST['price'],
         (int)$_POST['max_admin_users'],
-        (int)$_POST['max_total_users'],
         (int)$_POST['max_storage_gb'],
         (int)$_POST['max_file_size_mb'],
         (int)$_POST['max_files_per_upload'],
@@ -33,12 +38,21 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
     ];
     
     $sql = "UPDATE paket_ozellikleri SET 
-            plan_display_name = ?, price = ?, max_admin_users = ?, max_total_users = ?, max_storage_gb = ?, max_file_size_mb = ?, 
+            plan_display_name = ?, max_admin_users = ?, max_storage_gb = ?, max_file_size_mb = ?, 
             max_files_per_upload = ?, api_access = ?, api_requests_per_month = ?, custom_reports = ?, advanced_analytics = ?, 
             white_label = ?, email_campaigns = ?, bulk_operations = ?, support_level = ?, support_response_hours = ?
             WHERE feature_id = ?";
-            
+
+    /* $db->Update() istisnaları yutup 0 döndürür; yazdıktan sonra geri okunup
+       doğrulanır (plans.php ile aynı yaklaşım). */
     $db->Update($sql, $params);
+    $kontrol = $db->getRowAssoc("SELECT plan_display_name FROM paket_ozellikleri WHERE feature_id = ?", [$feature_id]);
+    if (!$kontrol || (string)$kontrol['plan_display_name'] !== (string)$_POST['plan_display_name']) {
+        $_SESSION['package_features_error'] = 'Değişiklikler kaydedilemedi. Tablo yapısını kontrol edin.';
+        echo "<script>window.location.href='settings/package_features.php?success=0';</script>";
+        exit;
+    }
+
     echo "<script>window.location.href='settings/package_features.php?success=1';</script>";
     exit;
 }
@@ -168,8 +182,9 @@ $plans = $db->getRowsAssoc("SELECT * FROM paket_ozellikleri ORDER BY feature_id 
                             <input type="text" class="form-control form-control-solid" name="plan_display_name" id="inp_plan_display_name" required />
                         </div>
                         <div class="col-md-4 mb-5">
-                            <label class="required fs-6 fw-semibold mb-2">Fiyat (TL)</label>
-                            <input type="number" step="0.01" class="form-control form-control-solid" name="price" id="inp_price" required />
+                            <label class="fs-6 fw-semibold mb-2 text-gray-500">Fiyat (TL)</label>
+                            <input type="number" step="0.01" class="form-control form-control-solid bg-light" id="inp_price" disabled />
+                            <div class="form-text">Fiyat <a href="plans.php">Paketler</a> ekranından yönetilir.</div>
                         </div>
                         <div class="col-md-4 mb-5">
                             <label class="required fs-6 fw-semibold mb-2">Destek Seviyesi</label>
@@ -188,8 +203,9 @@ $plans = $db->getRowsAssoc("SELECT * FROM paket_ozellikleri ORDER BY feature_id 
                             <input type="number" class="form-control form-control-solid" name="max_admin_users" id="inp_max_admin_users" required />
                         </div>
                         <div class="col-md-4 mb-3">
-                            <label class="fs-6 fw-semibold mb-2">Max Toplam Kullanıcı</label>
-                            <input type="number" class="form-control form-control-solid" name="max_total_users" id="inp_max_total_users" required />
+                            <label class="fs-6 fw-semibold mb-2 text-gray-500">Max Toplam Kullanıcı</label>
+                            <input type="number" class="form-control form-control-solid bg-light" id="inp_max_total_users" disabled />
+                            <div class="form-text">Kullanıcı ve şube limitleri <a href="plans.php">Paketler</a> ekranından yönetilir.</div>
                         </div>
                         <div class="col-md-4 mb-3">
                             <label class="fs-6 fw-semibold mb-2">Depolama (GB)</label>

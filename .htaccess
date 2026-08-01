@@ -1,0 +1,30 @@
+RewriteEngine On
+
+# Hassas dosyalara erişimi engelle
+<FilesMatch "^\.env">
+    Require all denied
+</FilesMatch>
+<FilesMatch "(\.env$|\.env\.|\.sql$|\.md$|composer\.(json|lock)|\.gitignore)">
+    Require all denied
+</FilesMatch>
+RewriteRule (^|/)\.git(/|$) - [F]
+
+DirectoryIndex index.php index.html
+
+# /p/ alt panelini bu dosya yönlendirmesin (kendi .htaccess'i yönetir)
+RewriteRule ^p/ - [L]
+
+# SEO temiz URL: .php ile biten SORGUSUZ GET isteklerini uzantısıza (301)
+RewriteCond %{REQUEST_METHOD} =GET
+RewriteCond %{QUERY_STRING} ^$
+RewriteCond %{THE_REQUEST} \s/+([^?\s]+)\.php[\s?] [NC]
+RewriteRule ^ /%1 [R=301,L]
+
+# Mevcut dosya/klasörse dokunma
+RewriteCond %{REQUEST_FILENAME} -f [OR]
+RewriteCond %{REQUEST_FILENAME} -d
+RewriteRule ^ - [L]
+
+# Uzantısız -> .php
+RewriteCond %{REQUEST_FILENAME}.php -f
+RewriteRule ^(.+)$ $1.php [L]

@@ -2,13 +2,18 @@
 /**
  * Prolyn Kurumsal Web Sitesi - Veritabanı Bağlantısı
  * Bu bağlantı sadece okuma amaçlı (Pricing, Blogs, vb.) kullanılır.
+ * Kimlik bilgileri kaynak koddan çıkarıldı; .env dosyasından okunur.
  */
 
-$host = '127.0.0.1';
-$db   = 'prolyn_master';
-$user = 'root';
-$pass = 'RootPass1903!';
-$charset = 'utf8mb4';
+require_once __DIR__ . '/env.php';
+
+$host    = prolynweb_env('DB_HOST', '127.0.0.1');
+$db      = prolynweb_env('DB_NAME', 'prolyn_master');
+$user    = prolynweb_env('DB_USER', '');
+$pass    = prolynweb_env('DB_PASS', '');
+$charset = prolynweb_env('DB_CHARSET', 'utf8mb4');
+
+$appDebug = filter_var(prolynweb_env('APP_DEBUG', 'false'), FILTER_VALIDATE_BOOLEAN);
 
 $dsn = "mysql:host=$host;dbname=$db;charset=$charset";
 $options = [
@@ -20,7 +25,11 @@ $options = [
 try {
     $pdo = new PDO($dsn, $user, $pass, $options);
 } catch (\PDOException $e) {
-    // Sitede DB hatası varsa kritik bir hata göster
+    // Hata detayı kullanıcıya gösterilmez; sadece loglanır.
+    error_log('[prolynweb] DB bağlantı hatası: ' . $e->getMessage());
+    if ($appDebug) {
+        die('DB bağlantı hatası: ' . htmlspecialchars($e->getMessage()));
+    }
     die("Sistem bakımı devam etmektedir. Lütfen daha sonra tekrar deneyiniz.");
 }
 
@@ -33,4 +42,5 @@ try {
     }
 } catch (\Exception $e) {
     // Ayarlar çekilemezse boş dizi kalsın
+    error_log('[prolynweb] Ayarlar okunamadı: ' . $e->getMessage());
 }

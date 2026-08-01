@@ -1,5 +1,20 @@
 <?php
-require_once 'db.php';
+/**
+ * Prolyn - 30 Günlük Deneme Kaydı (register.php)
+ * GÜVENLİK: CSRF, honeypot, IP rate-limit, güçlü şifre, güvenli provisioning.
+ */
+require_once __DIR__ . '/env.php';
+require_once 'db.php'; // $pdo (prolyn_master), $appSettings
+require_once __DIR__ . '/p/functions/provision.php';
+
+if (session_status() === PHP_SESSION_NONE) {
+    session_start();
+}
+
+// CSRF token
+if (empty($_SESSION['reg_csrf'])) {
+    $_SESSION['reg_csrf'] = bin2hex(random_bytes(32));
+}
 
 $message = '';
 $messageType = '';
@@ -7,59 +22,119 @@ $successData = null;
 
 $selectedPlan = $_GET['plan'] ?? '';
 
+/* Fiyatlandırma sayfasındaki Aylık/Yıllık seçimi buraya `?periyot=yillik`
+   olarak gelir. Deneme süreci her hâlükârda 30 gün ve ücretsizdir; seçim
+   kurum kaydına not edilir ki sözleşmeye geçişte doğru periyot önerilsin. */
+$secilenPeriyot = (($_GET['periyot'] ?? '') === 'yillik') ? 'yillik' : 'aylik';
+
+/** Basit dosya tabanlı IP rate-limit (harici bağımlılık yok). */
+function reg_rate_limit_check(int $limit): bool
+{
+    $dir = __DIR__ . '/p/config/rate_limit';
+    if (!is_dir($dir)) { @mkdir($dir, 0770, true); }
+    $ip = $_SERVER['REMOTE_ADDR'] ?? '0.0.0.0';
+    $file = $dir . '/reg_' . md5($ip) . '.json';
+    $now = time();
+    $window = 3600;
+    $hits = [];
+    if (is_readable($file)) {
+        $hits = json_decode((string)@file_get_contents($file), true) ?: [];
+    }
+    $hits = array_values(array_filter($hits, static fn($t) => ($now - (int)$t) < $window));
+    if (count($hits) >= $limit) {
+        return false;
+    }
+    $hits[] = $now;
+    @file_put_contents($file, json_encode($hits), LOCK_EX);
+    return true;
+}
+
+/** Güçlü şifre kuralı: en az 8 karakter, harf + rakam. */
+function reg_password_strong(string $p): bool
+{
+    return strlen($p) >= 8 && preg_match('/[A-Za-zÇĞİÖŞÜçğıöşü]/u', $p) && preg_match('/\d/', $p);
+}
+
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+
+    // 1) CSRF
+    if (empty($_POST['csrf_token']) || !hash_equals($_SESSION['reg_csrf'], (string)$_POST['csrf_token'])) {
+        $message = "Oturum doğrulaması başarısız. Sayfayı yenileyip tekrar deneyin.";
+        $messageType = "danger";
+    // 2) Honeypot (bot tuzağı - gizli alan dolduysa bot demektir)
+    } elseif (!empty($_POST['website'])) {
+        $message = "İstek reddedildi.";
+        $messageType = "danger";
+    // 3) Rate limit
+    } elseif (!reg_rate_limit_check((int)prolynweb_env('REGISTER_RATE_LIMIT', 5))) {
+        $message = "Çok fazla deneme yaptınız. Lütfen bir süre sonra tekrar deneyin.";
+        $messageType = "danger";
+    } else {
+
     $company_name  = trim($_POST['company_name'] ?? '');
     $official_name = trim($_POST['official_name'] ?? '');
     $contact_name  = trim($_POST['contact_name'] ?? '');
     $company_email = trim($_POST['company_email'] ?? '');
     $company_phone = trim($_POST['company_phone'] ?? '');
     $admin_password = $_POST['admin_password'] ?? '';
-    
+
     $tax_office = trim($_POST['tax_office'] ?? '');
     $tax_number = trim($_POST['tax_number'] ?? '');
     $billing_address = trim($_POST['billing_address'] ?? '');
-    
+
     $city_id       = (int)($_POST['city_id'] ?? 0);
     $district_id   = (int)($_POST['district_id'] ?? 0);
 
-    function firma_vno_digits($value) {
-        return preg_replace('/\D+/', '', (string) $value);
+    $toUpperText = static function ($value) {
+        $value = trim((string) $value);
+        return function_exists('mb_strtoupper') ? mb_strtoupper($value, 'UTF-8') : strtoupper($value);
+    };
+
+    $company_name = $toUpperText($company_name);
+    $official_name = $toUpperText($official_name);
+    $contact_name = $toUpperText($contact_name);
+    $tax_office = $toUpperText($tax_office);
+    $billing_address = $toUpperText($billing_address);
+
+    if (!function_exists('firma_vno_digits')) {
+        function firma_vno_digits($value) {
+            return preg_replace('/\D+/', '', (string) $value);
+        }
     }
-    
-    function firma_vno_is_valid($value) {
-        $value = firma_vno_digits($value);
-    
-        if ($value === '' || strlen($value) < 10 || strlen($value) > 11) {
-            return false;
-        }
-    
-        if (strlen($value) === 10) {
-            $digits = array_map('intval', str_split($value));
-            $sum = 0;
-            for ($i = 0; $i < 9; $i++) {
-                $v = ($digits[$i] + (9 - $i)) % 10;
-                $vv = ($v * pow(2, 9 - $i)) % 9;
-                if ($v !== 0 && $vv === 0) {
-                    $vv = 9;
-                }
-                $sum += $vv;
+
+    if (!function_exists('firma_vno_is_valid')) {
+        function firma_vno_is_valid($value) {
+            $value = firma_vno_digits($value);
+            if ($value === '' || strlen($value) < 10 || strlen($value) > 11) {
+                return false;
             }
-            $checkDigit = ($sum % 10 === 0) ? 0 : (10 - ($sum % 10));
-            return $checkDigit === $digits[9];
+            if (strlen($value) === 10) {
+                $digits = array_map('intval', str_split($value));
+                $sum = 0;
+                for ($i = 0; $i < 9; $i++) {
+                    $v = ($digits[$i] + (9 - $i)) % 10;
+                    $vv = ($v * pow(2, 9 - $i)) % 9;
+                    if ($v !== 0 && $vv === 0) { $vv = 9; }
+                    $sum += $vv;
+                }
+                $checkDigit = ($sum % 10 === 0) ? 0 : (10 - ($sum % 10));
+                return $checkDigit === $digits[9];
+            }
+            if ($value[0] === '0') { return false; }
+            $digits = array_map('intval', str_split($value));
+            $sumFirst10 = array_sum(array_slice($digits, 0, 10));
+            return ($sumFirst10 % 10) === $digits[10];
         }
-    
-        if ($value[0] === '0') {
-            return false;
-        }
-    
-        $digits = array_map('intval', str_split($value));
-        $sumFirst10 = array_sum(array_slice($digits, 0, 10));
-    
-        return ($sumFirst10 % 10) === $digits[10];
     }
 
     if (empty($company_name) || empty($official_name) || empty($contact_name) || empty($company_email) || empty($company_phone) || empty($admin_password) || empty($tax_number) || empty($tax_office) || empty($billing_address) || $city_id <= 0 || $district_id <= 0) {
         $message = "Lütfen tüm zorunlu alanları doldurunuz.";
+        $messageType = "danger";
+    } elseif (!filter_var($company_email, FILTER_VALIDATE_EMAIL)) {
+        $message = "Geçerli bir e-posta adresi giriniz.";
+        $messageType = "danger";
+    } elseif (!reg_password_strong($admin_password)) {
+        $message = "Şifre en az 8 karakter olmalı ve harf ile rakam içermelidir.";
         $messageType = "danger";
     } elseif (!firma_vno_is_valid($tax_number)) {
         $message = "Geçersiz Vergi No veya TC Kimlik No girişi yaptınız.";
@@ -70,7 +145,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $checkUser = $pdo->prepare("SELECT customer_id, company_email, company_phone, tax_number FROM kurumlar WHERE company_email = ? OR (company_phone = ? AND company_phone != '') OR tax_number = ?");
             $checkUser->execute([$company_email, $company_phone, $tax_number]);
             $existing = $checkUser->fetch();
-            
+
             if ($existing) {
                 if (strcasecmp($existing['company_email'], $company_email) === 0) {
                     $message = "Bu e-posta adresiyle daha önce kayıt olunmuş.";
@@ -83,173 +158,139 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 }
                 $messageType = "danger";
             } else {
-                // Sonraki veri tabanı adını belirle (prolyn_K1, prolyn_K2, vb.)
-                $stmt = $pdo->query("SHOW DATABASES");
-                $databases = $stmt->fetchAll(PDO::FETCH_COLUMN);
-                
-                $maxNum = 0;
-                foreach ($databases as $dbName) {
-                    if (preg_match('/^prolyn_k(\d+)$/i', $dbName, $matches)) {
-                        $num = (int)$matches[1];
-                        if ($num > $maxNum) {
-                            $maxNum = $num;
-                        }
-                    }
-                }
-                
-                // Ayrıca kurumlar tablosundaki customer_code değerlerini kontrol edelim
-                $stmtMasterCode = $pdo->query("SELECT customer_code FROM kurumlar WHERE customer_code LIKE 'k%'");
-                $customerCodes = $stmtMasterCode->fetchAll(PDO::FETCH_COLUMN);
-                foreach ($customerCodes as $code) {
-                    if (preg_match('/^k(\d+)$/i', $code, $matches)) {
-                        $num = (int)$matches[1];
-                        if ($num > $maxNum) {
-                            $maxNum = $num;
-                        }
-                    }
-                }
-                
-                $nextNum = $maxNum + 1;
-                $newDbName = "prolyn_k" . $nextNum;
-                $customerCode = "k" . $nextNum;
-                
-                // Yeni veritabanını oluştur
-                $pdo->exec("CREATE DATABASE `$newDbName` CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci");
-                
-                // prolyn_default'tan şablonu aktar
-                $mysqldumpPath = '/Applications/XAMPP/xamppfiles/bin/mysqldump';
-                $mysqlPath = '/Applications/XAMPP/xamppfiles/bin/mysql';
-                
-                // Şifre boşluk veya özel karakter içerebileceği için argümanları güvenli geçelim
-                $cmd = sprintf(
-                    "%s -u %s -p%s prolyn_default | %s -u %s -p%s %s",
-                    escapeshellarg($mysqldumpPath),
-                    escapeshellarg($user),
-                    escapeshellarg($pass),
-                    escapeshellarg($mysqlPath),
-                    escapeshellarg($user),
-                    escapeshellarg($pass),
-                    escapeshellarg($newDbName)
-                );
-                
-                $output = [];
-                $returnVar = 0;
-                exec($cmd, $output, $returnVar);
-                
-                if ($returnVar !== 0) {
-                    throw new Exception("Şablon veritabanı kopyalanamadı.");
-                }
-                
-                // Yeni tenant veri tabanına bağlan
-                $tenantDsn = "mysql:host=$host;dbname=$newDbName;charset=$charset";
-                $tenantPdo = new PDO($tenantDsn, $user, $pass, $options);
-                
-                // Gerekirse permissions kolonunu ekle
-                try {
-                    $tenantPdo->exec("ALTER TABLE usergrup ADD COLUMN permissions JSON DEFAULT NULL");
-                } catch (\Exception $ex) {
-                    // Zaten var olabilir
-                }
-                
-                // Varsayılan Admin grubunu güncelle
-                $stmtGrup = $tenantPdo->prepare("UPDATE usergrup SET permissions = '{\"all\": true}' WHERE UserGrupID = 1");
-                $stmtGrup->execute();
-                $grupId = 1;
-                
-                $final_city_id = ($city_id > 0) ? $city_id : 0;
-                $final_district_id = ($district_id > 0) ? $district_id : 0;
-
-                // Firma kaydı oluştur (Auto-increment ile yeni ID alır)
-                $stmtFirm = $tenantPdo->prepare("INSERT INTO firmalar (CustomerID, FirmaAdi, FirmaDetay, FirmaVergi, FirmaVNO, BayiCity, BayiTown, BayiAdres) VALUES (0, ?, ?, ?, ?, ?, ?, ?)");
-                $stmtFirm->execute([$company_name, $official_name, $tax_office, $tax_number, $final_city_id, $final_district_id, $billing_address]);
-                $firmaId = $tenantPdo->lastInsertId();
-                
-                // Şube ekle
-                $branchName = !empty($company_name) ? $company_name : 'Merkez Şube';
-                $stmtBranch = $tenantPdo->prepare("INSERT INTO subeler (FirmaID, CustomerID, BranchName, BranchResmi, BranchArea, BranchDesc, BranchPhone, BranchAuthorized, BranchStatus, BranchMail, BranchAdres, BranchShort) VALUES (?, 0, ?, ?, ?, ?, ?, 1, 1, ?, ?, 'MRK')");
-                $stmtBranch->execute([$firmaId, $branchName, $branchName, $final_city_id, $branchName, $company_phone, $company_email, $billing_address]);
-                $branchId = $tenantPdo->lastInsertId();
-                
-                // Şifreyi BCRYPT ile hashle
-                $hashedPassword = password_hash($admin_password, PASSWORD_BCRYPT);
-                
-                // Yönetici kullanıcısını ekle
-                $stmtUser = $tenantPdo->prepare("INSERT INTO users (FirmaID, UserName, UserMail, UserPhone, UserPass, UserAuthority, UserGroupID, BranchID, UserStatus) VALUES (?, ?, ?, ?, ?, 1, ?, ?, 1)");
-                $stmtUser->execute([$firmaId, $contact_name, $company_email, $company_phone, $hashedPassword, $grupId, $branchId]);
-
-                // Nakit Kasa ekle
-                $stmtKasa = $tenantPdo->prepare("INSERT INTO nakitkasa (FirmaID, NakitKasaTutar) VALUES (?, 0)");
-                $stmtKasa->execute([$firmaId]);
-                
-                // Master DB'de kolonlar farklı sürümlerde değişebildiği için dinamik INSERT kur.
-                $masterColumnsStmt = $pdo->query("SHOW COLUMNS FROM kurumlar");
-                $masterColumns = [];
-                foreach ($masterColumnsStmt->fetchAll(PDO::FETCH_ASSOC) as $columnInfo) {
-                    $masterColumns[$columnInfo['Field']] = true;
-                }
-
-                $allowedModulesJson = '["core","customer","commercial","appointment","current_account","inventory","accounting","invoice","contract","reports"]';
-                $masterValueMap = [
-                    'customer_code' => $customerCode,
-                    'company_name' => $company_name,
-                    'official_name' => $official_name,
-                    'company_email' => $company_email,
-                    'company_phone' => $company_phone,
-                    'database_name' => $newDbName,
-                    'database_password' => $pass,
-                    'status' => 'active',
-                    'contact_person' => $contact_name,
-                    'contact_name' => $contact_name,
-                    'contact_email' => $company_email,
-                    'contact_phone' => $company_phone,
-                    'tax_office' => $tax_office,
-                    'tax_number' => $tax_number,
-                    'billing_address' => $billing_address,
-                    'city_id' => $city_id,
-                    'district_id' => $district_id,
-                    'allowed_modules' => $allowedModulesJson,
-                    'created_by' => 0,
-                ];
-                $masterExprMap = [
-                    'trial_start_date' => 'NOW()',
-                    'trial_end_date' => 'DATE_ADD(NOW(), INTERVAL 30 DAY)',
-                ];
-
-                $masterInsertCols = [];
-                $masterInsertVals = [];
-                $masterBindVals = [];
-
-                foreach ($masterValueMap as $col => $val) {
-                    if (!isset($masterColumns[$col])) {
-                        continue;
-                    }
-                    $masterInsertCols[] = "`$col`";
-                    $masterInsertVals[] = '?';
-                    $masterBindVals[] = $val;
-                }
-
-                foreach ($masterExprMap as $col => $expr) {
-                    if (!isset($masterColumns[$col])) {
-                        continue;
-                    }
-                    $masterInsertCols[] = "`$col`";
-                    $masterInsertVals[] = $expr;
-                }
-
-                if (empty($masterInsertCols)) {
-                    throw new Exception("Kurumlar tablosu için geçerli kayıt kolonları bulunamadı.");
-                }
-
-                $masterSql = "INSERT INTO kurumlar (" . implode(', ', $masterInsertCols) . ") VALUES (" . implode(', ', $masterInsertVals) . ")";
-                $stmtMaster = $pdo->prepare($masterSql);
-                $stmtMaster->execute($masterBindVals);
-                $customerId = $pdo->lastInsertId() ?: 1;
-                
-                // Abonelikler tablosuna Trial ataması yap
-                $stmtAbonelik = $pdo->prepare("INSERT INTO abonelikler (customer_id, plan_name, num_branches, price_per_month, total_price, billing_cycle, start_date, end_date, status, auto_renew) VALUES (?, ?, 1, 0, 0, 1, NOW(), DATE_ADD(NOW(), INTERVAL 30 DAY), 'Deneme', 0)");
                 $planNameToInsert = !empty($selectedPlan) ? strtolower($selectedPlan) : 'pro';
                 if (!in_array($planNameToInsert, ['basic', 'pro', 'enterprise'])) $planNameToInsert = 'pro';
+
+                /* ── Paket modülleri: TEK KAYNAK paket_ozellikleri ────────────────
+                   Önceden burada sabit bir modül listesi yazılıydı; seçilen paket
+                   ne olursa olsun aynı 10 modül kaydediliyor, planning/bank/
+                   statistics hiç gelmiyordu. Ayrıca `musteri_paketi` alanı HİÇ
+                   yazılmıyordu — bu yüzden yeni kurumların paketi boş kalıyor,
+                   paket limitleri (şube/kullanıcı) hiç uygulanmıyordu.          */
+                $allowedModulesJson = null;
+                try {
+                    $planStmt = $pdo->prepare("SELECT allowed_modules FROM paket_ozellikleri WHERE plan_name = ? LIMIT 1");
+                    $planStmt->execute([$planNameToInsert]);
+                    $planRow = $planStmt->fetch(PDO::FETCH_ASSOC);
+                    if ($planRow && !empty($planRow['allowed_modules'])) {
+                        $decoded = json_decode((string)$planRow['allowed_modules'], true);
+                        if (is_array($decoded) && !empty($decoded)) {
+                            $allowedModulesJson = json_encode(array_values($decoded), JSON_UNESCAPED_UNICODE);
+                        }
+                    }
+                } catch (Exception $e) {
+                    // paket_ozellikleri okunamadi -> asagidaki acil yedege dusulur
+                }
+                if ($allowedModulesJson === null) {
+                    // ACİL YEDEK — paket_ozellikleri satırı yoksa kullanılır.
+                    $yedekHarita = [
+                        'basic'      => ['core','customer','appointment','reports','current_account','contract'],
+                        'pro'        => ['core','customer','commercial','appointment','current_account','inventory',
+                                         'accounting','invoice','contract','reports','bank','statistics'],
+                        'enterprise' => ['core','customer','commercial','appointment','current_account','inventory',
+                                         'accounting','invoice','contract','reports','planning','bank','statistics'],
+                    ];
+                    $allowedModulesJson = json_encode(
+                        $yedekHarita[$planNameToInsert] ?? $yedekHarita['basic'], JSON_UNESCAPED_UNICODE);
+                }
+
+                // --- 1) Önce kurumlar kaydını oluştur (customer_id = DB adı kaynağı) ---
+                // Şemadaki mevcut kolonlara göre dinamik INSERT
+                $masterColumnsStmt = $pdo->query("SHOW COLUMNS FROM kurumlar");
+                $masterColumns = [];
+                foreach ($masterColumnsStmt->fetchAll(PDO::FETCH_ASSOC) as $col) {
+                    $masterColumns[$col['Field']] = true;
+                }
+
+                $valueMap = [
+                    'company_name'    => $company_name,
+                    'official_name'   => $official_name,
+                    'company_email'   => $company_email,
+                    'company_phone'   => $company_phone,
+                    'status'          => 'active',
+                    'contact_person'  => $contact_name,
+                    'contact_name'    => $contact_name,
+                    'contact_email'   => $company_email,
+                    'contact_phone'   => $company_phone,
+                    'tax_office'      => $tax_office,
+                    'tax_number'      => $tax_number,
+                    'billing_address' => $billing_address,
+                    'city_id'         => $city_id,
+                    'district_id'     => $district_id,
+                    'allowed_modules' => $allowedModulesJson,
+                    'musteri_paketi'  => $planNameToInsert, // paket bağı — limitlerin çalışması için ŞART
+                    'odeme_periyodu'  => $secilenPeriyot,   // kolon yoksa atlanır (dinamik INSERT)
+                    'subscription_type' => 'trial',
+                    'created_by'      => 0,
+                    'database_name'   => '', // provisioning sonrası güncellenecek
+                    'database_password' => '', // provisioning sonrası güncellenecek (NOT NULL güvenliği)
+                ];
+                $exprMap = [
+                    'trial_start_date' => 'NOW()',
+                    'trial_end_date'   => 'DATE_ADD(NOW(), INTERVAL 30 DAY)',
+                ];
+
+                $cols = []; $ph = []; $bind = [];
+                foreach ($valueMap as $c => $v) {
+                    if (!isset($masterColumns[$c])) continue;
+                    $cols[] = "`$c`"; $ph[] = '?'; $bind[] = $v;
+                }
+                foreach ($exprMap as $c => $expr) {
+                    if (!isset($masterColumns[$c])) continue;
+                    $cols[] = "`$c`"; $ph[] = $expr;
+                }
+                if (empty($cols)) {
+                    throw new Exception("Kurumlar tablosu için geçerli kolon bulunamadı.");
+                }
+                $pdo->prepare("INSERT INTO kurumlar (" . implode(',', $cols) . ") VALUES (" . implode(',', $ph) . ")")->execute($bind);
+                $customerId = (int)$pdo->lastInsertId();
+                if ($customerId <= 0) {
+                    throw new Exception("Kurum kaydı oluşturulamadı.");
+                }
+                $customerCode = "k" . $customerId;
+
+                // --- 2) Provisioning (DB + kısıtlı kullanıcı + tohumlama; hata olursa geri alır) ---
+                $prov = provision_tenant([
+                    'customer_id'     => $customerId,
+                    'company_name'    => $company_name,
+                    'official_name'   => $official_name,
+                    'tax_office'      => $tax_office,
+                    'tax_number'      => $tax_number,
+                    'city_id'         => $city_id,
+                    'district_id'     => $district_id,
+                    'billing_address' => $billing_address,
+                    'company_phone'   => $company_phone,
+                    'admin_name'      => $contact_name,
+                    'admin_email'     => $company_email,
+                    'admin_password'  => $admin_password,
+                ]);
+
+                if (!$prov['success']) {
+                    // Provisioning başarısız → kurumlar kaydını da geri al
+                    $pdo->prepare("DELETE FROM kurumlar WHERE customer_id = ?")->execute([$customerId]);
+                    throw new Exception("Sistem kurulumu tamamlanamadı. Lütfen daha sonra tekrar deneyin.");
+                }
+
+                // --- 3) kurumlar kaydını DB bilgileriyle güncelle ---
+                $upd = [];
+                $updBind = [];
+                foreach (['database_name' => $prov['database_name'], 'customer_code' => $customerCode] as $c => $v) {
+                    if (isset($masterColumns[$c])) { $upd[] = "`$c` = ?"; $updBind[] = $v; }
+                }
+                if (isset($masterColumns['database_user']))     { $upd[] = "`database_user` = ?";     $updBind[] = $prov['database_user']; }
+                if (isset($masterColumns['database_password'])) { $upd[] = "`database_password` = ?"; $updBind[] = $prov['database_password']; }
+                if (!empty($upd)) {
+                    $updBind[] = $customerId;
+                    $pdo->prepare("UPDATE kurumlar SET " . implode(', ', $upd) . " WHERE customer_id = ?")->execute($updBind);
+                }
+
+                // --- 4) Deneme aboneliği ---
+                $stmtAbonelik = $pdo->prepare("INSERT INTO abonelikler (customer_id, plan_name, num_branches, price_per_month, total_price, billing_cycle, start_date, end_date, status, auto_renew) VALUES (?, ?, 1, 0, 0, 1, NOW(), DATE_ADD(NOW(), INTERVAL 30 DAY), 'Deneme', 0)");
                 $stmtAbonelik->execute([$customerId, $planNameToInsert]);
+
+                // CSRF token'ı yenile (tek kullanım)
+                $_SESSION['reg_csrf'] = bin2hex(random_bytes(32));
+
                 $successData = [
                     'customer_code' => $customerCode,
                     'company_name'  => $company_name,
@@ -257,10 +298,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 ];
             }
         } catch (Exception $e) {
-            $message = "Kayıt sırasında bir hata oluştu: " . $e->getMessage();
+            error_log('[register] ' . $e->getMessage());
+            $appDebug = filter_var(prolynweb_env('APP_DEBUG', 'false'), FILTER_VALIDATE_BOOLEAN);
+            $message = $appDebug ? ("Kayıt hatası: " . $e->getMessage()) : "Kayıt sırasında bir hata oluştu. Lütfen tekrar deneyin.";
             $messageType = "danger";
         }
     }
+    } // rate/csrf/honeypot else
 }
 
 // Şehirleri çek
@@ -449,7 +493,10 @@ $iller = $stmtCities->fetchAll(PDO::FETCH_ASSOC);
                                                 </div>
                                                 <div class="flex-grow-1">
                                                     <div class="text-gray-500 fs-7 fw-semibold mb-1">Seçilen Plan</div>
-                                                    <div class="text-white fs-5 fw-bold"><?= htmlspecialchars(!empty($selectedPlan) ? ucfirst($selectedPlan) : 'Pro') ?></div>
+                                                    <div class="text-white fs-5 fw-bold">
+                                                        <?= htmlspecialchars(!empty($selectedPlan) ? ucfirst($selectedPlan) : 'Pro') ?>
+                                                        <span class="badge badge-light-primary ms-2"><?= $secilenPeriyot === 'yillik' ? 'Yıllık' : 'Aylık' ?></span>
+                                                    </div>
                                                 </div>
                                                 <div>
                                                     <span class="badge fw-bolder px-3 py-2 fs-7" style="background: rgba(241, 65, 108, 0.15); color: #f1416c; border: 1px solid rgba(241, 65, 108, 0.3);">30 GÜN DENEME</span>
@@ -461,7 +508,7 @@ $iller = $stmtCities->fetchAll(PDO::FETCH_ASSOC);
                                 </div>
                                 
                                 <div class="text-center mt-10">
-                                    <a href="/prolyn/login.php?KurumKodu=<?= urlencode($successData['customer_code']) ?>" class="btn btn-success btn-lg w-100 py-4 fs-5 fw-bold" style="background-color: #50cd89;">
+                                    <a href="<?= htmlspecialchars(rtrim((string)prolynweb_env('APP_PANEL_URL', '/prolyn'), '/')) ?>/login.php?KurumKodu=<?= urlencode($successData['customer_code']) ?>" class="btn btn-success btn-lg w-100 py-4 fs-5 fw-bold" style="background-color: #50cd89;">
                                         Hemen Sisteme Giriş Yap <i class="ki-duotone ki-arrow-right fs-2 ms-2"><span class="path1"></span><span class="path2"></span></i>
                                     </a>
                                 </div>
@@ -477,7 +524,13 @@ $iller = $stmtCities->fetchAll(PDO::FETCH_ASSOC);
                                     </div>
                                 <?php endif; ?>
 
-                                <form action="" method="POST">
+                                <form action="" method="POST" autocomplete="off">
+                                    <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($_SESSION['reg_csrf'], ENT_QUOTES, 'UTF-8') ?>">
+                                    <!-- Honeypot: gerçek kullanıcılar görmez, botlar doldurur -->
+                                    <div style="position:absolute;left:-9999px;top:-9999px;" aria-hidden="true">
+                                        <label>Web Siteniz</label>
+                                        <input type="text" name="website" tabindex="-1" autocomplete="off">
+                                    </div>
                                     <div class="row g-8 mb-8">
                                         <div class="col-md-6">
                                             <label class="form-label fs-6 fw-semibold text-gray-300">Şirket / Kurum Adı <span class="text-danger">*</span></label>
@@ -542,7 +595,7 @@ $iller = $stmtCities->fetchAll(PDO::FETCH_ASSOC);
                                     
                                     <div class="mb-10">
                                         <label class="form-label fs-6 fw-semibold text-gray-300">Yönetici Giriş Şifresi <span class="text-danger">*</span></label>
-                                        <input type="password" name="admin_password" class="form-control form-control-lg glass-input" placeholder="En az 6 karakter" required minlength="6">
+                                        <input type="password" name="admin_password" class="form-control form-control-lg glass-input" placeholder="En az 8 karakter (harf + rakam)" required minlength="8">
                                     </div>
                                     
                                     <div class="text-end">

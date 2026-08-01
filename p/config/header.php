@@ -1,8 +1,15 @@
 <?php
 
-ini_set('display_errors', 1);
-ini_set('display_startup_errors', 1);
-error_reporting(E_ALL);
+require_once __DIR__ . '/../../env.php';
+
+// Hata gösterimi ortama göre (üretimde kapalı)
+$__appDebug = filter_var(prolynweb_env('APP_DEBUG', 'false'), FILTER_VALIDATE_BOOLEAN);
+ini_set('display_errors', $__appDebug ? '1' : '0');
+ini_set('display_startup_errors', $__appDebug ? '1' : '0');
+error_reporting($__appDebug ? E_ALL : (E_ALL & ~E_DEPRECATED & ~E_NOTICE));
+
+// Panel taban adresi (sabit /prolynweb/ yerine .env'den)
+$__panelBase = rtrim((string)prolynweb_env('BASE_URL', ''), '/') . '/p/';
 
 // Güvenlik Başlıkları
 header("X-Frame-Options: SAMEORIGIN");
@@ -27,7 +34,7 @@ if (isset($_SESSION['admin_id'])) {
         $check_sess = $db->getRow("SELECT session_id FROM oturumlar WHERE session_id = ?", [$current_sess]);
         if (!$check_sess) {
             // Oturum DB'den silinmiş (admin tarafından sonlandırılmış)
-            header("Location: /prolynweb/p/logout.php");
+            header("Location: " . $__panelBase . "logout.php");
             exit;
         } else {
             $db->Update("UPDATE oturumlar SET last_activity = NOW(), expires_at = DATE_ADD(NOW(), INTERVAL 1440 MINUTE) WHERE session_id = ?", [$current_sess]);
@@ -93,7 +100,7 @@ try {
 <!DOCTYPE html>
 <html lang="tr">
 <head>
-    <base href="/prolynweb/p/" />
+    <base href="<?= htmlspecialchars($__panelBase, ENT_QUOTES, 'UTF-8') ?>" />
     <title>Prolyn ERP</title>
     <meta charset="utf-8" />
     <meta name="description" content="" />
