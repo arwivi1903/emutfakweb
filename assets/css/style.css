@@ -96,7 +96,7 @@ body#kt_body {
 
 /* Hero Section Refinements */
 .hero-section {
-    padding: 160px 0 100px 0 !important;
+    padding: 220px 0 50px 0 !important;
     position: relative;
     overflow: hidden;
 }
@@ -130,10 +130,10 @@ body#kt_body {
 .dashboard-mockup {
     background: #1e1e2d;
     border-radius: 12px;
-    border: 1px solid #323248;
+    border: 1px solid rgba(255, 255, 255, 0.2);
     box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5), 0 0 40px rgba(102, 126, 234, 0.15);
     overflow: hidden;
-    margin-top: 60px;
+    margin-top: 40px;
     animation: float 6s ease-in-out infinite;
 }
 
@@ -163,11 +163,12 @@ body#kt_body {
     padding: 20px;
     display: flex;
     gap: 20px;
-    height: 300px;
+    height: 200px;
 }
 .sidebar-mock {
     width: 20%;
-    background: rgba(255,255,255,0.02);
+    background: rgba(255,255,255,0.1);
+    border: 1px solid rgba(255,255,255,0.05);
     border-radius: 8px;
     display: flex;
     flex-direction: column;
@@ -177,7 +178,7 @@ body#kt_body {
 .mock-line {
     height: 10px;
     border-radius: 5px;
-    background: rgba(255,255,255,0.1);
+    background: rgba(255,255,255,0.3);
 }
 .mock-line.w-full { width: 100%; }
 .mock-line.w-3-4 { width: 75%; }
@@ -196,7 +197,8 @@ body#kt_body {
 .metric-card-mock {
     flex: 1;
     height: 80px;
-    background: rgba(255,255,255,0.03);
+    background: rgba(255,255,255,0.1);
+    border: 1px solid rgba(255,255,255,0.05);
     border-radius: 8px;
     padding: 15px;
     display: flex;
@@ -205,7 +207,8 @@ body#kt_body {
 }
 .chart-mock {
     flex: 1;
-    background: rgba(255,255,255,0.03);
+    background: rgba(255,255,255,0.1);
+    border: 1px solid rgba(255,255,255,0.05);
     border-radius: 8px;
     display: flex;
     align-items: flex-end;
@@ -216,7 +219,7 @@ body#kt_body {
     flex: 1;
     background: var(--prolyn-primary);
     border-radius: 4px 4px 0 0;
-    opacity: 0.8;
+    opacity: 1;
 }
 
 /* Feature Cards */
@@ -441,56 +444,6 @@ a {
     color: var(--prolyn-text-muted) !important;
 }
 
-/* Fix dashboard mockup visibility */
-.dashboard-mockup {
-    background: #1e1e2d !important;
-    border: 1px solid rgba(255,255,255,0.1) !important;
-}
-.sidebar-mock {
-    background: rgba(255,255,255,0.05) !important;
-}
-.mock-line {
-    background: rgba(255,255,255,0.2) !important;
-}
-.metric-card-mock {
-    background: rgba(255,255,255,0.05) !important;
-}
-.chart-mock {
-    background: rgba(255,255,255,0.05) !important;
-}
-.chart-bar {
-    opacity: 1 !important;
-}
-
-/* Fix hero padding for Mac/Safari */
-.hero-section {
-    padding-top: 220px !important;
-}
-
-/* Dashboard Mockup Refinements */
-.dashboard-mockup {
-    margin-top: 40px !important;
-    border: 1px solid rgba(255,255,255,0.2) !important;
-}
-.dashboard-body {
-    height: 200px !important;
-}
-.sidebar-mock, .metric-card-mock, .chart-mock {
-    background: rgba(255,255,255,0.1) !important;
-    border: 1px solid rgba(255,255,255,0.05);
-}
-.mock-line {
-    background: rgba(255,255,255,0.3) !important;
-}
-.chart-bar {
-    background: var(--prolyn-primary) !important;
-    opacity: 1 !important;
-}
-
-.hero-section {
-    padding-bottom: 50px !important;
-}
-
 /* Fix for anchor links scrolling under fixed header */
 #ozellikler, #nasil-calisir {
     scroll-margin-top: 100px;
@@ -550,4 +503,29 @@ a {
     left: 0;
     right: 0;
     z-index: 1000 !important;
+}
+
+/* Scroll-triggered reveal animations */
+.scroll-reveal {
+    opacity: 0;
+    transform: translateY(24px);
+    transition: opacity 0.7s ease, transform 0.7s ease;
+}
+.scroll-reveal.is-visible {
+    opacity: 1;
+    transform: translateY(0);
+}
+.scroll-reveal.delay-1 { transition-delay: 0.1s; }
+.scroll-reveal.delay-2 { transition-delay: 0.2s; }
+.scroll-reveal.delay-3 { transition-delay: 0.3s; }
+.scroll-reveal.delay-4 { transition-delay: 0.4s; }
+.scroll-reveal.delay-5 { transition-delay: 0.5s; }
+.scroll-reveal.delay-6 { transition-delay: 0.6s; }
+
+/* Hero visual (dashboard mockup column) */
+.hero-visual {
+    animation: fadeInUp 1s ease-out 0.3s both;
+}
+@media (max-width: 991.98px) {
+    .hero-visual { margin-top: 3rem; }
 }

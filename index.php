@@ -62,32 +62,32 @@
         <!--end::Header-->
         
         <!--begin::Hero-->
-        <div class="hero-section text-center">
+        <div class="hero-section">
             <div class="hero-glow-1"></div>
             <div class="hero-glow-2"></div>
-            
+
             <div class="container-xxl position-relative z-index-2">
-                <div class="row align-items-center justify-content-center">
-                    <div class="col-lg-10 col-xl-8">
+                <div class="row align-items-center">
+                    <div class="col-lg-6 text-center text-lg-start">
                         <div class="animate-fade-in-up">
                             <span class="badge badge-light-primary fw-bolder px-5 py-2 fs-7 mb-7 rounded-pill border border-primary border-opacity-25">
                                 ✨ Yeni Nesil ERP ile Tanışın
                             </span>
-                            
+
                             <h1 class="text-white fw-bolder fs-3x fs-lg-4x mb-6 lh-sm">
                                 İşletmenizi <span class="text-gradient-primary">Geleceğe</span> Taşıyın
                             </h1>
-                            
-                            <p class="fw-medium fs-4 text-gray-400 mb-10 mx-auto" style="max-width: 600px; line-height: 1.6;">
+
+                            <p class="fw-medium fs-4 text-gray-400 mb-10 mx-auto mx-lg-0" style="max-width: 600px; line-height: 1.6;">
                                 Karmaşık süreçlere son verin. Bulut tabanlı, ışık hızında ve tamamen izole mimari ile iş akışlarınızı anında dijitalleştirin.
                             </p>
-                            
-                            <div class="d-flex justify-content-center gap-4 flex-wrap mb-10">
+
+                            <div class="d-flex justify-content-center justify-content-lg-start gap-4 flex-wrap mb-10">
                                 <a href="register.php" class="btn btn-primary-glow btn-lg px-8">Hemen Başla</a>
                                 <a href="#nasil-calisir" class="btn btn-outline btn-outline-dashed btn-outline-default btn-active-light-primary btn-lg text-white">Nasıl Çalışır?</a>
                             </div>
 
-                            <div class="d-flex align-items-center justify-content-center gap-5 text-gray-400 fs-6 fw-semibold">
+                            <div class="d-flex align-items-center justify-content-center justify-content-lg-start gap-5 text-gray-400 fs-6 fw-semibold flex-wrap">
                                 <div class="d-flex align-items-center">
                                     <i class="ki-duotone ki-check-circle fs-3 text-success me-2"><span class="path1"></span><span class="path2"></span></i>
                                     Kredi kartı gerekmez
@@ -102,9 +102,53 @@
                                 </div>
                             </div>
                         </div>
+                    </div>
 
-
-
+                    <div class="col-lg-6 d-none d-lg-block">
+                        <div class="hero-visual">
+                            <div class="dashboard-mockup">
+                                <div class="dashboard-header">
+                                    <div class="mac-buttons">
+                                        <span class="mac-btn mac-close"></span>
+                                        <span class="mac-btn mac-min"></span>
+                                        <span class="mac-btn mac-max"></span>
+                                    </div>
+                                </div>
+                                <div class="dashboard-body">
+                                    <div class="sidebar-mock">
+                                        <div class="mock-line w-3-4"></div>
+                                        <div class="mock-line w-full"></div>
+                                        <div class="mock-line w-1-2"></div>
+                                        <div class="mock-line w-full"></div>
+                                        <div class="mock-line w-3-4"></div>
+                                    </div>
+                                    <div class="content-mock">
+                                        <div class="metrics-mock">
+                                            <div class="metric-card-mock">
+                                                <div class="mock-line w-1-2"></div>
+                                                <div class="mock-line w-3-4"></div>
+                                            </div>
+                                            <div class="metric-card-mock">
+                                                <div class="mock-line w-1-2"></div>
+                                                <div class="mock-line w-3-4"></div>
+                                            </div>
+                                            <div class="metric-card-mock">
+                                                <div class="mock-line w-1-2"></div>
+                                                <div class="mock-line w-3-4"></div>
+                                            </div>
+                                        </div>
+                                        <div class="chart-mock">
+                                            <div class="chart-bar" style="height: 40%;"></div>
+                                            <div class="chart-bar" style="height: 70%;"></div>
+                                            <div class="chart-bar" style="height: 55%;"></div>
+                                            <div class="chart-bar" style="height: 90%;"></div>
+                                            <div class="chart-bar" style="height: 65%;"></div>
+                                            <div class="chart-bar" style="height: 80%;"></div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -115,19 +159,19 @@
         <div class="py-10 bg-black">
             <div class="container-xxl">
                 <div class="row g-8 text-center">
-                    <div class="col-6 col-md-3">
+                    <div class="col-6 col-md-3 scroll-reveal">
                         <div class="stat-number text-white">9+</div>
                         <div class="stat-label text-gray-500 fw-semibold">Gelişmiş Modül</div>
                     </div>
-                    <div class="col-6 col-md-3">
+                    <div class="col-6 col-md-3 scroll-reveal delay-1">
                         <div class="stat-number text-white">99.9%</div>
                         <div class="text-gray-500 fw-bold fs-5">Uptime Garantisi</div>
                     </div>
-                    <div class="col-6 col-md-3">
+                    <div class="col-6 col-md-3 scroll-reveal delay-2">
                         <div class="stat-number text-white">1sn</div>
                         <div class="text-gray-500 fw-bold fs-5">Altı Yanıt Süresi</div>
                     </div>
-                    <div class="col-6 col-md-3">
+                    <div class="col-6 col-md-3 scroll-reveal delay-3">
                         <div class="stat-number text-white">7/24</div>
                         <div class="text-gray-500 fw-bold fs-5">Teknik Destek</div>
                     </div>
@@ -145,7 +189,7 @@
                 </div>
 
                 <div class="row g-10">
-                    <div class="col-md-4">
+                    <div class="col-md-4 scroll-reveal">
                         <div class="glass-card h-100 p-8">
                             <div class="feature-icon-box text-primary">
                                 <i class="ki-duotone ki-rocket fs-3x text-primary"><span class="path1"></span><span class="path2"></span></i>
@@ -156,8 +200,8 @@
                             </p>
                         </div>
                     </div>
-                    
-                    <div class="col-md-4">
+
+                    <div class="col-md-4 scroll-reveal delay-1">
                         <div class="glass-card h-100 p-8">
                             <div class="feature-icon-box text-success">
                                 <i class="ki-duotone ki-shield-tick fs-3x text-success"><span class="path1"></span><span class="path2"></span></i>
@@ -169,7 +213,7 @@
                         </div>
                     </div>
 
-                    <div class="col-md-4">
+                    <div class="col-md-4 scroll-reveal delay-2">
                         <div class="glass-card h-100 p-8">
                             <div class="feature-icon-box text-info">
                                 <i class="ki-duotone ki-graph-3 fs-3x text-info"><span class="path1"></span><span class="path2"></span></i>
@@ -180,8 +224,8 @@
                             </p>
                         </div>
                     </div>
-                    
-                    <div class="col-md-4">
+
+                    <div class="col-md-4 scroll-reveal">
                         <div class="glass-card h-100 p-8">
                             <div class="feature-icon-box text-warning">
                                 <i class="ki-duotone ki-abstract-26 fs-3x text-warning"><span class="path1"></span><span class="path2"></span></i>
@@ -193,7 +237,7 @@
                         </div>
                     </div>
 
-                    <div class="col-md-4">
+                    <div class="col-md-4 scroll-reveal delay-1">
                         <div class="glass-card h-100 p-8">
                             <div class="feature-icon-box text-danger">
                                 <i class="ki-duotone ki-devices fs-3x text-danger"><span class="path1"></span><span class="path2"></span><span class="path3"></span><span class="path4"></span><span class="path5"></span></i>
@@ -205,7 +249,7 @@
                         </div>
                     </div>
 
-                    <div class="col-md-4">
+                    <div class="col-md-4 scroll-reveal delay-2">
                         <div class="glass-card h-100 p-8">
                             <div class="feature-icon-box text-primary">
                                 <i class="ki-duotone ki-cloud fs-3x text-primary"><span class="path1"></span><span class="path2"></span></i>
@@ -225,12 +269,12 @@
         <div id="nasil-calisir" class="py-15 py-lg-20 bg-black bg-opacity-50">
             <div class="container-xxl">
                 <div class="row align-items-center">
-                    <div class="col-lg-6 mb-10 mb-lg-0">
+                    <div class="col-lg-6 mb-10 mb-lg-0 scroll-reveal">
                         <h3 class="fs-2hx fw-bolder text-white mb-6">Sadece <span class="text-gradient-primary">3 Adımda</span> Başlayın</h3>
                         <p class="text-gray-400 fs-5 mb-10 lh-lg">
                             Prolyn'in tam otomatik tenant altyapısı sayesinde kayıt olduğunuz anda size özel veritabanınız ve ortamınız milisaniyeler içinde hazır olur. Herhangi bir kurulum beklemezsiniz.
                         </p>
-                        
+
                         <div class="d-flex flex-column gap-6">
                             <div class="d-flex">
                                 <div class="step-number">1</div>
@@ -255,7 +299,7 @@
                             </div>
                         </div>
                     </div>
-                    <div class="col-lg-6 text-center">
+                    <div class="col-lg-6 text-center scroll-reveal delay-2">
                         <img src="p/dist/assets/media/illustrations/sketchy-1/17-dark.png" class="mw-100" style="max-height: 400px; opacity: 0.8;" alt="" />
                     </div>
                 </div>
@@ -266,7 +310,7 @@
         <!--begin::CTA-->
         <div class="cta-section py-20">
             <div class="cta-pattern"></div>
-            <div class="container-xxl position-relative z-index-2 text-center">
+            <div class="container-xxl position-relative z-index-2 text-center scroll-reveal">
                 <h2 class="text-white fw-bolder fs-2hx mb-5">Şirketinizi Dönüştürmeye Hazır Mısınız?</h2>
                 <p class="text-gray-400 fs-4 mb-10 max-w-700 mx-auto">
                     Türkiye'nin en yenilikçi bulut ERP sistemine geçiş yapın, operasyonel yüklerinizi %70 oranında azaltın.
@@ -351,6 +395,7 @@
     <script src="p/dist/assets/plugins/global/plugins.bundle.js"></script>
     <script src="p/dist/assets/js/scripts.bundle.js"></script>
     <!--end::Global Javascript Bundle-->
+    <script src="assets/js/site.js"></script>
 
 <!-- Floating Action Buttons -->
 <div class="floating-action-buttons">
