@@ -28,3 +28,6 @@ dump.sql
 
 # Rate-limit / runtime state
 p/config/rate_limit/
+
+# Kullanıcı/destek yüklemeleri (çalışma zamanı içeriği, repoya girmez)
+uploads/
