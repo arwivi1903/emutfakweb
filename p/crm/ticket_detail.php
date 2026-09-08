@@ -77,7 +77,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 $query = "
     SELECT t.*, k.company_name 
     FROM destek_talepleri t
-    LEFT JOIN kurumlar k ON t.customer_id = k.id
+    LEFT JOIN kurumlar k ON t.customer_id = k.customer_id
     WHERE t.ticket_id = ?
 ";
 $ticket = $db->getRowAssoc($query, [$ticket_id]);

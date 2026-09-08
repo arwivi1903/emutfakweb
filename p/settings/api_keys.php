@@ -47,7 +47,7 @@ $customers = $db->getRowsAssoc("SELECT id, company_name FROM kurumlar ORDER BY c
 $query = "
     SELECT a.*, k.company_name 
     FROM api_anahtarlari a
-    LEFT JOIN kurumlar k ON a.customer_id = k.id
+    LEFT JOIN kurumlar k ON a.customer_id = k.customer_id
     ORDER BY a.api_key_id DESC
 ";
 $api_keys = $db->getRowsAssoc($query);

@@ -17,7 +17,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && isset($_
     $admin_id = $_SESSION['admin_id'] ?? 1; // Fallback to 1 if not set
 
     // Eski veriyi al (Loglama için)
-    $old_data = $db->getRowAssoc("SELECT * FROM abonelikler WHERE del_status = 1 AND subscription_id = ?", [$subscription_id]);
+    $old_data = $db->getRowAssoc("SELECT * FROM abonelikler WHERE subscription_id = ?", [$subscription_id]);
     
     if ($old_data) {
         if ($action === 'cancel') {
@@ -40,7 +40,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && isset($_
 }
 
 // Abonelikleri Kurumlarla birlikte çek
-$subscriptions = $db->getRowsAssoc("SELECT a.*, k.company_name FROM abonelikler a LEFT JOIN kurumlar k ON a.customer_id = k.customer_id WHERE a.del_status = 1 ORDER BY a.subscription_id DESC");
+$subscriptions = $db->getRowsAssoc("SELECT a.*, k.company_name FROM abonelikler a LEFT JOIN kurumlar k ON a.customer_id = k.customer_id ORDER BY a.subscription_id DESC");
 ?>
 
 <div class="app-main flex-column flex-row-fluid" id="kt_app_main">

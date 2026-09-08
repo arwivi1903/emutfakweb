@@ -22,7 +22,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
 $query = "
     SELECT f.*, k.company_name as customer_name
     FROM faturalar f
-    LEFT JOIN kurumlar k ON f.customer_id = k.id
+    LEFT JOIN kurumlar k ON f.customer_id = k.customer_id
     ORDER BY f.issue_date DESC, f.created_at DESC
 ";
 $invoices = $db->getRowsAssoc($query);

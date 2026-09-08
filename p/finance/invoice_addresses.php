@@ -12,7 +12,7 @@ require_once '../config/sidebar.php';
 $query = "
     SELECT fa.*, k.company_name as customer_company_name 
     FROM fatura_adresleri fa
-    LEFT JOIN kurumlar k ON fa.customer_id = k.id
+    LEFT JOIN kurumlar k ON fa.customer_id = k.customer_id
     ORDER BY fa.created_at DESC
 ";
 $addresses = $db->getRowsAssoc($query);

@@ -55,7 +55,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
 $tenants = $db->getRowsAssoc("SELECT k.*, y.full_name as account_manager_name 
     FROM kurumlar k 
     LEFT JOIN yoneticiler y ON k.account_manager_id = y.admin_id 
-    WHERE k.del_status = 1 AND k.deleted_at IS NULL 
+    WHERE k.deleted_at IS NULL
     ORDER BY k.customer_id DESC");
 ?>
 

@@ -13,7 +13,7 @@ $adminRow = $db->getRow("SELECT username FROM yoneticiler WHERE admin_id = ?", [
 $username = $adminRow ? $adminRow->username : 'Yönetici';
 
 // İstatistikleri doğru mantıkla (tenants.php ile aynı) hesapla
-$allTenants = $db->getRows("SELECT status, trial_end_date, sozlesme_bitis_tarihi FROM kurumlar WHERE del_status = 1 AND deleted_at IS NULL");
+$allTenants = $db->getRows("SELECT status, trial_end_date, sozlesme_bitis_tarihi FROM kurumlar WHERE deleted_at IS NULL");
 $totalTenants = count($allTenants);
 $activeTenants = 0;
 $passiveTenants = 0;
@@ -52,10 +52,10 @@ foreach ($allTenants as $t) {
 }
 
 // Son kayıt olan 5 kurum
-$recentTenants = $db->getRows("SELECT customer_id, customer_code, tenant_alias, company_name, company_email, status, trial_end_date, sozlesme_bitis_tarihi, created_at FROM kurumlar WHERE del_status = 1 AND deleted_at IS NULL ORDER BY customer_id DESC LIMIT 5");
+$recentTenants = $db->getRows("SELECT customer_id, customer_code, tenant_alias, company_name, company_email, status, trial_end_date, sozlesme_bitis_tarihi, created_at FROM kurumlar WHERE deleted_at IS NULL ORDER BY customer_id DESC LIMIT 5");
 
 // Son 5 sistem hatası
-$recentErrors = $db->getRows("SELECT error_id, error_message, severity, created_at FROM sistem_hatalari WHERE del_status = 1 ORDER BY error_id DESC LIMIT 5");
+$recentErrors = $db->getRows("SELECT id, message AS error_message, created_at FROM sistem_hatalari ORDER BY id DESC LIMIT 5");
 
 $resetRequestPending = 0;
 $resetQueuePending = 0;

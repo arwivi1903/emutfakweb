@@ -27,7 +27,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
 // Destek Taleplerini çek
 $query = "SELECT t.*, k.company_name 
     FROM destek_talepleri t
-    LEFT JOIN kurumlar k ON t.customer_id = k.id
+    LEFT JOIN kurumlar k ON t.customer_id = k.customer_id
     WHERE t.del_status = 1 ORDER BY t.created_at DESC";
 $tickets = $db->getRowsAssoc($query);
 ?>

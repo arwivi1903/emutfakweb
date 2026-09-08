@@ -315,7 +315,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
     // haritası vardı ve panelde girilen şube limitiyle çelişiyordu.
     $num_branches    = $branches_map[$plan_name] ?? 0;
 
-    $existing_sub = $db->getRowAssoc("SELECT subscription_id FROM abonelikler WHERE customer_id = ? AND del_status = 1 ORDER BY subscription_id DESC LIMIT 1", [$customer_id]);
+    $existing_sub = $db->getRowAssoc("SELECT subscription_id FROM abonelikler WHERE customer_id = ? ORDER BY subscription_id DESC LIMIT 1", [$customer_id]);
 
     if ($subscription_type == 'trial') {
         // Deneme sürümü için fatura tutarı 0

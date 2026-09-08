@@ -48,7 +48,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 $query = "SELECT d.*, y.full_name as creator_name
     FROM duyurular d
     LEFT JOIN yoneticiler y ON d.created_by = y.admin_id
-    WHERE d.del_status = 1 ORDER BY d.created_at DESC";
+    WHERE d.is_active = 1 ORDER BY d.created_at DESC";
 $announcements = $db->getRowsAssoc($query);
 ?>
 
