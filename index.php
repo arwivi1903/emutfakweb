@@ -15,6 +15,19 @@
     <link href="assets/css/style.css" rel="stylesheet" type="text/css" />
 </head>
 <body id="kt_body" class="app-blank">
+    <!--begin::Security Check Overlay-->
+    <div id="prolyn-boot-check" class="boot-check">
+        <div class="boot-check-box">
+            <h1 class="text-white fs-2 fw-bolder mb-6">Prolyn<span class="text-primary">.</span></h1>
+            <ul class="boot-check-list">
+                <li id="boot-step-1"><span class="boot-dot"></span> Sunucu bağlantısı kuruluyor</li>
+                <li id="boot-step-2"><span class="boot-dot"></span> Bağlantı güvenliği doğrulanıyor</li>
+                <li id="boot-step-3"><span class="boot-dot"></span> Sayfa hazırlanıyor</li>
+            </ul>
+        </div>
+    </div>
+    <!--end::Security Check Overlay-->
+
     <!--begin::Root-->
     <div class="d-flex flex-column flex-root" id="kt_app_root">
         <!--begin::Header-->
@@ -307,6 +320,88 @@
         </div>
         <!--end::How It Works-->
 
+        <!--begin::FAQ-->
+        <div id="sss" class="py-15 py-lg-20">
+            <div class="container-xxl">
+                <div class="text-center mb-17 scroll-reveal">
+                    <h3 class="fs-2hx fw-bolder text-white mb-5">Sıkça Sorulan Sorular</h3>
+                    <div class="fs-5 text-gray-400 fw-medium">Aklınıza takılan bir şey mi var? İşte en çok sorulanlar.</div>
+                </div>
+
+                <div class="row justify-content-center">
+                    <div class="col-lg-9">
+                        <div class="accordion scroll-reveal" id="prolynFaqAccordion">
+                            <div class="glass-card mb-4 p-2">
+                                <h2 class="accordion-header" id="faqHead1">
+                                    <button class="accordion-button collapsed bg-transparent text-white fw-bold fs-5" type="button" data-bs-toggle="collapse" data-bs-target="#faqBody1">
+                                        30 günlük deneme sürümünde kısıtlama var mı?
+                                    </button>
+                                </h2>
+                                <div id="faqBody1" class="accordion-collapse collapse" data-bs-parent="#prolynFaqAccordion">
+                                    <div class="accordion-body text-gray-400 fs-6 lh-lg">
+                                        Hayır. Deneme sürecinde de kendi izole veritabanınızla, seçtiğiniz pakete uygun modüllerle çalışırsınız. Kredi kartı istemiyoruz; süre sonunda dilerseniz sözleşmeli müşteriye geçersiniz, dilerseniz vazgeçersiniz.
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="glass-card mb-4 p-2">
+                                <h2 class="accordion-header" id="faqHead2">
+                                    <button class="accordion-button collapsed bg-transparent text-white fw-bold fs-5" type="button" data-bs-toggle="collapse" data-bs-target="#faqBody2">
+                                        Verilerimiz başka firmalarla aynı veritabanında mı tutuluyor?
+                                    </button>
+                                </h2>
+                                <div id="faqBody2" class="accordion-collapse collapse" data-bs-parent="#prolynFaqAccordion">
+                                    <div class="accordion-body text-gray-400 fs-6 lh-lg">
+                                        Hayır. Prolyn'de her kurum için ayrı, tamamen izole bir veritabanı (Multi-DB mimari) oluşturulur. Verileriniz hiçbir şekilde başka bir müşteriyle aynı tabloyu paylaşmaz.
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="glass-card mb-4 p-2">
+                                <h2 class="accordion-header" id="faqHead3">
+                                    <button class="accordion-button collapsed bg-transparent text-white fw-bold fs-5" type="button" data-bs-toggle="collapse" data-bs-target="#faqBody3">
+                                        Paketler arasında sonradan geçiş yapabilir miyim?
+                                    </button>
+                                </h2>
+                                <div id="faqBody3" class="accordion-collapse collapse" data-bs-parent="#prolynFaqAccordion">
+                                    <div class="accordion-body text-gray-400 fs-6 lh-lg">
+                                        Evet. Sözleşmeli müşterilerimiz panelden paket yükseltme talebinde bulunabilir; kalan süreye göre fiyat farkı otomatik hesaplanır, ek bir kurulum sürecine gerek kalmaz.
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="glass-card mb-4 p-2">
+                                <h2 class="accordion-header" id="faqHead4">
+                                    <button class="accordion-button collapsed bg-transparent text-white fw-bold fs-5" type="button" data-bs-toggle="collapse" data-bs-target="#faqBody4">
+                                        Mevcut sistemimizdeki verileri Prolyn'e aktarabilir miyiz?
+                                    </button>
+                                </h2>
+                                <div id="faqBody4" class="accordion-collapse collapse" data-bs-parent="#prolynFaqAccordion">
+                                    <div class="accordion-body text-gray-400 fs-6 lh-lg">
+                                        Kayıt sonrası kurulum ekibimiz sizinle iletişime geçerek mevcut müşteri, cari ve stok verilerinizin aktarım sürecini birlikte planlar.
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="glass-card p-2">
+                                <h2 class="accordion-header" id="faqHead5">
+                                    <button class="accordion-button collapsed bg-transparent text-white fw-bold fs-5" type="button" data-bs-toggle="collapse" data-bs-target="#faqBody5">
+                                        Destek talebi açtığımda ne kadar sürede dönüş alırım?
+                                    </button>
+                                </h2>
+                                <div id="faqBody5" class="accordion-collapse collapse" data-bs-parent="#prolynFaqAccordion">
+                                    <div class="accordion-body text-gray-400 fs-6 lh-lg">
+                                        Paketinize göre değişen öncelik seviyelerimiz var; panel üzerinden açtığınız destek talepleri ekibimiz tarafından takip edilip yanıtlanır.
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <!--end::FAQ-->
+
         <!--begin::CTA-->
         <div class="cta-section py-20">
             <div class="cta-pattern"></div>
@@ -343,7 +438,7 @@
                         <h4 class="text-white fw-bold mb-5">Destek</h4>
                         <div class="d-flex flex-column gap-3">
                             <a href="contact.php" class="footer-link fw-semibold">İletişim</a>
-                            <a href="#" class="footer-link fw-semibold">SSS</a>
+                            <a href="index.php#sss" class="footer-link fw-semibold">SSS</a>
                         </div>
                     </div>
                     <div class="col-lg-4">
@@ -396,6 +491,7 @@
     <script src="p/dist/assets/js/scripts.bundle.js"></script>
     <!--end::Global Javascript Bundle-->
     <script src="assets/js/site.js"></script>
+    <script src="assets/js/boot-check.js"></script>
 
 <!-- Floating Action Buttons -->
 <div class="floating-action-buttons">

@@ -445,8 +445,21 @@ a {
 }
 
 /* Fix for anchor links scrolling under fixed header */
-#ozellikler, #nasil-calisir {
+#ozellikler, #nasil-calisir, #sss {
     scroll-margin-top: 100px;
+}
+
+/* FAQ accordion */
+.accordion-button::after {
+    filter: invert(1) grayscale(1) brightness(2);
+}
+.accordion-button:not(.collapsed) {
+    color: var(--prolyn-primary) !important;
+    box-shadow: none;
+}
+.accordion-button:focus {
+    box-shadow: none;
+    border-color: transparent;
 }
 
 /* Floating Action Buttons */
@@ -521,6 +534,69 @@ a {
 .scroll-reveal.delay-4 { transition-delay: 0.4s; }
 .scroll-reveal.delay-5 { transition-delay: 0.5s; }
 .scroll-reveal.delay-6 { transition-delay: 0.6s; }
+
+/* Boot / connection-security check overlay */
+.boot-check {
+    position: fixed;
+    inset: 0;
+    z-index: 20000;
+    background: var(--prolyn-bg);
+    background-image: var(--prolyn-bg-gradient);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: opacity 0.4s ease;
+}
+.boot-check.boot-check-done {
+    opacity: 0;
+    pointer-events: none;
+}
+.boot-check-box {
+    text-align: center;
+}
+.boot-check-list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    text-align: left;
+    display: inline-flex;
+    flex-direction: column;
+    gap: 12px;
+}
+.boot-check-list li {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    color: var(--prolyn-text-muted);
+    font-size: 0.95rem;
+    font-weight: 500;
+    opacity: 0.4;
+    transition: opacity 0.3s ease, color 0.3s ease;
+}
+.boot-check-list li.boot-active {
+    opacity: 1;
+    color: #ffffff;
+}
+.boot-check-list li.boot-ok .boot-dot {
+    background: #50cd89;
+    box-shadow: 0 0 0 3px rgba(80, 205, 137, 0.2);
+}
+.boot-check-list li.boot-warn .boot-dot {
+    background: #ffc700;
+    box-shadow: 0 0 0 3px rgba(255, 199, 0, 0.2);
+}
+.boot-dot {
+    width: 9px;
+    height: 9px;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.25);
+    flex-shrink: 0;
+    transition: background 0.3s ease, box-shadow 0.3s ease;
+}
+.boot-check-list li.boot-active:not(.boot-ok):not(.boot-warn) .boot-dot {
+    background: var(--prolyn-primary);
+    animation: pulseGlow 1.2s ease-in-out infinite;
+}
 
 /* Hero visual (dashboard mockup column) */
 .hero-visual {
