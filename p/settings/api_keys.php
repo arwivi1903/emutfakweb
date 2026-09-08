@@ -41,7 +41,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
 }
 
 // Tüm müşterileri (kurumları) çek (Yeni Ekle formundaki select için)
-$customers = $db->getRowsAssoc("SELECT id, company_name FROM kurumlar ORDER BY company_name ASC");
+$customers = $db->getRowsAssoc("SELECT customer_id AS id, company_name FROM kurumlar ORDER BY company_name ASC");
 
 // API Anahtarlarını çek
 $query = "
