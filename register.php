@@ -356,6 +356,12 @@ $iller = $stmtCities->fetchAll(PDO::FETCH_ASSOC);
                             <li class="nav-item">
                                 <a class="nav-link text-white px-4" href="moduller.php">Modüller</a>
                             </li>
+                                                        <li class="nav-item">
+                                <a class="nav-link text-white px-4" href="blog.php">Blog</a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link text-white px-4" href="video.php">Videolar</a>
+                            </li>
                             <li class="nav-item">
                                 <a class="nav-link text-white px-4" href="pricing.php">Fiyatlandırma</a>
                             </li>
@@ -631,6 +637,8 @@ $iller = $stmtCities->fetchAll(PDO::FETCH_ASSOC);
                 <li class="nav-item mb-2"><a class="nav-link text-white px-0" href="index.php#ozellikler"><i class="bi bi-star me-2 text-primary"></i>Özellikler</a></li>
                 <li class="nav-item mb-2"><a class="nav-link text-white px-0" href="index.php#nasil-calisir"><i class="bi bi-info-circle me-2 text-primary"></i>Nasıl Çalışır?</a></li>
                 <li class="nav-item mb-2"><a class="nav-link text-white px-0" href="moduller.php"><i class="bi bi-grid me-2 text-primary"></i>Modüller</a></li>
+                <li class="nav-item mb-2"><a class="nav-link text-white px-0" href="blog.php"><i class="bi bi-file-text me-2 text-primary"></i>Blog</a></li>
+                <li class="nav-item mb-2"><a class="nav-link text-white px-0" href="video.php"><i class="bi bi-play-circle me-2 text-primary"></i>Videolar</a></li>
                 <li class="nav-item mb-2"><a class="nav-link text-white px-0" href="pricing.php"><i class="bi bi-tag me-2 text-primary"></i>Fiyatlandırma</a></li>
                 <li class="nav-item mb-2"><a class="nav-link text-white px-0" href="contact.php"><i class="bi bi-envelope me-2 text-primary"></i>İletişim</a></li>
             </ul>

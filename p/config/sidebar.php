@@ -188,6 +188,8 @@ try {
                         <div class="menu-item"><a class="menu-link <?= isActive('website/seo.php') ?>" href="website/seo.php"><span class="menu-bullet"><span class="bullet bullet-dot"></span></span><span class="menu-title">SEO ve Temel Ayarlar</span></a></div>
                         <div class="menu-item"><a class="menu-link <?= isActive('website/features.php') ?>" href="website/features.php"><span class="menu-bullet"><span class="bullet bullet-dot"></span></span><span class="menu-title">Ana Sayfa Özellikleri</span></a></div>
                         <div class="menu-item"><a class="menu-link <?= isActive('website/modules.php') ?>" href="website/modules.php"><span class="menu-bullet"><span class="bullet bullet-dot"></span></span><span class="menu-title">Web Modülleri</span></a></div>
+                        <div class="menu-item"><a class="menu-link <?= isActive('website/blog.php') ?>" href="website/blog.php"><span class="menu-bullet"><span class="bullet bullet-dot"></span></span><span class="menu-title">Blog</span></a></div>
+                        <div class="menu-item"><a class="menu-link <?= isActive('website/videos.php') ?>" href="website/videos.php"><span class="menu-bullet"><span class="bullet bullet-dot"></span></span><span class="menu-title">Videolar</span></a></div>
                     </div>
                 </div>
 

@@ -55,6 +55,12 @@
                             <li class="nav-item">
                                 <a class="nav-link text-white px-4" href="moduller.php">Modüller</a>
                             </li>
+                                                        <li class="nav-item">
+                                <a class="nav-link text-white px-4" href="blog.php">Blog</a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link text-white px-4" href="video.php">Videolar</a>
+                            </li>
                             <li class="nav-item">
                                 <a class="nav-link text-white px-4" href="pricing.php">Fiyatlandırma</a>
                             </li>
@@ -429,6 +435,8 @@
                             <a href="index.php#ozellikler" class="footer-link fw-semibold">Özellikler</a>
                             <a href="index.php#nasil-calisir" class="footer-link fw-semibold">Nasıl Çalışır?</a>
                             <a href="moduller.php" class="footer-link fw-semibold">Modüller</a>
+                            <a href="blog.php" class="footer-link fw-semibold">Blog</a>
+                            <a href="video.php" class="footer-link fw-semibold">Videolar</a>
                             <a href="pricing.php" class="footer-link fw-semibold">Fiyatlandırma</a>
                         </div>
                     </div>
@@ -475,6 +483,8 @@
                 <li class="nav-item mb-4"><a class="nav-link text-white px-0" href="index.php#ozellikler">Özellikler</a></li>
                 <li class="nav-item mb-4"><a class="nav-link text-white px-0" href="index.php#nasil-calisir">Nasıl Çalışır?</a></li>
                 <li class="nav-item mb-4"><a class="nav-link text-white px-0" href="moduller.php">Modüller</a></li>
+                <li class="nav-item mb-4"><a class="nav-link text-white px-0" href="blog.php">Blog</a></li>
+                <li class="nav-item mb-4"><a class="nav-link text-white px-0" href="video.php">Videolar</a></li>
                 <li class="nav-item mb-4"><a class="nav-link text-white px-0" href="pricing.php">Fiyatlandırma</a></li>
                 <li class="nav-item"><a class="nav-link text-white px-0" href="contact.php">İletişim</a></li>
             </ul>

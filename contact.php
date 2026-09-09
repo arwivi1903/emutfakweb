@@ -125,6 +125,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                             <li class="nav-item">
                                 <a class="nav-link text-white px-4" href="moduller.php">Modüller</a>
                             </li>
+                                                        <li class="nav-item">
+                                <a class="nav-link text-white px-4" href="blog.php">Blog</a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link text-white px-4" href="video.php">Videolar</a>
+                            </li>
                             <li class="nav-item">
                                 <a class="nav-link text-white px-4" href="pricing.php">Fiyatlandırma</a>
                             </li>
@@ -250,6 +256,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                             <a href="index.php#ozellikler" class="footer-link fw-semibold">Özellikler</a>
                             <a href="index.php#nasil-calisir" class="footer-link fw-semibold">Nasıl Çalışır?</a>
                             <a href="moduller.php" class="footer-link fw-semibold">Modüller</a>
+                            <a href="blog.php" class="footer-link fw-semibold">Blog</a>
+                            <a href="video.php" class="footer-link fw-semibold">Videolar</a>
                             <a href="pricing.php" class="footer-link fw-semibold">Fiyatlandırma</a>
                         </div>
                     </div>
@@ -296,6 +304,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 <li class="nav-item mb-2"><a class="nav-link text-white px-0" href="index.php#ozellikler"><i class="bi bi-star me-2 text-primary"></i>Özellikler</a></li>
                 <li class="nav-item mb-2"><a class="nav-link text-white px-0" href="index.php#nasil-calisir"><i class="bi bi-info-circle me-2 text-primary"></i>Nasıl Çalışır?</a></li>
                 <li class="nav-item mb-2"><a class="nav-link text-white px-0" href="moduller.php"><i class="bi bi-grid me-2 text-primary"></i>Modüller</a></li>
+                <li class="nav-item mb-2"><a class="nav-link text-white px-0" href="blog.php"><i class="bi bi-file-text me-2 text-primary"></i>Blog</a></li>
+                <li class="nav-item mb-2"><a class="nav-link text-white px-0" href="video.php"><i class="bi bi-play-circle me-2 text-primary"></i>Videolar</a></li>
                 <li class="nav-item mb-2"><a class="nav-link text-white px-0" href="pricing.php"><i class="bi bi-tag me-2 text-primary"></i>Fiyatlandırma</a></li>
                 <li class="nav-item mb-2"><a class="nav-link text-white px-0" href="contact.php"><i class="bi bi-envelope me-2 text-primary"></i>İletişim</a></li>
             </ul>
