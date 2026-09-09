@@ -33,6 +33,10 @@ try {
     die("Sistem bakımı devam etmektedir. Lütfen daha sonra tekrar deneyiniz.");
 }
 
+// Mevcut müşteri girişi (ERP paneli) — üretimde app.prolyn.net, yerelde
+// localhost/prolyn; nav'daki "Giriş Yap" bağlantısı bunu kullanır.
+$appPanelUrl = rtrim((string)prolynweb_env('APP_PANEL_URL', '/prolyn'), '/') . '/login.php';
+
 // Tüm ayarları çekip global bir diziye atalım
 $appSettings = [];
 try {
