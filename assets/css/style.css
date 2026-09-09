@@ -553,49 +553,37 @@ a {
 }
 .boot-check-box {
     text-align: center;
+    max-width: 320px;
+    padding: 0 24px;
 }
-.boot-check-list {
-    list-style: none;
-    margin: 0;
-    padding: 0;
-    text-align: left;
-    display: inline-flex;
-    flex-direction: column;
-    gap: 12px;
-}
-.boot-check-list li {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    color: var(--prolyn-text-muted);
-    font-size: 0.95rem;
-    font-weight: 500;
-    opacity: 0.4;
-    transition: opacity 0.3s ease, color 0.3s ease;
-}
-.boot-check-list li.boot-active {
-    opacity: 1;
-    color: #ffffff;
-}
-.boot-check-list li.boot-ok .boot-dot {
-    background: #50cd89;
-    box-shadow: 0 0 0 3px rgba(80, 205, 137, 0.2);
-}
-.boot-check-list li.boot-warn .boot-dot {
-    background: #ffc700;
-    box-shadow: 0 0 0 3px rgba(255, 199, 0, 0.2);
-}
-.boot-dot {
-    width: 9px;
-    height: 9px;
+.boot-check-icon {
+    font-size: 2.75rem;
+    line-height: 1;
+    margin-bottom: 18px;
+    animation: pulseGlow 1.6s ease-in-out infinite;
     border-radius: 50%;
-    background: rgba(255, 255, 255, 0.25);
-    flex-shrink: 0;
-    transition: background 0.3s ease, box-shadow 0.3s ease;
+    display: inline-flex;
 }
-.boot-check-list li.boot-active:not(.boot-ok):not(.boot-warn) .boot-dot {
-    background: var(--prolyn-primary);
-    animation: pulseGlow 1.2s ease-in-out infinite;
+.boot-check-bar {
+    margin-top: 22px;
+    height: 3px;
+    width: 100%;
+    background: rgba(255, 255, 255, 0.08);
+    border-radius: 3px;
+    overflow: hidden;
+}
+.boot-check-bar-fill {
+    height: 100%;
+    width: 0%;
+    background: linear-gradient(90deg, var(--prolyn-primary), var(--prolyn-secondary));
+    border-radius: 3px;
+    transition: width 1.4s ease;
+}
+.boot-check.boot-check-verified .boot-check-bar-fill {
+    width: 100%;
+}
+.boot-check.boot-check-verified .boot-check-icon {
+    animation: none;
 }
 
 /* Hero visual (dashboard mockup column) */

@@ -18,12 +18,10 @@
     <!--begin::Security Check Overlay-->
     <div id="prolyn-boot-check" class="boot-check">
         <div class="boot-check-box">
-            <h1 class="text-white fs-2 fw-bolder mb-6">Prolyn<span class="text-primary">.</span></h1>
-            <ul class="boot-check-list">
-                <li id="boot-step-1"><span class="boot-dot"></span> Sunucu bağlantısı kuruluyor</li>
-                <li id="boot-step-2"><span class="boot-dot"></span> Bağlantı güvenliği doğrulanıyor</li>
-                <li id="boot-step-3"><span class="boot-dot"></span> Sayfa hazırlanıyor</li>
-            </ul>
+            <div class="boot-check-icon">🛡️</div>
+            <h1 class="text-white fs-3 fw-bolder mb-3">Güvenlik Kontrolü</h1>
+            <p id="boot-check-message" class="text-gray-400 fs-6 mb-0">Lütfen bekleyin, tarayıcınız doğrulanıyor...</p>
+            <div class="boot-check-bar"><div class="boot-check-bar-fill"></div></div>
         </div>
     </div>
     <!--end::Security Check Overlay-->
