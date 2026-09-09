@@ -64,12 +64,14 @@ try {
              LIMIT 10",
             [$headerAdminId]
         );
-        $headerUnreadCount = count($headerNotifications);
     }
 } catch (Throwable $e) {
     $headerNotifications = [];
-    $headerUnreadCount = 0;
 }
+
+// Canlı hesaplanan bildirimler (yeni abonelik, süresi yaklaşan abonelik vb.)
+$headerNotifications = array_merge($headerNotifications, prolyn_canli_bildirimler($db));
+$headerUnreadCount = count($headerNotifications);
 
 $headerOpenTickets = 0;
 try {
@@ -3564,6 +3566,11 @@ target="_blank">
                                                 <?php if ($headerUnreadCount === 0): ?>
                                                     <div class="text-center text-muted py-8" id="notification-empty">Yeni bildirim yok.</div>
                                                 <?php else: ?>
+                                                    <?php
+                                                        usort($headerNotifications, function ($a, $b) {
+                                                            return strtotime((string)($b['created_at'] ?? '')) <=> strtotime((string)($a['created_at'] ?? ''));
+                                                        });
+                                                    ?>
                                                     <?php foreach ($headerNotifications as $notif): ?>
                                                         <?php
                                                             $notifType = $notif['type'] ?? 'info';
@@ -3576,7 +3583,8 @@ target="_blank">
                                                                 $notifBadgeClass = 'badge-light-success';
                                                             }
                                                         ?>
-                                                        <div class="d-flex flex-column border-bottom border-gray-200 py-4" data-notification-id="<?= (int)$notif['notification_id'] ?>">
+                                                        <?php $notifCanli = (int)($notif['notification_id'] ?? 0) === 0; ?>
+                                                        <div class="d-flex flex-column border-bottom border-gray-200 py-4" data-notification-id="<?= (int)($notif['notification_id'] ?? 0) ?>">
                                                             <div class="d-flex align-items-center justify-content-between mb-1">
                                                                 <span class="fw-bold text-gray-800"><?= htmlspecialchars((string)$notif['title']) ?></span>
                                                                 <span class="badge <?= $notifBadgeClass ?>"><?= htmlspecialchars(strtoupper((string)$notifType)) ?></span>
@@ -3584,7 +3592,11 @@ target="_blank">
                                                             <span class="text-muted fs-7 mb-2"><?= htmlspecialchars((string)$notif['message']) ?></span>
                                                             <div class="d-flex align-items-center justify-content-between">
                                                                 <span class="text-muted fs-8"><?= date('d.m.Y H:i', strtotime((string)$notif['created_at'])) ?></span>
-                                                                <button type="button" class="btn btn-sm btn-light-primary py-1 px-2 mark-notification-read-btn">Okundu</button>
+                                                                <?php if ($notifCanli): ?>
+                                                                    <a href="<?= htmlspecialchars((string)($notif['action_url'] ?? '#')) ?>" class="btn btn-sm btn-light-primary py-1 px-2">Görüntüle</a>
+                                                                <?php else: ?>
+                                                                    <button type="button" class="btn btn-sm btn-light-primary py-1 px-2 mark-notification-read-btn">Okundu</button>
+                                                                <?php endif; ?>
                                                             </div>
                                                         </div>
                                                     <?php endforeach; ?>
@@ -3649,6 +3661,10 @@ target="_blank">
                                 function renderNotifications(items) {
                                     const rows = items.map((item) => {
                                         const type = item.type || 'info';
+                                        const canli = Number(item.notification_id || 0) === 0;
+                                        const actionHtml = canli
+                                            ? '<a href="' + escapeHtml(item.action_url || '#') + '" class="btn btn-sm btn-light-primary py-1 px-2">Görüntüle</a>'
+                                            : '<button type="button" class="btn btn-sm btn-light-primary py-1 px-2 mark-notification-read-btn">Okundu</button>';
                                         return ''
                                             + '<div class="d-flex flex-column border-bottom border-gray-200 py-4" data-notification-id="' + Number(item.notification_id || 0) + '">'
                                             + '  <div class="d-flex align-items-center justify-content-between mb-1">'
@@ -3658,7 +3674,7 @@ target="_blank">
                                             + '  <span class="text-muted fs-7 mb-2">' + escapeHtml(item.message || '') + '</span>'
                                             + '  <div class="d-flex align-items-center justify-content-between">'
                                             + '    <span class="text-muted fs-8">' + escapeHtml(formatDate(item.created_at)) + '</span>'
-                                            + '    <button type="button" class="btn btn-sm btn-light-primary py-1 px-2 mark-notification-read-btn">Okundu</button>'
+                                            + '    ' + actionHtml
                                             + '  </div>'
                                             + '</div>';
                                     });

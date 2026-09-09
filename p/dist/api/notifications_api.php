@@ -17,10 +17,14 @@ $admin_id = $_SESSION['admin_id'];
 $action = $_GET['action'] ?? $_POST['action'] ?? '';
 
 if ($action === 'get_unread') {
-    $notifications = $db->getRows(
+    $notifications = $db->getRowsAssoc(
         "SELECT notification_id, title, message, type, created_at FROM bildirimler WHERE admin_id = ? AND is_read = 0 ORDER BY notification_id DESC LIMIT 10",
         [$admin_id]
     );
+    $notifications = array_merge($notifications, prolyn_canli_bildirimler($db));
+    usort($notifications, function ($a, $b) {
+        return strtotime((string)($b['created_at'] ?? '')) <=> strtotime((string)($a['created_at'] ?? ''));
+    });
     echo json_encode($notifications);
     exit;
 }
