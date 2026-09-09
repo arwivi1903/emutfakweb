@@ -71,6 +71,17 @@ try {
     $headerUnreadCount = 0;
 }
 
+$headerOpenTickets = 0;
+try {
+    if (method_exists($db, 'tableExists') && $db->tableExists('destek_talepleri')) {
+        $headerOpenTickets = (int)$db->getColumn(
+            "SELECT COUNT(*) FROM destek_talepleri WHERE del_status = 1 AND status IN ('new', 'open', 'in_progress')"
+        );
+    }
+} catch (Throwable $e) {
+    $headerOpenTickets = 0;
+}
+
 try {
     if (method_exists($db, 'tableExists') && $db->tableExists('sifre_sifirlama_talepleri')) {
         $headerResetRequestPending = (int)$db->getColumn(
@@ -3504,11 +3515,24 @@ target="_blank">
                                 </div>
                             </div>
 
+                            <!-- Destek Talepleri -->
+                            <div class="app-navbar-item ms-1 ms-md-4">
+                                <a href="crm/tickets.php" class="btn btn-icon btn-custom btn-icon-muted btn-active-light btn-active-color-primary w-35px h-35px position-relative" title="Destek Talepleri">
+                                    <i class="ki-duotone ki-message-text-2 fs-2">
+                                        <span class="path1"></span>
+                                        <span class="path2"></span>
+                                        <span class="path3"></span>
+                                    </i>
+                                    <span class="badge badge-circle badge-warning position-absolute top-0 start-100 translate-middle"
+                                          style="<?= $headerOpenTickets > 0 ? 'display: inline-flex;' : 'display: none;' ?>"><?= $headerOpenTickets ?></span>
+                                </a>
+                            </div>
+
                             <!-- Notification Dropdown -->
                             <div class="app-navbar-item ms-1 ms-md-4">
-                                <div class="btn btn-icon btn-custom btn-icon-muted btn-active-light btn-active-color-primary w-35px h-35px position-relative" 
-                                     data-kt-menu-trigger="{default: 'click', lg: 'hover'}" 
-                                     data-kt-menu-attach="parent" 
+                                <div class="btn btn-icon btn-custom btn-icon-muted btn-active-light btn-active-color-primary w-35px h-35px position-relative"
+                                     data-kt-menu-trigger="{default: 'click', lg: 'hover'}"
+                                     data-kt-menu-attach="parent"
                                      data-kt-menu-placement="bottom-end">
                                     <i class="ki-duotone ki-notification-on fs-2">
                                         <span class="path1"></span>
