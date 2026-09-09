@@ -177,7 +177,7 @@
             <div class="container-xxl">
                 <div class="row g-8 text-center">
                     <div class="col-6 col-md-3 scroll-reveal">
-                        <div class="stat-number text-white">9+</div>
+                        <div class="stat-number text-white">13+</div>
                         <div class="stat-label text-gray-500 fw-semibold">Gelişmiş Modül</div>
                     </div>
                     <div class="col-6 col-md-3 scroll-reveal delay-1">
