@@ -17,6 +17,13 @@ $featureColors = ['primary', 'success', 'info', 'warning', 'danger'];
     <title><?php echo htmlspecialchars($appSettings['seo_title'] ?? 'Prolyn ERP - Yeni Çağın İş Yönetimi'); ?></title>
     <meta name="description" content="<?php echo htmlspecialchars($appSettings['seo_description'] ?? ''); ?>">
     <meta name="keywords" content="<?php echo htmlspecialchars($appSettings['seo_keywords'] ?? ''); ?>">
+    <link rel="canonical" href="<?php echo htmlspecialchars(prolynweb_current_url()); ?>">
+    <meta property="og:type" content="website">
+    <meta property="og:site_name" content="<?php echo htmlspecialchars($appSettings['site_name'] ?? 'Prolyn ERP'); ?>">
+    <meta property="og:title" content="<?php echo htmlspecialchars($appSettings['seo_title'] ?? 'Prolyn ERP - Yeni Çağın İş Yönetimi'); ?>">
+    <meta property="og:description" content="<?php echo htmlspecialchars($appSettings['seo_description'] ?? ''); ?>">
+    <meta property="og:url" content="<?php echo htmlspecialchars(prolynweb_current_url()); ?>">
+    <meta name="twitter:card" content="summary_large_image">
     <link rel="shortcut icon" href="p/dist/assets/media/logos/favicon.ico" />
     <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Inter:300,400,500,600,700,800" />
     <link href="p/dist/assets/plugins/global/plugins.bundle.css" rel="stylesheet" type="text/css" />

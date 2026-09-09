@@ -1,0 +1,6 @@
+User-agent: *
+Allow: /
+Disallow: /p/
+Disallow: /uploads/
+
+Sitemap: https://prolyn.net/sitemap.xml

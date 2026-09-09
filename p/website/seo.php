@@ -18,7 +18,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
     foreach ($keys as $k) {
         if (isset($_POST[$k])) {
             $val = trim($_POST[$k]);
-            $db->Update("UPDATE sistem_ayarlari SET setting_value = ?, updated_at = NOW() WHERE setting_key = ?", [$val, $k]);
+            /* Satır hiç yoksa UPDATE sessizce 0 satır etkiler ve hiçbir şey
+               kaydedilmez (sistem_ayarlari boş kurulduğunda tam olarak bu
+               oluyordu). INSERT ... ON DUPLICATE KEY UPDATE ile satır yoksa
+               oluşturuluyor, varsa güncelleniyor. */
+            $db->Insert(
+                "INSERT INTO sistem_ayarlari (setting_key, setting_value, category, is_public, updated_at)
+                 VALUES (?, ?, 'seo', 1, NOW())
+                 ON DUPLICATE KEY UPDATE setting_value = VALUES(setting_value), updated_at = NOW()",
+                [$k, $val]
+            );
         }
     }
     

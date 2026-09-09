@@ -21,6 +21,9 @@ RewriteRule (^|/)\.git(/|$) - [F]
 
 DirectoryIndex index.php index.html
 
+# sitemap.xml -> sitemap.php (arama motorları için)
+RewriteRule ^sitemap\.xml$ sitemap.php [L]
+
 # /p/ alt panelini bu dosya yönlendirmesin (kendi .htaccess'i yönetir)
 RewriteRule ^p/ - [L]
 

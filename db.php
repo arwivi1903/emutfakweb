@@ -44,3 +44,19 @@ try {
     // Ayarlar çekilemezse boş dizi kalsın
     error_log('[prolynweb] Ayarlar okunamadı: ' . $e->getMessage());
 }
+
+/** Geçerli sayfanın tam (canonical/og:url için) URL'sini döndürür. */
+function prolynweb_current_url(): string
+{
+    // BASE_URL'in yalnızca şema+host kısmı kullanılır; REQUEST_URI zaten
+    // gerçek yolu (dev ortamında /prolynweb/... alt yolu dahil) içerir.
+    // İkisini birleştirmek BASE_URL bir alt yol içerdiğinde yolu
+    // (ör. /prolynweb/prolynweb/...) ikiye katlıyordu.
+    $parts = parse_url(prolynweb_env('BASE_URL', ''));
+    $origin = ($parts['scheme'] ?? 'https') . '://' . ($parts['host'] ?? ($_SERVER['HTTP_HOST'] ?? 'localhost'));
+    if (!empty($parts['port'])) {
+        $origin .= ':' . $parts['port'];
+    }
+    $path = strtok($_SERVER['REQUEST_URI'] ?? '/', '?');
+    return $origin . $path;
+}

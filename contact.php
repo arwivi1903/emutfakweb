@@ -87,6 +87,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title><?php echo htmlspecialchars($appSettings['seo_title'] ?? 'Prolyn - Yeni Nesil Bulut ERP Sistemi'); ?> - İletişim</title>
     <meta name="description" content="<?php echo htmlspecialchars($appSettings['seo_description'] ?? 'Kurumsal Kaynak Planlama, CRM, İK ve Ön Muhasebe çözümleri tek bir platformda.'); ?>">
+    <link rel="canonical" href="<?php echo htmlspecialchars(prolynweb_current_url()); ?>">
+    <meta property="og:type" content="website">
+    <meta property="og:site_name" content="<?php echo htmlspecialchars($appSettings['site_name'] ?? 'Prolyn ERP'); ?>">
+    <meta property="og:title" content="<?php echo htmlspecialchars($appSettings['seo_title'] ?? 'Prolyn - Yeni Nesil Bulut ERP Sistemi'); ?> - İletişim">
+    <meta property="og:description" content="<?php echo htmlspecialchars($appSettings['seo_description'] ?? 'Kurumsal Kaynak Planlama, CRM, İK ve Ön Muhasebe çözümleri tek bir platformda.'); ?>">
+    <meta property="og:url" content="<?php echo htmlspecialchars(prolynweb_current_url()); ?>">
+    <meta name="twitter:card" content="summary_large_image">
     <meta name="keywords" content="<?php echo htmlspecialchars($appSettings['seo_keywords'] ?? 'erp, bulut erp, crm, ön muhasebe, ik'); ?>">
     <link rel="shortcut icon" href="p/dist/assets/media/logos/favicon.ico" />
     <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Inter:300,400,500,600,700,800" />
