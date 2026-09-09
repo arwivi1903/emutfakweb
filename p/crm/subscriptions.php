@@ -40,7 +40,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && isset($_
 }
 
 // Abonelikleri Kurumlarla birlikte çek
-$subscriptions = $db->getRowsAssoc("SELECT a.*, k.company_name FROM abonelikler a LEFT JOIN kurumlar k ON a.customer_id = k.customer_id ORDER BY a.subscription_id DESC");
+$subscriptions = $db->getRowsAssoc(
+    "SELECT a.*, k.company_name,
+            COALESCE((SELECT SUM(o.amount) FROM odemeler o WHERE o.subscription_id = a.subscription_id AND o.payment_status = 'completed'), 0) AS alinan
+     FROM abonelikler a
+     LEFT JOIN kurumlar k ON a.customer_id = k.customer_id
+     ORDER BY a.subscription_id DESC"
+);
 ?>
 
 <div class="app-main flex-column flex-row-fluid" id="kt_app_main">
@@ -91,6 +97,7 @@ $subscriptions = $db->getRowsAssoc("SELECT a.*, k.company_name FROM abonelikler 
                                         <th>Firma Adı</th>
                                         <th>Plan Adı</th>
                                         <th>Fiyat (₺)</th>
+                                        <th>Ödeme Durumu</th>
                                         <th>Başlangıç/Bitiş</th>
                                         <th>Durum</th>
                                         <th class="text-end">İşlemler</th>
@@ -110,6 +117,23 @@ $subscriptions = $db->getRowsAssoc("SELECT a.*, k.company_name FROM abonelikler 
                                             </td>
                                             <td>
                                                 <span class="fw-bold text-success"><?php echo number_format($sub['total_price'], 2, ',', '.'); ?> ₺</span>
+                                            </td>
+                                            <td>
+                                                <?php
+                                                    $alinan = (float)$sub['alinan'];
+                                                    $toplam = (float)$sub['total_price'];
+                                                    $kalan = max(0, $toplam - $alinan);
+                                                    $yuzde = $toplam > 0 ? min(100, round(($alinan / $toplam) * 100)) : 0;
+                                                    $odemeRenk = $yuzde >= 100 ? 'success' : ($yuzde > 0 ? 'warning' : 'danger');
+                                                ?>
+                                                <div class="d-flex justify-content-between fs-8 mb-1">
+                                                    <span class="text-gray-700 fw-bold">Alınan: <?php echo number_format($alinan, 2, ',', '.'); ?> ₺</span>
+                                                    <span class="text-<?php echo $odemeRenk; ?> fw-bold"><?php echo $yuzde; ?>%</span>
+                                                </div>
+                                                <div class="h-5px bg-light rounded mb-1" style="width:140px;">
+                                                    <div class="bg-<?php echo $odemeRenk; ?> rounded h-5px" style="width:<?php echo $yuzde; ?>%;"></div>
+                                                </div>
+                                                <div class="text-muted fs-8">Kalan: <?php echo number_format($kalan, 2, ',', '.'); ?> ₺</div>
                                             </td>
                                             <td>
                                                 <div><i class="ki-duotone ki-calendar text-success fs-7"></i> <?php echo date('d.m.Y', strtotime($sub['start_date'])); ?></div>
