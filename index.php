@@ -1,4 +1,14 @@
 <?php require_once 'db.php'; ?>
+<?php
+$websiteFeatures = [];
+try {
+    $stmt = $pdo->query("SELECT * FROM website_features WHERE status = 1 ORDER BY order_no ASC");
+    $websiteFeatures = $stmt->fetchAll();
+} catch (Throwable $e) {
+    error_log('[prolynweb] website_features okunamadi: ' . $e->getMessage());
+}
+$featureColors = ['primary', 'success', 'info', 'warning', 'danger'];
+?>
 <!DOCTYPE html>
 <html lang="tr" data-bs-theme="dark">
 <head>
@@ -206,77 +216,22 @@
                 </div>
 
                 <div class="row g-10">
-                    <div class="col-md-4 scroll-reveal">
-                        <div class="glass-card h-100 p-8">
-                            <div class="feature-icon-box text-primary">
-                                <i class="ki-duotone ki-rocket fs-3x text-primary"><span class="path1"></span><span class="path2"></span></i>
+                    <?php if (!empty($websiteFeatures)): ?>
+                        <?php foreach ($websiteFeatures as $i => $feature): ?>
+                        <?php $color = $featureColors[$i % count($featureColors)]; ?>
+                        <div class="col-md-4 scroll-reveal delay-<?php echo ($i % 3) + 1; ?>">
+                            <div class="glass-card h-100 p-8">
+                                <div class="feature-icon-box text-<?php echo $color; ?>">
+                                    <i class="bi <?php echo htmlspecialchars($feature['icon']); ?> fs-3x text-<?php echo $color; ?>"></i>
+                                </div>
+                                <h4 class="text-white fs-3 fw-bold mb-4"><?php echo htmlspecialchars($feature['title']); ?></h4>
+                                <p class="text-gray-400 fs-6 lh-lg mb-0">
+                                    <?php echo htmlspecialchars($feature['description']); ?>
+                                </p>
                             </div>
-                            <h4 class="text-white fs-3 fw-bold mb-4">Işık Hızında Performans</h4>
-                            <p class="text-gray-400 fs-6 lh-lg mb-0">
-                                PgBouncer ve Redis destekli altyapımızla binlerce veriyi milisaniyeler içinde işleyin. Connection kopmalarına son.
-                            </p>
                         </div>
-                    </div>
-
-                    <div class="col-md-4 scroll-reveal delay-1">
-                        <div class="glass-card h-100 p-8">
-                            <div class="feature-icon-box text-success">
-                                <i class="ki-duotone ki-shield-tick fs-3x text-success"><span class="path1"></span><span class="path2"></span></i>
-                            </div>
-                            <h4 class="text-white fs-3 fw-bold mb-4">Tam İzolasyon (%100)</h4>
-                            <p class="text-gray-400 fs-6 lh-lg mb-0">
-                                Her müşteriye (tenant) özel ayrı veritabanı (Multi-DB) mimarisi ile verileriniz diğer firmalardan tamamen izole ve güvende.
-                            </p>
-                        </div>
-                    </div>
-
-                    <div class="col-md-4 scroll-reveal delay-2">
-                        <div class="glass-card h-100 p-8">
-                            <div class="feature-icon-box text-info">
-                                <i class="ki-duotone ki-graph-3 fs-3x text-info"><span class="path1"></span><span class="path2"></span></i>
-                            </div>
-                            <h4 class="text-white fs-3 fw-bold mb-4">Gelişmiş Analitik</h4>
-                            <p class="text-gray-400 fs-6 lh-lg mb-0">
-                                Tüm hareketlerinizi anlık takip edin. Log ve denetim mekanizmaları sayesinde kim, ne zaman, ne yaptı her zaman bilin.
-                            </p>
-                        </div>
-                    </div>
-
-                    <div class="col-md-4 scroll-reveal">
-                        <div class="glass-card h-100 p-8">
-                            <div class="feature-icon-box text-warning">
-                                <i class="ki-duotone ki-abstract-26 fs-3x text-warning"><span class="path1"></span><span class="path2"></span></i>
-                            </div>
-                            <h4 class="text-white fs-3 fw-bold mb-4">Kolay Entegrasyon</h4>
-                            <p class="text-gray-400 fs-6 lh-lg mb-0">
-                                E-Fatura, banka sistemleri ve 3. parti yazılımlarınızla sorunsuz entegre çalışacak modern API altyapısı.
-                            </p>
-                        </div>
-                    </div>
-
-                    <div class="col-md-4 scroll-reveal delay-1">
-                        <div class="glass-card h-100 p-8">
-                            <div class="feature-icon-box text-danger">
-                                <i class="ki-duotone ki-devices fs-3x text-danger"><span class="path1"></span><span class="path2"></span><span class="path3"></span><span class="path4"></span><span class="path5"></span></i>
-                            </div>
-                            <h4 class="text-white fs-3 fw-bold mb-4">Mobil Uyumluluk</h4>
-                            <p class="text-gray-400 fs-6 lh-lg mb-0">
-                                Tüm cihazlardan kusursuz erişim. İşinizi ofise bağlı kalmadan cep telefonunuzdan veya tabletinizden yönetin.
-                            </p>
-                        </div>
-                    </div>
-
-                    <div class="col-md-4 scroll-reveal delay-2">
-                        <div class="glass-card h-100 p-8">
-                            <div class="feature-icon-box text-primary">
-                                <i class="ki-duotone ki-cloud fs-3x text-primary"><span class="path1"></span><span class="path2"></span></i>
-                            </div>
-                            <h4 class="text-white fs-3 fw-bold mb-4">Otomatik Yedekleme</h4>
-                            <p class="text-gray-400 fs-6 lh-lg mb-0">
-                                Verileriniz her gün otomatik olarak güvenli sunucularda yedeklenir. Veri kaybı endişesi yaşamadan işinize odaklanın.
-                            </p>
-                        </div>
-                    </div>
+                        <?php endforeach; ?>
+                    <?php endif; ?>
                 </div>
             </div>
         </div>
