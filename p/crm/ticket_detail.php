@@ -32,6 +32,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $admin_id = (int)($_SESSION['admin_id'] ?? 0);
         $ekVar    = !empty($_FILES['ek']['name'][0]);
 
+        $reply_id = 0;
         if (trim($message) !== '' || $ekVar) {
             // Insert() bu sınıfta doğrudan lastInsertId döner
             $reply_id = (int)$db->Insert(
@@ -40,23 +41,27 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 [$ticket_id, $admin_id ?: null, trim($message) !== '' ? $message : '(dosya eklendi)', $is_internal]
             );
 
-            if ($ekVar) {
-                destek_admin_ek_yukle($db, $_FILES['ek'], $ticket_id, $reply_id, (string)($_SESSION['full_name'] ?? 'Yönetici'), $admin_id);
-            }
+            if ($reply_id > 0) {
+                if ($ekVar) {
+                    destek_admin_ek_yukle($db, $_FILES['ek'], $ticket_id, $reply_id, (string)($_SESSION['full_name'] ?? 'Yönetici'), $admin_id);
+                }
 
-            // İç not müşteriye gitmediği için talebin "son yanıt" bilgisini değiştirmez
-            if (!$is_internal) {
-                $db->Update(
-                    "UPDATE destek_talepleri
-                     SET status = CASE WHEN status IN ('new','open') THEN 'in_progress' ELSE status END,
-                         last_reply_at = NOW(), last_reply_by = 'admin', updated_at = NOW()
-                     WHERE ticket_id = ?",
-                    [$ticket_id]
-                );
+                // İç not müşteriye gitmediği için talebin "son yanıt" bilgisini değiştirmez
+                if (!$is_internal) {
+                    $db->Update(
+                        "UPDATE destek_talepleri
+                         SET status = CASE WHEN status IN ('new','open') THEN 'in_progress' ELSE status END,
+                             last_reply_at = NOW(), last_reply_by = 'admin', updated_at = NOW()
+                         WHERE ticket_id = ?",
+                        [$ticket_id]
+                    );
+                }
             }
         }
 
-        echo "<script>window.location.href='crm/ticket_detail.php?id=$ticket_id&success=reply';</script>";
+        // Insert başarısızsa (ör. bir DB hatası) sahte "başarılı" mesajı gösterilmez.
+        $sonuc = ($reply_id > 0) ? 'reply' : 'reply_error';
+        echo "<script>window.location.href='crm/ticket_detail.php?id=$ticket_id&success=$sonuc';</script>";
         exit;
     }
     
@@ -210,7 +215,15 @@ function destek_admin_ek_yukle($db, array $files, int $ticketId, ?int $replyId, 
         <div id="kt_app_content" class="app-content flex-column-fluid">
             <div id="kt_app_content_container" class="app-container container-fluid">
                 
-                <?php if(isset($_GET['success'])): ?>
+                <?php if (($_GET['success'] ?? '') === 'reply_error'): ?>
+                <div class="alert alert-danger d-flex align-items-center p-5 mb-5">
+                    <i class="ki-duotone ki-information-5 fs-2hx text-danger me-4"><span class="path1"></span><span class="path2"></span><span class="path3"></span></i>
+                    <div class="d-flex flex-column">
+                        <h4 class="mb-1 text-danger">Yanıt kaydedilemedi</h4>
+                        <span>Bir veritabanı hatası oluştu, yanıtınız kaydedilmedi. Lütfen tekrar deneyin.</span>
+                    </div>
+                </div>
+                <?php elseif (isset($_GET['success'])): ?>
                 <div class="alert alert-success d-flex align-items-center p-5 mb-5">
                     <i class="ki-duotone ki-shield-tick fs-2hx text-success me-4"><span class="path1"></span><span class="path2"></span></i>
                     <div class="d-flex flex-column">
