@@ -61,6 +61,7 @@ if($settings) {
                 <?php endif; ?>
 
                 <form method="post" action="">
+                    <?= csrfTokenField() ?>
                     <input type="hidden" name="action" value="update_seo">
                     
                     <div class="row g-5 g-xl-8">

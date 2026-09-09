@@ -127,6 +127,7 @@ $features = $db->getRowsAssoc("SELECT * FROM website_features ORDER BY order_no 
                                             <div class="modal-dialog modal-dialog-centered mw-650px">
                                                 <div class="modal-content">
                                                     <form class="form" action="" method="post">
+                                                        <?= csrfTokenField() ?>
                                                         <input type="hidden" name="action" value="edit_feature">
                                                         <input type="hidden" name="id" value="<?= $f['id'] ?>">
                                                         
@@ -176,6 +177,7 @@ $features = $db->getRowsAssoc("SELECT * FROM website_features ORDER BY order_no 
                                             <div class="modal-dialog modal-dialog-centered mw-400px">
                                                 <div class="modal-content">
                                                     <form class="form" action="" method="post">
+                                                        <?= csrfTokenField() ?>
                                                         <input type="hidden" name="action" value="delete_feature">
                                                         <input type="hidden" name="id" value="<?= $f['id'] ?>">
                                                         <div class="modal-header">
@@ -212,6 +214,7 @@ $features = $db->getRowsAssoc("SELECT * FROM website_features ORDER BY order_no 
                     <div class="modal-dialog modal-dialog-centered mw-650px">
                         <div class="modal-content">
                             <form class="form" action="" method="post">
+                                <?= csrfTokenField() ?>
                                 <input type="hidden" name="action" value="add_feature">
                                 <div class="modal-header">
                                     <h2 class="fw-bold">Yeni Özellik Ekle</h2>
