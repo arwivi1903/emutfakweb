@@ -20,6 +20,11 @@ if (session_status() === PHP_SESSION_NONE) {
     session_start();
 }
 
+// Kampanya takip kodu (?ref=L123) — kayıt tamamlanınca lead ile eşleşir
+if (isset($_GET['ref']) && preg_match('/^L\d{1,9}$/', (string)$_GET['ref'])) {
+    $_SESSION['lead_ref'] = (string)$_GET['ref'];
+}
+
 // CSRF token
 if (empty($_SESSION['reg_csrf'])) {
     $_SESSION['reg_csrf'] = bin2hex(random_bytes(32));
@@ -300,6 +305,23 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 // CSRF token'ı yenile (tek kullanım)
                 $_SESSION['reg_csrf'] = bin2hex(random_bytes(32));
 
+                // --- 5) Kampanyadan geldiyse lead'i "denemede" olarak eşleştir ---
+                try {
+                    $leadRef = (int)preg_replace('/\D/', '', (string)($_SESSION['lead_ref'] ?? ($_COOKIE['prolyn_lead'] ?? '')));
+                    $leadSt = $pdo->prepare("UPDATE potansiyel_musteriler SET durum = 'deneme', customer_id = ?, son_iletisim = NOW()
+                        WHERE (lead_id = ? OR (eposta <> '' AND eposta = ?) OR (telefon <> '' AND telefon = ?)) AND durum <> 'musteri'");
+                    $telE164 = preg_replace('/\D/', '', $company_phone);
+                    $telE164 = strlen($telE164) === 11 && $telE164[0] === '0' ? '+9' . $telE164 : (strlen($telE164) === 10 ? '+90' . $telE164 : '+' . $telE164);
+                    $leadSt->execute([$customerId, $leadRef, strtolower($company_email), $telE164]);
+                    if ($leadSt->rowCount() > 0) {
+                        $pdo->prepare("INSERT INTO lead_aktiviteler (lead_id, tur, aciklama)
+                            SELECT lead_id, 'sistem', ? FROM potansiyel_musteriler WHERE customer_id = ?")
+                            ->execute(['Deneme kaydı açtı (kurum #' . $customerId . ').', $customerId]);
+                    }
+                } catch (Throwable $leadErr) {
+                    // lead tabloları yoksa sessiz geç
+                }
+
                 $successData = [
                     'customer_code' => $customerCode,
                     'company_name'  => $company_name,
@@ -317,7 +339,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 }
 
 // Şehirleri çek
-$stmtCities = $pdo->query("SELECT * FROM prolyn_default.iller ORDER BY sehiradi ASC");
+$stmtCities = $pdo->query("SELECT * FROM `" . prolynweb_template_db() . "`.iller ORDER BY sehiradi ASC");
 $iller = $stmtCities->fetchAll(PDO::FETCH_ASSOC);
 ?>
 <!DOCTYPE html>
@@ -671,19 +693,7 @@ $iller = $stmtCities->fetchAll(PDO::FETCH_ASSOC);
     <script src="p/dist/assets/js/scripts.bundle.js"></script>
     <!--end::Global Javascript Bundle-->
 
-<!-- Floating Action Buttons -->
-<div class="floating-action-buttons">
-    <a href="tel:+905555555555" class="fab-btn fab-phone" title="Bizi Arayın">
-        <i class="bi bi-telephone-fill"></i>
-    </a>
-    <a href="https://wa.me/905555555555" class="fab-btn fab-whatsapp" target="_blank" title="WhatsApp Destek">
-        <i class="bi bi-whatsapp"></i>
-    </a>
-    <button class="fab-btn fab-scrolltop" onclick="window.scrollTo({top: 0, behavior: 'smooth'});" title="Yukarı Çık">
-        <i class="bi bi-arrow-up-short"></i>
-    </button>
-</div>
-
+<?php require __DIR__ . '/partials/fab.php'; ?>
 <script>
 function loadIlceler(cityId) {
     const districtSelect = document.getElementById('district_id');
@@ -695,18 +705,20 @@ function loadIlceler(cityId) {
     
     districtSelect.innerHTML = '<option value="">Yükleniyor...</option>';
     
-    fetch('p/crm/ajax_get_ilceler.php?city_id=' + cityId)
+    fetch('ilceler.php?city_id=' + encodeURIComponent(cityId))
         .then(response => response.json())
         .then(data => {
             if (data.success) {
                 let html = '<option value="">İlçe Seçiniz</option>';
-                data.data.forEach(function(ilce) {
-                    html += '<option value="' + ilce.ilce_id + '">' + ilce.ilceadi + '</option>';
-                });
                 districtSelect.innerHTML = html;
+                data.data.forEach(function(ilce) {
+                    const o = document.createElement('option');
+                    o.value = ilce.ilce_id; o.textContent = ilce.ilceadi;
+                    districtSelect.appendChild(o);
+                });
                 
                 // Eğer önceden seçili bir ilçe varsa onu geri yükle (post back durumu için)
-                const selectedDistrict = '<?= isset($_POST["district_id"]) ? $_POST["district_id"] : "" ?>';
+                const selectedDistrict = '<?= (int)($_POST["district_id"] ?? 0) ?: '' ?>';
                 if (selectedDistrict) {
                     districtSelect.value = selectedDistrict;
                 }

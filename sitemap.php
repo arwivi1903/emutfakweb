@@ -13,6 +13,7 @@ $staticPages = [
     ['loc' => '/video', 'priority' => '0.6'],
     ['loc' => '/contact', 'priority' => '0.5'],
     ['loc' => '/register', 'priority' => '0.6'],
+    ['loc' => '/mutfak-dolap-yazilimi', 'priority' => '0.9'],
 ];
 $lastmod = date('Y-m-d');
 

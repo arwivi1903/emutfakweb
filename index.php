@@ -461,18 +461,6 @@ $faqItems = [
     <script src="assets/js/site.js?v=6"></script>
     <script src="assets/js/boot-check.js"></script>
 
-<!-- Floating Action Buttons -->
-<div class="floating-action-buttons">
-    <a href="tel:+905555555555" class="fab-btn fab-phone" title="Bizi Arayın">
-        <i class="bi bi-telephone-fill"></i>
-    </a>
-    <a href="https://wa.me/905555555555" class="fab-btn fab-whatsapp" target="_blank" title="WhatsApp Destek">
-        <i class="bi bi-whatsapp"></i>
-    </a>
-    <button class="fab-btn fab-scrolltop" onclick="window.scrollTo({top: 0, behavior: 'smooth'});" title="Yukarı Çık">
-        <i class="bi bi-arrow-up-short"></i>
-    </button>
-</div>
-
+<?php require __DIR__ . '/partials/fab.php'; ?>
 </body>
 </html>

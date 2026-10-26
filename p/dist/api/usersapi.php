@@ -1,4 +1,6 @@
 <?php
+require_once __DIR__ . '/../../../env.php';
+
 error_reporting(E_ALL);
 ini_set('display_errors', 0);
 ini_set('log_errors', 1);
@@ -34,10 +36,11 @@ if (!isAdmin(['superadmin'])) {
 
 // Database örneğini al
 try {
-    $db = new Database('prolyn_master');
+    $db = new Database(prolynweb_master_db());
 } catch (Exception $e) {
     http_response_code(500);
-    echo json_encode(['success' => false, 'message' => 'Database hatası: ' . $e->getMessage()]);
+    error_log('[usersapi] ' . $e->getMessage());
+    echo json_encode(['success' => false, 'message' => 'Veritabanına bağlanılamadı.']);
     exit;
 }
 
@@ -114,7 +117,7 @@ if ($action === 'list' && $method === 'GET') {
 
     } catch (Exception $e) {
         http_response_code(500);
-        echo json_encode(['success' => false, 'message' => 'Hata: ' . $e->getMessage()]);
+        echo json_encode(['success' => false, 'message' => ($e instanceof PDOException ? 'Veritabanı hatası.' : 'Hata: ' . $e->getMessage())]);
     }
     exit;
 }
@@ -150,7 +153,8 @@ if ($action === 'detail' && $method === 'GET') {
 
     } catch (Exception $e) {
         http_response_code(500);
-        echo json_encode(['success' => false, 'message' => $e->getMessage()]);
+        error_log('[usersapi] ' . $e->getMessage());
+        echo json_encode(['success' => false, 'message' => ($e instanceof PDOException ? 'Veritabanı hatası.' : $e->getMessage())]);
     }
     exit;
 }
@@ -239,7 +243,8 @@ if ($action === 'create' && $method === 'POST') {
 
     } catch (Exception $e) {
         http_response_code(500);
-        echo json_encode(['success' => false, 'message' => $e->getMessage()]);
+        error_log('[usersapi] ' . $e->getMessage());
+        echo json_encode(['success' => false, 'message' => ($e instanceof PDOException ? 'Veritabanı hatası.' : $e->getMessage())]);
     }
     exit;
 }
@@ -380,7 +385,8 @@ if ($action === 'update' && $method === 'POST') {
 
     } catch (Exception $e) {
         http_response_code(500);
-        echo json_encode(['success' => false, 'message' => $e->getMessage()]);
+        error_log('[usersapi] ' . $e->getMessage());
+        echo json_encode(['success' => false, 'message' => ($e instanceof PDOException ? 'Veritabanı hatası.' : $e->getMessage())]);
     }
     exit;
 }
@@ -429,7 +435,8 @@ if ($action === 'delete' && $method === 'POST') {
 
     } catch (Exception $e) {
         http_response_code(500);
-        echo json_encode(['success' => false, 'message' => $e->getMessage()]);
+        error_log('[usersapi] ' . $e->getMessage());
+        echo json_encode(['success' => false, 'message' => ($e instanceof PDOException ? 'Veritabanı hatası.' : $e->getMessage())]);
     }
     exit;
 }

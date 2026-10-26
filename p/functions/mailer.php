@@ -17,7 +17,7 @@ if (!function_exists('prolyn_send_mail')) {
      */
     function prolyn_smtp_send(string $host, int $port, string $secure, string $user, string $pass,
                               string $fromEmail, string $fromName, string $to, string $subject,
-                              string $body, bool $isHtml): bool
+                              string $body, bool $isHtml, array $extraHeaders = []): bool
     {
         $clean = function (string $v): string { return trim(preg_replace('/[\r\n]+/', ' ', $v)); };
         $to = $clean($to); $fromEmail = $clean($fromEmail); $fromName = $clean($fromName); $subject = $clean($subject);
@@ -64,6 +64,9 @@ if (!function_exists('prolyn_send_mail')) {
             $hdr .= "To: <$to>\r\n";
             $hdr .= 'Subject: =?UTF-8?B?' . base64_encode($subject) . "?=\r\n";
             $hdr .= 'Message-ID: <' . bin2hex(random_bytes(12)) . '@' . $host . ">\r\n";
+            foreach ($extraHeaders as $hk => $hv) {
+                if (preg_match('/^[A-Za-z0-9-]+$/', (string)$hk)) { $hdr .= $hk . ': ' . $clean((string)$hv) . "\r\n"; }
+            }
             $hdr .= "MIME-Version: 1.0\r\n";
             $hdr .= 'Content-Type: ' . ($isHtml ? 'text/html' : 'text/plain') . "; charset=UTF-8\r\n";
             $hdr .= "Content-Transfer-Encoding: base64\r\n\r\n";
@@ -80,7 +83,7 @@ if (!function_exists('prolyn_send_mail')) {
         }
     }
 
-    function prolyn_send_mail(string $to, string $subject, string $body, bool $isHtml = false): bool
+    function prolyn_send_mail(string $to, string $subject, string $body, bool $isHtml = false, array $extraHeaders = []): bool
     {
         $fromEmail = prolynweb_env('MAIL_FROM', 'noreply@prolyn.net');
         $fromName  = prolynweb_env('MAIL_FROM_NAME', 'Prolyn');
@@ -114,6 +117,9 @@ if (!function_exists('prolyn_send_mail')) {
                     $mail->SMTPSecure = 'tls';
                 }
                 $mail->CharSet = 'UTF-8';
+                foreach ($extraHeaders as $hk => $hv) {
+                    if (preg_match('/^[A-Za-z0-9-]+$/', (string)$hk)) { $mail->addCustomHeader((string)$hk, preg_replace('/[\r\n]+/', ' ', (string)$hv)); }
+                }
                 $mail->setFrom($fromEmail, $fromName);
                 $mail->addAddress($to);
                 $mail->Subject = $subject;
@@ -134,7 +140,7 @@ if (!function_exists('prolyn_send_mail')) {
         // 1b) PHPMailer yoksa yerleşik SMTP istemcisi
         if ($host !== '' && !class_exists($phpmailerClass)) {
             if (prolyn_smtp_send($host, $port, (string)$secure, (string)$user, (string)$pass,
-                                 $fromEmail, $fromName, $to, $subject, $body, $isHtml)) {
+                                 $fromEmail, $fromName, $to, $subject, $body, $isHtml, $extraHeaders)) {
                 return true;
             }
             // SMTP başarısızsa mail() yedeğine düş
@@ -153,6 +159,9 @@ if (!function_exists('prolyn_send_mail')) {
 
         $headers = [];
         $headers[] = 'From: ' . $fromName . ' <' . $fromEmail . '>';
+        foreach ($extraHeaders as $hk => $hv) {
+            if (preg_match('/^[A-Za-z0-9-]+$/', (string)$hk)) { $headers[] = $hk . ': ' . preg_replace('/[\r\n]+/', ' ', (string)$hv); }
+        }
         $headers[] = 'MIME-Version: 1.0';
         $headers[] = 'Content-Type: ' . ($isHtml ? 'text/html' : 'text/plain') . '; charset=UTF-8';
         $ok = @mail($to, $subject, $body, implode("\r\n", $headers));

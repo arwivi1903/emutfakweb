@@ -1,4 +1,6 @@
 <?php
+require_once __DIR__ . '/../../env.php';
+
 
 class Auth 
 {
@@ -136,7 +138,7 @@ class Auth
 
     private function setSession($admin, $activeSource) {
         session_regenerate_id(true);
-        $activeDbName = $this->db->MYSQL_DB ?? 'prolyn_master';
+        $activeDbName = $this->db->MYSQL_DB ?? prolynweb_master_db();
         $_SESSION['admin_id'] = $admin->admin_id;
         $_SESSION['email'] = $admin->email;
         $_SESSION['full_name'] = $admin->full_name;
@@ -145,7 +147,7 @@ class Auth
         $_SESSION['status'] = $admin->status;
         $_SESSION['database_name'] = $activeDbName;
         $_SESSION['tenant_db'] = $activeDbName;
-        $_SESSION['is_master_db'] = ($activeDbName === 'prolyn_master') ? 1 : 0;
+        $_SESSION['is_master_db'] = ($activeDbName === prolynweb_master_db()) ? 1 : 0;
         
         $_SESSION['can_manage_customers'] = $admin->can_manage_customers;
         $_SESSION['can_manage_subscriptions'] = $admin->can_manage_subscriptions;

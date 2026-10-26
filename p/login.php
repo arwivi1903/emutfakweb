@@ -42,8 +42,9 @@ if (isset($_GET['islem'])) {
 ?>
 <!DOCTYPE html>
 <html lang="tr">
+
 <head>
-    <base href="<?= htmlspecialchars(prolynweb_panel_url() . '/', ENT_QUOTES, 'UTF-8') ?>"/>
+    <base href="<?= htmlspecialchars(prolynweb_panel_url() . '/', ENT_QUOTES, 'UTF-8') ?>" />
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>Prolyn ERP - Giriş</title>
@@ -52,150 +53,169 @@ if (isset($_GET['islem'])) {
     <link href="dist/assets/plugins/global/plugins.bundle.css" rel="stylesheet" type="text/css" />
     <link href="dist/assets/css/style.bundle.css" rel="stylesheet" type="text/css" />
 </head>
+
 <body id="kt_body" class="app-blank bgi-size-cover bgi-attachment-fixed bgi-position-center bgi-no-repeat">
     <script>
-        var defaultThemeMode = "light";
-        var themeMode;
-        if (document.documentElement) {
-            if (document.documentElement.hasAttribute("data-bs-theme-mode")) {
-                themeMode = document.documentElement.getAttribute("data-bs-theme-mode");
+    var defaultThemeMode = "light";
+    var themeMode;
+    if (document.documentElement) {
+        if (document.documentElement.hasAttribute("data-bs-theme-mode")) {
+            themeMode = document.documentElement.getAttribute("data-bs-theme-mode");
+        } else {
+            if (localStorage.getItem("data-bs-theme") !== null) {
+                themeMode = localStorage.getItem("data-bs-theme");
             } else {
-                if (localStorage.getItem("data-bs-theme") !== null) {
-                    themeMode = localStorage.getItem("data-bs-theme");
-                } else {
-                    themeMode = defaultThemeMode;
-                }
+                themeMode = defaultThemeMode;
             }
-            if (themeMode === "system") {
-                themeMode = window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
-            }
-            document.documentElement.setAttribute("data-bs-theme", themeMode);
         }
+        if (themeMode === "system") {
+            themeMode = window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
+        }
+        document.documentElement.setAttribute("data-bs-theme", themeMode);
+    }
     </script>
 
     <div class="d-flex flex-column flex-root" id="kt_app_root">
         <style>
-            body {
-                background:
-                    radial-gradient(circle at 15% 20%, rgba(59, 130, 246, 0.22), transparent 28%),
-                    radial-gradient(circle at 85% 18%, rgba(16, 185, 129, 0.18), transparent 24%),
-                    radial-gradient(circle at 50% 100%, rgba(14, 165, 233, 0.14), transparent 34%),
-                    linear-gradient(180deg, #07111f 0%, #0b1220 38%, #101827 100%);
-                min-height: 100vh;
-            }
-            .login-shell {
-                position: relative;
-                overflow: hidden;
-            }
-            .login-shell::before,
-            .login-shell::after {
-                content: '';
-                position: absolute;
-                border-radius: 999px;
-                pointer-events: none;
-                filter: blur(8px);
-            }
-            .login-shell::before {
-                width: 380px;
-                height: 380px;
-                left: -160px;
-                top: -140px;
-                background: rgba(59, 130, 246, 0.14);
-            }
-            .login-shell::after {
-                width: 320px;
-                height: 320px;
-                right: -130px;
-                bottom: -120px;
-                background: rgba(34, 197, 94, 0.10);
-            }
-            .auth-shell {
-                position: relative;
-                z-index: 1;
-            }
-            .auth-card {
-                background: rgba(8, 15, 31, 0.84);
-                border: 1px solid rgba(255, 255, 255, 0.08);
-                box-shadow: 0 28px 90px rgba(0, 0, 0, 0.42);
-                overflow: hidden;
-            }
-            .auth-card::before {
-                content: '';
-                display: block;
-                height: 6px;
-                background: linear-gradient(90deg, #2563eb 0%, #10b981 50%, #0ea5e9 100%);
-            }
-            .brand-mark {
-                width: 56px;
-                height: 56px;
-                border-radius: 18px;
-                display: inline-flex;
-                align-items: center;
-                justify-content: center;
-                background: linear-gradient(135deg, #0f172a 0%, #1d4ed8 100%);
-                color: #fff;
-                font-weight: 800;
-                font-size: 1.2rem;
-                letter-spacing: 0.04em;
-                box-shadow: 0 10px 24px rgba(37, 99, 235, 0.28);
-            }
-            .hero-badge {
-                border: 1px solid rgba(37, 99, 235, 0.16);
-                background: rgba(37, 99, 235, 0.14);
-                color: #dbeafe;
-            }
-            .surface-soft {
-                background: rgba(255, 255, 255, 0.04);
-                border: 1px solid rgba(255, 255, 255, 0.08);
-            }
-            .text-soft {
-                color: rgba(226, 232, 240, 0.82) !important;
-            }
-            .text-muted-soft {
-                color: rgba(148, 163, 184, 0.95) !important;
-            }
-            .login-divider {
-                border-color: rgba(255, 255, 255, 0.08) !important;
-            }
-            .login-surface {
-                background:
-                    radial-gradient(circle at top right, rgba(37, 99, 235, 0.18), transparent 26%),
-                    linear-gradient(180deg, rgba(10, 16, 31, 0.96) 0%, rgba(8, 15, 31, 0.96) 100%);
-            }
-            .prolyn-chip {
-                display: inline-flex;
-                align-items: center;
-                justify-content: center;
-                min-width: 112px;
-                padding: 0.7rem 1rem;
-                border-radius: 999px;
-                background: rgba(255, 255, 255, 0.06);
-                color: #e2e8f0;
-                border: 1px solid rgba(255, 255, 255, 0.08);
-                font-size: 0.75rem;
-                font-weight: 700;
-                letter-spacing: 0.08em;
-                text-transform: uppercase;
-            }
-            .prolyn-auth-input {
-                background: #ffffff !important;
-                color: #0f172a !important;
-                caret-color: #0f172a;
-                -webkit-text-fill-color: #0f172a;
-            }
-            .prolyn-auth-input::placeholder {
-                color: #94a3b8;
-                opacity: 1;
-            }
-            .prolyn-auth-input:-webkit-autofill,
-            .prolyn-auth-input:-webkit-autofill:hover,
-            .prolyn-auth-input:-webkit-autofill:focus,
-            .prolyn-auth-input:-webkit-autofill:active {
-                -webkit-box-shadow: 0 0 0 1000px #ffffff inset !important;
-                -webkit-text-fill-color: #0f172a !important;
-                caret-color: #0f172a;
-                transition: background-color 9999s ease-out 0s;
-            }
+        body {
+            background:
+                radial-gradient(circle at 15% 20%, rgba(59, 130, 246, 0.22), transparent 28%),
+                radial-gradient(circle at 85% 18%, rgba(16, 185, 129, 0.18), transparent 24%),
+                radial-gradient(circle at 50% 100%, rgba(14, 165, 233, 0.14), transparent 34%),
+                linear-gradient(180deg, #07111f 0%, #0b1220 38%, #101827 100%);
+            min-height: 100vh;
+        }
+
+        .login-shell {
+            position: relative;
+            overflow: hidden;
+        }
+
+        .login-shell::before,
+        .login-shell::after {
+            content: '';
+            position: absolute;
+            border-radius: 999px;
+            pointer-events: none;
+            filter: blur(8px);
+        }
+
+        .login-shell::before {
+            width: 380px;
+            height: 380px;
+            left: -160px;
+            top: -140px;
+            background: rgba(59, 130, 246, 0.14);
+        }
+
+        .login-shell::after {
+            width: 320px;
+            height: 320px;
+            right: -130px;
+            bottom: -120px;
+            background: rgba(34, 197, 94, 0.10);
+        }
+
+        .auth-shell {
+            position: relative;
+            z-index: 1;
+        }
+
+        .auth-card {
+            background: rgba(8, 15, 31, 0.84);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            box-shadow: 0 28px 90px rgba(0, 0, 0, 0.42);
+            overflow: hidden;
+        }
+
+        .auth-card::before {
+            content: '';
+            display: block;
+            height: 6px;
+            background: linear-gradient(90deg, #2563eb 0%, #10b981 50%, #0ea5e9 100%);
+        }
+
+        .brand-mark {
+            width: 56px;
+            height: 56px;
+            border-radius: 18px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            background: linear-gradient(135deg, #0f172a 0%, #1d4ed8 100%);
+            color: #fff;
+            font-weight: 800;
+            font-size: 1.2rem;
+            letter-spacing: 0.04em;
+            box-shadow: 0 10px 24px rgba(37, 99, 235, 0.28);
+        }
+
+        .hero-badge {
+            border: 1px solid rgba(37, 99, 235, 0.16);
+            background: rgba(37, 99, 235, 0.14);
+            color: #dbeafe;
+        }
+
+        .surface-soft {
+            background: rgba(255, 255, 255, 0.04);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+        }
+
+        .text-soft {
+            color: rgba(226, 232, 240, 0.82) !important;
+        }
+
+        .text-muted-soft {
+            color: rgba(148, 163, 184, 0.95) !important;
+        }
+
+        .login-divider {
+            border-color: rgba(255, 255, 255, 0.08) !important;
+        }
+
+        .login-surface {
+            background:
+                radial-gradient(circle at top right, rgba(37, 99, 235, 0.18), transparent 26%),
+                linear-gradient(180deg, rgba(10, 16, 31, 0.96) 0%, rgba(8, 15, 31, 0.96) 100%);
+        }
+
+        .prolyn-chip {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            min-width: 112px;
+            padding: 0.7rem 1rem;
+            border-radius: 999px;
+            background: rgba(255, 255, 255, 0.06);
+            color: #e2e8f0;
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            font-size: 0.75rem;
+            font-weight: 700;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+        }
+
+        .prolyn-auth-input {
+            background: #ffffff !important;
+            color: #0f172a !important;
+            caret-color: #0f172a;
+            -webkit-text-fill-color: #0f172a;
+        }
+
+        .prolyn-auth-input::placeholder {
+            color: #94a3b8;
+            opacity: 1;
+        }
+
+        .prolyn-auth-input:-webkit-autofill,
+        .prolyn-auth-input:-webkit-autofill:hover,
+        a .prolyn-auth-input:-webkit-autofill:focus,
+        .prolyn-auth-input:-webkit-autofill:active {
+            -webkit-box-shadow: 0 0 0 1000px #ffffff inset !important;
+            -webkit-text-fill-color: #0f172a !important;
+            caret-color: #0f172a;
+            transition: background-color 9999s ease-out 0s;
+        }
         </style>
         <div class="d-flex flex-column flex-root auth-shell login-shell">
             <div class="d-flex flex-column flex-column-fluid py-10 py-lg-14">
@@ -208,7 +228,8 @@ if (isset($_GET['islem'])) {
                                         <div class="d-flex align-items-center gap-4">
                                             <div class="brand-mark">P</div>
                                             <div>
-                                                <div class="text-white fw-bolder fs-2 mb-1">Prolyn</div>
+                                                <div class="text-white fw-bolder fs-2 mb-1"><a href="http://prolyn.net"
+                                                        rel="noopener noreferrer">Prolyn</a></div>
                                                 <div class="text-muted-soft fw-semibold fs-7">Ana admin girişi</div>
                                             </div>
                                         </div>
@@ -217,29 +238,36 @@ if (isset($_GET['islem'])) {
 
                                     <div class="mb-10">
                                         <h1 class="text-white fw-bolder fs-1 fs-lg-2qx mb-3">Hoş geldiniz</h1>
-                                        <p class="text-soft fs-6 fs-lg-5 mb-0">Prolyn ana yönetim paneline güvenli şekilde giriş yapın.</p>
+                                        <p class="text-soft fs-6 fs-lg-5 mb-0">Prolyn ana yönetim paneline güvenli
+                                            şekilde giriş yapın.</p>
                                     </div>
 
                                     <?php if ($message): ?>
-                                        <div class="alert alert-<?php echo htmlspecialchars($messageType); ?> mb-8" role="alert">
-                                            <div class="d-flex align-items-center">
-                                                <div class="flex-grow-1">
-                                                    <h4 class="mb-1 text-<?php echo htmlspecialchars($messageType); ?>"><?php echo htmlspecialchars($message); ?></h4>
-                                                </div>
+                                    <div class="alert alert-<?php echo htmlspecialchars($messageType); ?> mb-8"
+                                        role="alert">
+                                        <div class="d-flex align-items-center">
+                                            <div class="flex-grow-1">
+                                                <h4 class="mb-1 text-<?php echo htmlspecialchars($messageType); ?>">
+                                                    <?php echo htmlspecialchars($message); ?></h4>
                                             </div>
                                         </div>
+                                    </div>
                                     <?php endif; ?>
 
                                     <form class="form w-100" method="POST" action="config/islem.php">
                                         <?= csrfTokenField() ?>
                                         <div class="fv-row mb-6">
                                             <label class="form-label fw-bold text-white fs-6 mb-2">E-posta</label>
-                                            <input type="email" name="email" class="form-control form-control-solid form-control-lg border-0 prolyn-auth-input" placeholder="Mail adresinizi giriniz" required autocomplete="off" />
+                                            <input type="email" name="email"
+                                                class="form-control form-control-solid form-control-lg border-0 prolyn-auth-input"
+                                                placeholder="Mail adresinizi giriniz" required autocomplete="off" />
                                         </div>
 
                                         <div class="fv-row mb-3">
                                             <label class="form-label fw-bold text-white fs-6 mb-2">Şifre</label>
-                                            <input type="password" name="password" class="form-control form-control-solid form-control-lg border-0 prolyn-auth-input" placeholder="Şifrenizi giriniz" required autocomplete="off" />
+                                            <input type="password" name="password"
+                                                class="form-control form-control-solid form-control-lg border-0 prolyn-auth-input"
+                                                placeholder="Şifrenizi giriniz" required autocomplete="off" />
                                         </div>
 
                                         <div class="d-grid mt-8">
@@ -275,8 +303,11 @@ if (isset($_GET['islem'])) {
     </div>
 
     <!-- Scripts -->
-    <script>var hostUrl = "dist/assets/";</script>
+    <script>
+    var hostUrl = "dist/assets/";
+    </script>
     <script src="dist/assets/plugins/global/plugins.bundle.js"></script>
     <script src="dist/assets/js/scripts.bundle.js"></script>
 </body>
+
 </html>

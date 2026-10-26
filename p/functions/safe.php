@@ -189,6 +189,50 @@ function csrfTokenMeta()
     return '<meta name="csrf-token" content="' . htmlspecialchars($token, ENT_QUOTES, 'UTF-8') . '">';
 }
 
+/**
+ * Modern, bağımsız (harici CSS/JS gerektirmeyen) hata sayfası.
+ * AJAX/JSON isteklerinde JSON döner. Çıktıdan sonra exit eder.
+ */
+function prolyn_hata_sayfasi(int $kod, string $baslik, string $mesaj, string $ipucu = ''): void
+{
+    $accept = $_SERVER['HTTP_ACCEPT'] ?? '';
+    $ctype  = $_SERVER['CONTENT_TYPE'] ?? '';
+    $xhr    = strtolower($_SERVER['HTTP_X_REQUESTED_WITH'] ?? '') === 'xmlhttprequest';
+    http_response_code($kod);
+    if ($xhr || stripos($accept, 'application/json') !== false || stripos($ctype, 'application/json') !== false) {
+        header('Content-Type: application/json; charset=utf-8');
+        echo json_encode(['success' => false, 'message' => $baslik . '. ' . $mesaj . ($ipucu !== '' ? ' ' . $ipucu : '')], JSON_UNESCAPED_UNICODE);
+        exit;
+    }
+    $e = static function ($v) { return htmlspecialchars((string)$v, ENT_QUOTES, 'UTF-8'); };
+    $geri = $_SERVER['HTTP_REFERER'] ?? '';
+    $geriGuvenli = ($geri !== '' && preg_match('#^https?://#i', $geri)) ? $geri : '';
+    header('Content-Type: text/html; charset=utf-8');
+    header('Cache-Control: no-store');
+    echo '<!DOCTYPE html><html lang="tr"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">'
+       . '<title>' . $e($baslik) . '</title><style>'
+       . ':root{color-scheme:light dark;--bg:#f4f6fb;--card:#fff;--tx:#1e2433;--mut:#6b7385;--ac:#e5484d;--pr:#3b6cf6;--bd:#e4e8f1}'
+       . '@media(prefers-color-scheme:dark){:root{--bg:#0f1220;--card:#181c2e;--tx:#eef0f7;--mut:#9aa3b8;--bd:#272c44}}'
+       . '*{box-sizing:border-box}body{margin:0;min-height:100vh;display:flex;align-items:center;justify-content:center;padding:24px;'
+       . 'background:radial-gradient(1200px 600px at 10% -10%,rgba(59,108,246,.15),transparent),radial-gradient(900px 500px at 110% 110%,rgba(229,72,77,.12),transparent),var(--bg);'
+       . 'font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto,sans-serif;color:var(--tx)}'
+       . '.c{max-width:460px;width:100%;background:var(--card);border:1px solid var(--bd);border-radius:20px;padding:40px 32px;text-align:center;box-shadow:0 20px 50px rgba(15,18,32,.12)}'
+       . '.i{width:68px;height:68px;border-radius:50%;margin:0 auto 20px;display:grid;place-items:center;background:rgba(229,72,77,.12);color:var(--ac)}'
+       . '.k{display:inline-block;font-size:12px;font-weight:700;letter-spacing:.08em;color:var(--ac);background:rgba(229,72,77,.1);padding:4px 10px;border-radius:999px;margin-bottom:12px}'
+       . 'h1{font-size:22px;margin:0 0 10px;font-weight:700}p{margin:0 0 8px;color:var(--mut);line-height:1.6;font-size:15px}'
+       . '.h{margin-top:14px;padding:12px 14px;border-radius:12px;background:rgba(59,108,246,.08);color:var(--tx);font-size:14px}'
+       . '.b{display:flex;gap:10px;justify-content:center;flex-wrap:wrap;margin-top:26px}'
+       . '.b a{font:inherit;font-weight:600;font-size:14px;padding:11px 20px;border-radius:12px;border:1px solid var(--bd);background:transparent;color:var(--tx);cursor:pointer;text-decoration:none}'
+       . '.b .p{background:var(--pr);border-color:var(--pr);color:#fff}.b a:hover{opacity:.88}'
+       . '</style></head><body><main class="c" role="alert"><div class="i"><svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3l8 3v6c0 4.5-3.2 8.3-8 9-4.8-.7-8-4.5-8-9V6l8-3z"/><path d="M12 8v5"/><path d="M12 16.5h.01"/></svg></div>'
+       . '<span class="k">HATA ' . (int)$kod . '</span><h1>' . $e($baslik) . '</h1><p>' . $e($mesaj) . '</p>'
+       . ($ipucu !== '' ? '<div class="h">' . $e($ipucu) . '</div>' : '')
+       . '<div class="b">'
+       . ($geriGuvenli !== '' ? '<a class="p" href="' . $e($geriGuvenli) . '">Sayfaya dön</a>' : '<a class="p" href="/">Ana sayfa</a>')
+       . '<a href="">Yenile</a></div></main></body></html>';
+    exit;
+}
+
 // CSRF token doğrulama yardımcı fonksiyonu (POST isteklerinde kullanılır)
 // Normal formlar $_POST['csrf_token'] gönderir; application/json ile POST
 // eden fetch() çağrıları ise token'ı X-CSRF-Token başlığında taşır
@@ -198,8 +242,12 @@ function checkCSRF()
     if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $token = $_POST['csrf_token'] ?? ($_SERVER['HTTP_X_CSRF_TOKEN'] ?? '');
         if (!validateCSRFToken($token)) {
-            http_response_code(403);
-            die('CSRF token doğrulaması başarısız. Lütfen sayfayı yenileyin ve tekrar deneyin.');
+            prolyn_hata_sayfasi(
+                419,
+                'Oturum doğrulaması başarısız',
+                'Güvenlik doğrulaması tamamlanamadı. Sayfa uzun süre açık kaldığı ya da oturum süresi dolduğu için olabilir.',
+                'Sayfayı yenileyip işlemi tekrar deneyin.'
+            );
         }
     }
 }

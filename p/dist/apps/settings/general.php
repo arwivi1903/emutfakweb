@@ -1,18 +1,35 @@
 <?php
+require_once __DIR__ . '/../../../../env.php';
 require_once __DIR__ . '/../../../classes/database.class.php';
 require_once __DIR__ . '/../../../config/header.php';
 require_once __DIR__ . '/../../../config/sidebar.php';
 
 $db = new Database();
 
+// Tablo yeni kurulumda (üretim) yoksa oluştur; ayarlar kaydedilemiyordu.
+try {
+    $db->Insert("CREATE TABLE IF NOT EXISTS system_settings (
+        setting_id INT(11) NOT NULL AUTO_INCREMENT,
+        setting_key VARCHAR(100) NOT NULL,
+        setting_value TEXT DEFAULT NULL,
+        updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+        PRIMARY KEY (setting_id),
+        UNIQUE KEY uq_setting_key (setting_key)
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci");
+} catch (Exception $e) {
+    error_log('[ayarlar] system_settings oluşturulamadı: ' . $e->getMessage());
+}
+
+// Varsayılanlar .env değerlerinden gelir (şifre HARİÇ; şifreyi panelden gir).
+$envMailFrom = (string)prolynweb_env('MAIL_FROM', 'destek@prolyn.net');
 $requiredMailSettings = [
-    'smtp_host' => '',
-    'smtp_port' => '587',
-    'smtp_secure' => 'tls',
-    'smtp_user' => '',
+    'smtp_host' => (string)prolynweb_env('MAIL_HOST', ''),
+    'smtp_port' => (string)prolynweb_env('MAIL_PORT', '587'),
+    'smtp_secure' => (string)prolynweb_env('MAIL_SECURE', 'tls'),
+    'smtp_user' => (string)prolynweb_env('MAIL_USER', ''),
     'smtp_pass' => '',
-    'from_email' => 'destek@prolyn.net',
-    'from_name' => 'Prolyn',
+    'from_email' => $envMailFrom,
+    'from_name' => (string)prolynweb_env('MAIL_FROM_NAME', 'Prolyn'),
     'support_email' => 'destek@prolyn.net',
     'notify_email' => 'destek@prolyn.net',
     'whatsapp_enabled' => '0',

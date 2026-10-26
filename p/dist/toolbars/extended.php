@@ -1,4 +1,6 @@
 <?php
+require_once __DIR__ . '/../../../env.php';
+
 require_once '../../config/header.php';
 Auth::requireModule('manage_tenants');
 require_once '../../config/sidebar.php';
@@ -12,9 +14,9 @@ if (empty($dbName)) {
 
 // Güvenlik: sadece bilinen kiracı veritabanlarına bağlanılabilir
 // (GET parametresiyle sunucudaki herhangi bir veritabanına bağlanılmasını engeller)
-$__masterDb = new Database('prolyn_master');
+$__masterDb = new Database(prolynweb_master_db());
 $__validTenant = $__masterDb->getRow('SELECT customer_id FROM customers WHERE database_name = ? LIMIT 1', [$dbName]);
-if (!$__validTenant && $dbName !== 'prolyn_master' && $dbName !== 'prolyn_default') {
+if (!$__validTenant && $dbName !== prolynweb_master_db() && $dbName !== prolynweb_template_db()) {
     header('Location: ' . prolynweb_panel_url('dist/toolbars/db_control.php'));
     exit;
 }

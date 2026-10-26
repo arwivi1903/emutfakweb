@@ -14,9 +14,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
         'seo_title', 'seo_description', 'seo_keywords', 
         'website_footer_text', 'website_hero_badge', 
         'website_hero_title', 'website_hero_subtitle',
-        'contact_email', 'contact_phone', 'contact_address'
+        'contact_email', 'contact_phone', 'contact_whatsapp', 'contact_address'
     ];
-    $contactKeys = ['contact_email', 'contact_phone', 'contact_address'];
+    $contactKeys = ['contact_email', 'contact_phone', 'contact_whatsapp', 'contact_address'];
 
     foreach ($keys as $k) {
         if (isset($_POST[$k])) {
@@ -41,7 +41,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
 }
 
 // Verileri çek
-$settings = $db->getRowsAssoc("SELECT setting_key, setting_value FROM sistem_ayarlari WHERE setting_key IN ('seo_title', 'seo_description', 'seo_keywords', 'website_footer_text', 'website_hero_badge', 'website_hero_title', 'website_hero_subtitle', 'contact_email', 'contact_phone', 'contact_address')");
+$settings = $db->getRowsAssoc("SELECT setting_key, setting_value FROM sistem_ayarlari WHERE setting_key IN ('seo_title', 'seo_description', 'seo_keywords', 'website_footer_text', 'website_hero_badge', 'website_hero_title', 'website_hero_subtitle', 'contact_email', 'contact_phone', 'contact_whatsapp', 'contact_address')");
 $seo = [];
 if($settings) {
     foreach($settings as $s) {
@@ -145,6 +145,11 @@ if($settings) {
                                     <div class="mb-10">
                                         <label class="form-label">Telefon</label>
                                         <input type="text" name="contact_phone" class="form-control form-control-solid" placeholder="+90 850 000 00 00" value="<?= htmlspecialchars($seo['contact_phone'] ?? '') ?>" />
+                                    </div>
+                                    <div class="mb-10">
+                                        <label class="form-label">WhatsApp numarası</label>
+                                        <input type="text" name="contact_whatsapp" class="form-control form-control-solid" placeholder="+90 5xx xxx xx xx" value="<?= htmlspecialchars($seo['contact_whatsapp'] ?? '') ?>" />
+                                        <div class="form-text">Sitedeki WhatsApp butonu ve sektör sayfasındaki "WhatsApp'tan demo iste" bu numaraya gider. Boşsa telefon cep numarasıysa o kullanılır.</div>
                                     </div>
                                     <div class="mb-10">
                                         <label class="form-label">Adres</label>

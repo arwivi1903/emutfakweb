@@ -29,14 +29,14 @@ try {
 // Fetch Cities (İller) from default DB
 $iller = [];
 try {
-    $iller = $db->getRowsAssoc("SELECT * FROM prolyn_default.iller ORDER BY sehiradi ASC");
+    $iller = $db->getRowsAssoc("SELECT * FROM `" . prolynweb_template_db() . "`.iller ORDER BY sehiradi ASC");
 } catch(Exception $e) {}
 
 // Fetch Districts (İlçeler) if city_id is set
 $ilceler = [];
 if (!empty($tenant['city_id'])) {
     try {
-        $ilceler = $db->getRowsAssoc("SELECT * FROM prolyn_default.ilceler WHERE iller_id = ? ORDER BY ilceadi ASC", [$tenant['city_id']]);
+        $ilceler = $db->getRowsAssoc("SELECT * FROM `" . prolynweb_template_db() . "`.ilceler WHERE iller_id = ? ORDER BY ilceadi ASC", [$tenant['city_id']]);
     } catch(Exception $e) {}
 }
 
@@ -391,10 +391,10 @@ if (isset($_GET['verify'])) {
         $iller_row = [];
         $ilceler_row = [];
         if (!empty($dbFirma->city_id)) {
-            $iller_row = $db->getRowAssoc("SELECT sehiradi FROM prolyn_default.iller WHERE iller_id = ?", [$dbFirma->city_id]);
+            $iller_row = $db->getRowAssoc("SELECT sehiradi FROM `" . prolynweb_template_db() . "`.iller WHERE iller_id = ?", [$dbFirma->city_id]);
         }
         if (!empty($dbFirma->district_id)) {
-            $ilceler_row = $db->getRowAssoc("SELECT ilceadi FROM prolyn_default.ilceler WHERE ilce_id = ?", [$dbFirma->district_id]);
+            $ilceler_row = $db->getRowAssoc("SELECT ilceadi FROM `" . prolynweb_template_db() . "`.ilceler WHERE ilce_id = ?", [$dbFirma->district_id]);
         }
         $city_name = $iller_row['sehiradi'] ?? 'Belirtilmemiş';
         $district_name = $ilceler_row['ilceadi'] ?? 'Belirtilmemiş';

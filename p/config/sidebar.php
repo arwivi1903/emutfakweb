@@ -63,6 +63,20 @@ try {
                 <div class="menu-item pt-5">
                     <div class="menu-content"><span class="menu-heading fw-bold text-uppercase fs-7">CRM Yönetimi</span></div>
                 </div>
+                <div data-kt-menu-trigger="click" class="menu-item menu-accordion <?= showAccordion(['leads.php', 'lead_detail.php', 'lead_import.php', 'lead_templates.php']) ?>">
+                    <span class="menu-link">
+                        <span class="menu-icon"><i class="ki-duotone ki-rocket fs-2"><span class="path1"></span><span class="path2"></span></i></span>
+                        <span class="menu-title">Potansiyel Müşteriler</span>
+                        <span class="menu-arrow"></span>
+                    </span>
+                    <div class="menu-sub menu-sub-accordion">
+                        <div class="menu-item"><a class="menu-link <?= isActive('crm/leads.php') ?>" href="crm/leads.php"><span class="menu-bullet"><span class="bullet bullet-dot"></span></span><span class="menu-title">Lead Listesi</span></a></div>
+                        <div class="menu-item"><a class="menu-link" href="crm/leads.php?takip=bugun"><span class="menu-bullet"><span class="bullet bullet-dot"></span></span><span class="menu-title">Bugün Takip</span></a></div>
+                        <div class="menu-item"><a class="menu-link <?= isActive('crm/lead_import.php') ?>" href="crm/lead_import.php"><span class="menu-bullet"><span class="bullet bullet-dot"></span></span><span class="menu-title">İçe Aktar</span></a></div>
+                        <div class="menu-item"><a class="menu-link <?= isActive('crm/lead_templates.php') ?>" href="crm/lead_templates.php"><span class="menu-bullet"><span class="bullet bullet-dot"></span></span><span class="menu-title">Mesaj Şablonları</span></a></div>
+                    </div>
+                </div>
+
                 <div data-kt-menu-trigger="click" class="menu-item menu-accordion <?= showAccordion(['tenants.php', 'tenant_detail.php']) ?>">
                     <span class="menu-link">
                         <span class="menu-icon"><i class="ki-duotone ki-briefcase fs-2"><span class="path1"></span><span class="path2"></span></i></span>

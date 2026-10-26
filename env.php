@@ -75,3 +75,16 @@ if (!function_exists('prolynweb_env')) {
         return $base . '/' . ltrim($path, '/');
     }
 }
+
+if (!function_exists('prolynweb_master_db')) {
+    /** Merkez (master) veritabanı adı: .env DB_NAME (üretimde teknikse_prolyn_master). */
+    function prolynweb_master_db(): string
+    {
+        return preg_replace('/[^A-Za-z0-9_]/', '', (string)prolynweb_env('DB_NAME', 'prolyn_master'));
+    }
+    /** Şablon (default) veritabanı adı: .env TENANT_TEMPLATE_DB. */
+    function prolynweb_template_db(): string
+    {
+        return preg_replace('/[^A-Za-z0-9_]/', '', (string)prolynweb_env('TENANT_TEMPLATE_DB', 'prolyn_default'));
+    }
+}

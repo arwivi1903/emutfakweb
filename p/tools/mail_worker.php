@@ -48,7 +48,7 @@ try {
     exit(1);
 }
 
-$rows = $pdo->prepare("SELECT * FROM mail_kuyrugu WHERE status = 'pending' AND attempts < ? ORDER BY id ASC LIMIT {$batch}");
+$rows = $pdo->prepare("SELECT * FROM mail_kuyrugu WHERE status = 'pending' AND attempts < ? ORDER BY queue_id ASC LIMIT {$batch}");
 $rows->execute([$maxAttempts]);
 $items = $rows->fetchAll(PDO::FETCH_ASSOC);
 
@@ -56,25 +56,28 @@ echo "İşlenecek kayıt: " . count($items) . "\n";
 $sent = 0; $failed = 0;
 
 foreach ($items as $row) {
-    $id = (int)$row['id'];
+    $id = (int)$row['queue_id'];
+    $payload = json_decode((string)($row['payload'] ?? ''), true) ?: [];
+    $extraHeaders = is_array($payload['headers'] ?? null) ? $payload['headers'] : [];
+    $isHtml = !empty($payload['html']);
     $to = $row['recipient'] ?? '';
     $subject = $row['subject'] ?? '(konu yok)';
     $message = $row['message'] ?? '';
 
     if ($to === '' || !filter_var($to, FILTER_VALIDATE_EMAIL)) {
-        $pdo->prepare("UPDATE mail_kuyrugu SET status='failed', attempts=attempts+1, processed_at=NOW() WHERE id=?")->execute([$id]);
+        $pdo->prepare("UPDATE mail_kuyrugu SET status='failed', attempts=attempts+1, last_error='Geçersiz alıcı adresi', processed_at=NOW() WHERE queue_id=?")->execute([$id]);
         $failed++;
         continue;
     }
 
-    $ok = prolyn_send_mail($to, $subject, $message, false);
+    $ok = prolyn_send_mail($to, $subject, $message, $isHtml, $extraHeaders);
     if ($ok) {
-        $pdo->prepare("UPDATE mail_kuyrugu SET status='sent', attempts=attempts+1, processed_at=NOW() WHERE id=?")->execute([$id]);
+        $pdo->prepare("UPDATE mail_kuyrugu SET status='sent', attempts=attempts+1, processed_at=NOW() WHERE queue_id=?")->execute([$id]);
         $sent++;
     } else {
         // Deneme sayısı dolduysa failed, yoksa pending kalsın (tekrar denenir)
         $newStatus = ((int)$row['attempts'] + 1 >= $maxAttempts) ? 'failed' : 'pending';
-        $pdo->prepare("UPDATE mail_kuyrugu SET status=?, attempts=attempts+1, processed_at=NOW() WHERE id=?")->execute([$newStatus, $id]);
+        $pdo->prepare("UPDATE mail_kuyrugu SET status=?, attempts=attempts+1, last_error='Gönderim başarısız (PHP error log: [mailer])', processed_at=NOW() WHERE queue_id=?")->execute([$newStatus, $id]);
         $failed++;
     }
 }

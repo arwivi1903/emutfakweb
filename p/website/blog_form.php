@@ -174,7 +174,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                                     <div class="fv-row mb-7">
                                         <label class="required fs-6 fw-semibold mb-2">İçerik</label>
                                         <textarea class="form-control form-control-solid" name="content" rows="16" required><?php echo htmlspecialchars($post['content']); ?></textarea>
-                                        <div class="form-text">Düz metin olarak yazın; paragraf aralarına boş satır bırakmanız yeterli.</div>
+                                        <div class="form-text">Paragraf aralarına boş satır bırakın. Biçimlendirme: <code>## Başlık</code> (içindekiler listesine eklenir), <code>### Alt başlık</code>, <code>- madde</code>, <code>1. madde</code>, <code>&gt; not kutusu</code>, <code>**kalın**</code>, <code>[bağlantı metni](https://adres)</code>. İpucu: ilk paragrafta konunun kısa cevabını verin; arama motorları ve yapay zekâ özetleri bunu alıntılar.</div>
                                     </div>
                                 </div>
                             </div>

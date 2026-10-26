@@ -1,8 +1,9 @@
 <?php require_once 'db.php'; ?>
 <?php
+require_once __DIR__ . '/partials/blog_render.php';
 $posts = [];
 try {
-    $stmt = $pdo->prepare("SELECT title, slug, excerpt, cover_image, published_at FROM blog_yazilari WHERE status = 'published' ORDER BY published_at DESC");
+    $stmt = $pdo->prepare("SELECT title, slug, excerpt, cover_image, published_at, content FROM blog_yazilari WHERE status = 'published' ORDER BY published_at DESC");
     $stmt->execute();
     $posts = $stmt->fetchAll();
 } catch (Throwable $e) {
@@ -15,19 +16,20 @@ try {
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title><?php echo htmlspecialchars($appSettings['seo_title'] ?? 'Prolyn ERP'); ?> - Blog</title>
-    <meta name="description" content="Prolyn ERP blogu: bulut ERP, işletme yönetimi ve dijitalleşme üzerine yazılar.">
+    <meta name="description" content="Prolyn blogu: mutfak, dolap ve banyo firmaları başta olmak üzere KOBİ'ler için randevu, montaj, tahsilat ve ön muhasebe üzerine uygulanabilir rehberler.">
     <link rel="canonical" href="<?php echo htmlspecialchars(prolynweb_current_url()); ?>">
     <meta property="og:type" content="website">
     <meta property="og:site_name" content="<?php echo htmlspecialchars($appSettings['site_name'] ?? 'Prolyn ERP'); ?>">
     <meta property="og:title" content="<?php echo htmlspecialchars($appSettings['seo_title'] ?? 'Prolyn ERP'); ?> - Blog">
-    <meta property="og:description" content="Prolyn ERP blogu: bulut ERP, işletme yönetimi ve dijitalleşme üzerine yazılar.">
+    <meta property="og:description" content="Prolyn blogu: KOBİ'ler için randevu, montaj, tahsilat ve ön muhasebe üzerine uygulanabilir rehberler.">
     <meta property="og:url" content="<?php echo htmlspecialchars(prolynweb_current_url()); ?>">
     <meta name="twitter:card" content="summary_large_image">
     <link rel="shortcut icon" href="p/dist/assets/media/logos/favicon.ico" />
     <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Inter:300,400,500,600,700,800" />
     <link href="p/dist/assets/plugins/global/plugins.bundle.css" rel="stylesheet" type="text/css" />
     <link href="p/dist/assets/css/style.bundle.css" rel="stylesheet" type="text/css" />
-    <link href="assets/css/style.css?v=6" rel="stylesheet" type="text/css" />
+    <link href="assets/css/style.css?v=7" rel="stylesheet" type="text/css" />
+    <link href="assets/css/blog.css?v=1" rel="stylesheet" type="text/css" />
 </head>
 <body id="kt_body" class="app-blank">
     <!--begin::Root-->
@@ -69,7 +71,7 @@ try {
                 <div class="mb-5 animate-fade-in-up">
                     <h1 class="text-white fw-bolder fs-2hx fs-lg-3x mb-6">Prolyn <span class="text-gradient-primary">Blog</span></h1>
                     <div class="fw-medium fs-4 text-gray-400 mb-10 mx-auto" style="max-width: 600px;">
-                        Bulut ERP, işletme yönetimi ve dijitalleşme üzerine yazılar.
+                        Randevu, montaj, tahsilat ve ön muhasebe üzerine sahada işe yarayan rehberler.
                     </div>
                 </div>
             </div>
@@ -80,32 +82,38 @@ try {
         <div class="py-10 py-lg-15">
             <div class="container-xxl">
                 <?php if (empty($posts)): ?>
-                    <div class="text-center text-gray-400 py-20 fs-5">
-                        Henüz yayınlanmış bir yazı bulunmuyor. Yakında burada olacak.
-                    </div>
+                    <div class="text-center text-gray-400 py-20 fs-5">Henüz yayınlanmış bir yazı bulunmuyor. Yakında burada olacak.</div>
                 <?php else: ?>
-                    <div class="row g-10">
+                    <?php $one = array_shift($posts); ?>
+                    <a href="blog_detail.php?slug=<?= urlencode($one['slug']) ?>" class="glass-card blog-featured scroll-reveal">
+                        <div class="blog-featured-art" <?= !empty($one['cover_image']) ? 'style="background-image:url(\'' . htmlspecialchars($one['cover_image'], ENT_QUOTES) . '\')"' : '' ?>>
+                            <?php if (empty($one['cover_image'])): ?><span>Prolyn<i>.</i></span><?php endif; ?>
+                        </div>
+                        <div class="blog-featured-body">
+                            <span class="blog-pill">Son yazı</span>
+                            <h2><?= htmlspecialchars($one['title']) ?></h2>
+                            <?php if (!empty($one['excerpt'])): ?><p><?= htmlspecialchars($one['excerpt']) ?></p><?php endif; ?>
+                            <span class="blog-card-meta"><?= date('d.m.Y', strtotime($one['published_at'])) ?> · <?= blog_okuma_suresi((string)$one['content']) ?> dk okuma</span>
+                            <span class="blog-more">Yazıyı oku <i class="bi bi-arrow-right"></i></span>
+                        </div>
+                    </a>
+                    <?php if ($posts): ?>
+                    <div class="row g-6 mt-2">
                         <?php foreach ($posts as $i => $post): ?>
-                        <div class="col-md-6 col-lg-4 scroll-reveal delay-<?php echo ($i % 3) + 1; ?>">
-                            <a href="blog_detail.php?slug=<?php echo urlencode($post['slug']); ?>" class="glass-card h-100 d-block text-decoration-none overflow-hidden">
+                        <div class="col-md-6 col-lg-4 scroll-reveal delay-<?= ($i % 3) + 1 ?>">
+                            <a href="blog_detail.php?slug=<?= urlencode($post['slug']) ?>" class="glass-card blog-card h-100">
                                 <?php if (!empty($post['cover_image'])): ?>
-                                    <img src="<?php echo htmlspecialchars($post['cover_image']); ?>" class="w-100" style="height:200px;object-fit:cover;" alt="" />
-                                <?php else: ?>
-                                    <div class="w-100 d-flex align-items-center justify-content-center" style="height:200px;background:linear-gradient(135deg, var(--prolyn-primary), var(--prolyn-secondary));">
-                                        <h2 class="text-white fw-bolder m-0">Prolyn<span class="opacity-50">.</span></h2>
-                                    </div>
+                                    <img src="<?= htmlspecialchars($post['cover_image']) ?>" class="blog-card-img" alt="" loading="lazy" />
                                 <?php endif; ?>
-                                <div class="p-8">
-                                    <span class="text-muted fs-8 d-block mb-2"><?php echo date('d.m.Y', strtotime($post['published_at'])); ?></span>
-                                    <h4 class="text-white fs-3 fw-bold mb-4"><?php echo htmlspecialchars($post['title']); ?></h4>
-                                    <?php if (!empty($post['excerpt'])): ?>
-                                        <p class="text-gray-400 fs-6 lh-lg mb-0"><?php echo htmlspecialchars($post['excerpt']); ?></p>
-                                    <?php endif; ?>
-                                </div>
+                                <span class="blog-card-meta"><?= date('d.m.Y', strtotime($post['published_at'])) ?> · <?= blog_okuma_suresi((string)$post['content']) ?> dk okuma</span>
+                                <h3><?= htmlspecialchars($post['title']) ?></h3>
+                                <?php if (!empty($post['excerpt'])): ?><p><?= htmlspecialchars(mb_strimwidth($post['excerpt'], 0, 170, '…')) ?></p><?php endif; ?>
+                                <span class="blog-more">Oku <i class="bi bi-arrow-right"></i></span>
                             </a>
                         </div>
                         <?php endforeach; ?>
                     </div>
+                    <?php endif; ?>
                 <?php endif; ?>
             </div>
         </div>
@@ -196,18 +204,6 @@ try {
     <!--end::Global Javascript Bundle-->
     <script src="assets/js/site.js?v=6"></script>
 
-<!-- Floating Action Buttons -->
-<div class="floating-action-buttons">
-    <a href="tel:+905555555555" class="fab-btn fab-phone" title="Bizi Arayın">
-        <i class="bi bi-telephone-fill"></i>
-    </a>
-    <a href="https://wa.me/905555555555" class="fab-btn fab-whatsapp" target="_blank" title="WhatsApp Destek">
-        <i class="bi bi-whatsapp"></i>
-    </a>
-    <button class="fab-btn fab-scrolltop" onclick="window.scrollTo({top: 0, behavior: 'smooth'});" title="Yukarı Çık">
-        <i class="bi bi-arrow-up-short"></i>
-    </button>
-</div>
-
+<?php require __DIR__ . '/partials/fab.php'; ?>
 </body>
 </html>

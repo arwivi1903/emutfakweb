@@ -4,6 +4,7 @@
 
 ## Ana sayfalar
 - [Ana sayfa](https://prolyn.net/): Ürüne genel bakış, öne çıkan özellikler ve sıkça sorulan sorular
+- [Mutfak, dolap ve banyo firmaları için Prolyn](https://prolyn.net/mutfak-dolap-yazilimi): Ölçü-montaj randevuları, eksik malzeme, sözleşme, taksit ve cari takibi; sektöre özel tanıtım
 - [Modüller](https://prolyn.net/moduller): Prolyn ile gelen modüllerin güncel listesi
 - [Fiyatlandırma](https://prolyn.net/pricing): Paketler, dahil modüller, depolama ve destek seviyeleri
 - [30 Günlük Ücretsiz Deneme](https://prolyn.net/register): Kayıt ve deneme başlatma

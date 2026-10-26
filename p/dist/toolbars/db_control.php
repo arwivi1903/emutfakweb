@@ -1,5 +1,8 @@
 <?php
+require_once __DIR__ . '/../../../env.php';
 require_once '../../config/header.php';
+$masterDbName = (string)prolynweb_env('DB_NAME', 'prolyn_master');
+$templateDbName = (string)prolynweb_env('TENANT_TEMPLATE_DB', 'prolyn_default');
 Auth::requireModule('manage_tenants');
 require_once '../../config/sidebar.php';
 ?>
@@ -28,7 +31,7 @@ require_once '../../config/sidebar.php';
                 <?php
                 try {
                     // Master veritabanına bağlan
-                    $db_master = new Database('prolyn_master');
+                    $db_master = new Database($masterDbName);
                     
                     $tenantDbs = $db_master->allAssoc("
                         SELECT
@@ -40,12 +43,12 @@ require_once '../../config/sidebar.php';
                     ");
                     
                     // Master DB İstatistikleri
-                    $masterTables = $db_master->allAssoc("SELECT TABLE_NAME FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_SCHEMA = 'prolyn_master'");
+                    $masterTables = $db_master->allAssoc("SELECT TABLE_NAME FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_SCHEMA = '" . addslashes($masterDbName) . "'");
                     $packages = $db_master->allAssoc("SELECT plan_name, max_admin_users, max_total_users FROM package_features");
                     
                     // Reference schema (prolyn_master ana şablon veritabanı)
                     $referenceSchema = [];
-                    $refTablesResult = $db_master->allAssoc("SELECT TABLE_NAME FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_SCHEMA = 'prolyn_default'");
+                    $refTablesResult = $db_master->allAssoc("SELECT TABLE_NAME FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_SCHEMA = '" . addslashes($templateDbName) . "'");
                     if ($refTablesResult && is_array($refTablesResult)) {
                         foreach ($refTablesResult as $row) {
                             $referenceSchema[] = $row['TABLE_NAME'];
@@ -480,11 +483,11 @@ require_once '../../config/sidebar.php';
                                 $connections = [];
                                 
                                 try {
-                                    $db_m = new Database('prolyn_master');
-                                    $connections['Prolyn Master'] = ['db' => 'prolyn_master', 'status' => true];
+                                    $db_m = new Database($masterDbName);
+                                    $connections['Prolyn Master'] = ['db' => $masterDbName, 'status' => true];
                                 } catch (Exception $e) {
                                     $isolationTest = false;
-                                    $connections['Prolyn Master'] = ['db' => 'prolyn_master', 'status' => false];
+                                    $connections['Prolyn Master'] = ['db' => $masterDbName, 'status' => false];
                                 }
                                 
                                 $testTenants = array_slice($tenantDbs, 0, 3);
@@ -590,8 +593,8 @@ require_once '../../config/sidebar.php';
                     echo '<i class="ki-duotone ki-information fs-2hx text-danger me-4"><span class="path1"></span><span class="path2"></span><span class="path3"></span></i>';
                     echo '<div class="d-flex flex-column"><h4 class="mb-1 text-danger">Kritik Hata</h4><span>' . htmlspecialchars($e->getMessage()) . '</span></div>';
                     echo '</div>';
-                    echo '<div class="card"><div class="card-header"><h3 class="card-title">Stack Trace</h3></div>';
-                    echo '<div class="card-body"><pre class="mb-0">' . htmlspecialchars($e->getTraceAsString()) . '</pre></div></div>';
+                    if (filter_var(prolynweb_env('APP_DEBUG', 'false'), FILTER_VALIDATE_BOOLEAN)) { echo '<div class="card"><div class="card-header"><h3 class="card-title">Stack Trace</h3></div>';
+                    echo '<div class="card-body"><pre class="mb-0">' . htmlspecialchars($e->getTraceAsString()) . '</pre></div></div>'; }
                     echo '</div></div>';
                 }
                 ?>
