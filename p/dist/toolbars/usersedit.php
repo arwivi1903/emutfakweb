@@ -1,6 +1,7 @@
-<?php 
-require_once '../../config/header.php'; 
-require_once '../../config/sidebar.php'; 
+<?php
+require_once '../../config/header.php';
+Auth::requireModule('manage_admins');
+require_once '../../config/sidebar.php';
 
 // ID parameter kontrolü
 $userId = isset($_GET['id']) ? (int)$_GET['id'] : 0;
@@ -275,7 +276,10 @@ document.getElementById('editUserForm').addEventListener('submit', function(e) {
 
     fetch('../api/usersapi.php?action=update', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRF-Token': document.querySelector('meta[name="csrf-token"]').content
+        },
         body: JSON.stringify(formData)
     })
     .then(response => response.json())

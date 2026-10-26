@@ -40,11 +40,25 @@ try {
     <meta property="og:image" content="<?php echo htmlspecialchars($post['cover_image']); ?>">
     <?php endif; ?>
     <meta name="twitter:card" content="summary_large_image">
+    <script type="application/ld+json"><?php echo json_encode(array_filter([
+        '@context'      => 'https://schema.org',
+        '@type'         => 'Article',
+        'headline'      => $post['title'],
+        'description'   => $post['excerpt'] ?? mb_substr(strip_tags($post['content']), 0, 160),
+        'image'         => $post['cover_image'] ?? null,
+        'datePublished' => !empty($post['published_at']) ? date('c', strtotime($post['published_at'])) : null,
+        'dateModified'  => !empty($post['updated_at']) ? date('c', strtotime($post['updated_at'])) : null,
+        'publisher'     => [
+            '@type' => 'Organization',
+            'name'  => $appSettings['site_name'] ?? 'Prolyn ERP',
+        ],
+        'mainEntityOfPage' => prolynweb_current_url(),
+    ]), JSON_UNESCAPED_UNICODE); ?></script>
     <link rel="shortcut icon" href="p/dist/assets/media/logos/favicon.ico" />
     <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Inter:300,400,500,600,700,800" />
     <link href="p/dist/assets/plugins/global/plugins.bundle.css" rel="stylesheet" type="text/css" />
     <link href="p/dist/assets/css/style.bundle.css" rel="stylesheet" type="text/css" />
-    <link href="assets/css/style.css" rel="stylesheet" type="text/css" />
+    <link href="assets/css/style.css?v=6" rel="stylesheet" type="text/css" />
 </head>
 <body id="kt_body" class="app-blank">
     <!--begin::Root-->

@@ -5,6 +5,7 @@
  */
 
 require_once '../config/header.php';
+Auth::requireModule('manage_settings');
 require_once '../config/sidebar.php';
 
 // Yeni Duyuru Ekleme veya Silme/Durum Değiştirme
@@ -17,7 +18,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $show_from = !empty($_POST['show_from']) ? $_POST['show_from'] : null;
         $show_until = !empty($_POST['show_until']) ? $_POST['show_until'] : null;
         $is_active = isset($_POST['is_active']) ? 1 : 0;
-        $created_by = 1; // Sabit yönetici ID (oturumdan alınmalı)
+        $created_by = (int)($_SESSION['admin_id'] ?? 0);
 
         $db->Insert(
             "INSERT INTO duyurular (title, content, type, target_audience, is_active, show_from, show_until, created_by) VALUES (?, ?, ?, ?, ?, ?, ?, ?)",

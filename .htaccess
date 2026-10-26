@@ -1,5 +1,14 @@
 RewriteEngine On
 
+# HTTPS zorunlu (üretimde; localhost/127.0.0.1'de devre dışı)
+RewriteCond %{HTTPS} off
+RewriteCond %{HTTP_HOST} !^localhost [NC]
+RewriteCond %{HTTP_HOST} !^127\.0\.0\.1 [NC]
+RewriteRule ^ https://%{HTTP_HOST}%{REQUEST_URI} [L,R=301]
+
+# Dizin listelemeyi kapat
+Options -Indexes
+
 # Güvenlik başlıkları
 <IfModule mod_headers.c>
     Header always set X-Content-Type-Options "nosniff"
@@ -14,7 +23,7 @@ RewriteEngine On
 <FilesMatch "^\.env">
     Require all denied
 </FilesMatch>
-<FilesMatch "(\.env$|\.env\.|\.sql$|\.md$|composer\.(json|lock)|\.gitignore)">
+<FilesMatch "(\.env$|\.env\.|\.sql$|\.md$|composer\.(json|lock)|\.gitignore|\.bak$|\.backup$|~$|\.orig$|\.swp$|\.log$|\.tgz$|\.tar\.gz$|\.DS_Store$)">
     Require all denied
 </FilesMatch>
 RewriteRule (^|/)\.git(/|$) - [F]

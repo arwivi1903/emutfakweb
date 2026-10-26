@@ -60,4 +60,18 @@ if (!function_exists('prolynweb_env')) {
         }
         return $default;
     }
+
+    /**
+     * Panel (p/) taban URL'i. BASE_URL'e göre hesaplanır, ortama göre değişir
+     * (yerelde .../prolynweb/p, üretimde https://prolyn.net/p gibi).
+     * Kodda "/prolynweb/p/" gibi sabit yol YAZMAYIN — bu fonksiyonu kullanın.
+     */
+    function prolynweb_panel_url(string $path = ''): string
+    {
+        $base = rtrim((string) prolynweb_env('BASE_URL', ''), '/') . '/p';
+        if ($path === '') {
+            return $base;
+        }
+        return $base . '/' . ltrim($path, '/');
+    }
 }

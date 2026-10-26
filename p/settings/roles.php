@@ -212,7 +212,7 @@ foreach($rol_izinleri_data as $ri) {
                                         <td><?= date('d.m.Y H:i', strtotime($role->created_at)) ?></td>
                                         <td class="text-end">
                                             <button class="btn btn-icon btn-bg-light btn-active-color-primary btn-sm me-1" 
-                                                onclick="editRole(<?= $role->id ?>, '<?= htmlspecialchars($role->name, ENT_QUOTES) ?>', '<?= htmlspecialchars($role->description, ENT_QUOTES) ?>', '<?= json_encode($rol_izinleri[$role->id] ?? []) ?>')">
+                                                onclick="editRole(<?= (int) $role->id ?>, <?= htmlspecialchars(json_encode((string) $role->name), ENT_QUOTES, 'UTF-8') ?>, <?= htmlspecialchars(json_encode((string) $role->description), ENT_QUOTES, 'UTF-8') ?>, <?= htmlspecialchars(json_encode(json_encode($rol_izinleri[$role->id] ?? [])), ENT_QUOTES, 'UTF-8') ?>)">
                                                 <i class="ki-duotone ki-pencil fs-2"><span class="path1"></span><span class="path2"></span></i>
                                             </button>
                                         </td>

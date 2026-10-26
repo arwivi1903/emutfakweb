@@ -1,11 +1,21 @@
 <?php
-require_once '../../config/header.php'; 
-require_once '../../config/sidebar.php'; 
+require_once '../../config/header.php';
+Auth::requireModule('manage_tenants');
+require_once '../../config/sidebar.php';
 
 $dbName = isset($_GET['db']) ? $_GET['db'] : '';
 
 if (empty($dbName)) {
-    header('Location: /prolynweb/p/dist/toolbars/db_control.php');
+    header('Location: ' . prolynweb_panel_url('dist/toolbars/db_control.php'));
+    exit;
+}
+
+// Güvenlik: sadece bilinen kiracı veritabanlarına bağlanılabilir
+// (GET parametresiyle sunucudaki herhangi bir veritabanına bağlanılmasını engeller)
+$__masterDb = new Database('prolyn_master');
+$__validTenant = $__masterDb->getRow('SELECT customer_id FROM customers WHERE database_name = ? LIMIT 1', [$dbName]);
+if (!$__validTenant && $dbName !== 'prolyn_master' && $dbName !== 'prolyn_default') {
+    header('Location: ' . prolynweb_panel_url('dist/toolbars/db_control.php'));
     exit;
 }
 ?>

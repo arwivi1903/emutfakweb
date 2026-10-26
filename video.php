@@ -27,7 +27,7 @@ try {
     <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Inter:300,400,500,600,700,800" />
     <link href="p/dist/assets/plugins/global/plugins.bundle.css" rel="stylesheet" type="text/css" />
     <link href="p/dist/assets/css/style.bundle.css" rel="stylesheet" type="text/css" />
-    <link href="assets/css/style.css" rel="stylesheet" type="text/css" />
+    <link href="assets/css/style.css?v=6" rel="stylesheet" type="text/css" />
     <style>
         .video-thumb { position: relative; cursor: pointer; overflow: hidden; border-radius: 1rem 1rem 0 0; aspect-ratio: 16/9; background: #000; }
         .video-thumb img { width: 100%; height: 100%; object-fit: cover; transition: transform .3s ease; }
@@ -201,7 +201,7 @@ try {
     <script src="p/dist/assets/plugins/global/plugins.bundle.js"></script>
     <script src="p/dist/assets/js/scripts.bundle.js"></script>
     <!--end::Global Javascript Bundle-->
-    <script src="assets/js/site.js"></script>
+    <script src="assets/js/site.js?v=6"></script>
     <script>
         document.querySelectorAll('.video-thumb').forEach(function (el) {
             el.addEventListener('click', function () {

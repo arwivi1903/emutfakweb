@@ -11,6 +11,8 @@ if (session_status() === PHP_SESSION_NONE) {
     session_start();
 }
 
+require_once __DIR__ . '/../env.php';
+
 // Oturum tablosundan sil (Sistem Geneli Aktif Oturumlar Takibi)
 require_once __DIR__ . '/classes/allClass.php';
 try {
@@ -41,5 +43,5 @@ if (ini_get("session.use_cookies")) {
 session_destroy();
 
 // Login sayfasına yönlendir
-header('Location: /prolynweb/p/login.php', true, 302);
+header('Location: ' . prolynweb_panel_url('login.php'), true, 302);
 exit;

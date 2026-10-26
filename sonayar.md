@@ -1,0 +1,3 @@
+- p/.htaccess: RewriteBase /prolynweb/p/ satırı — prod'da prolyn.net document root'u prolynweb ise bu /p/ olmalı. Canlı sunucuda test edilmeden değiştirmek riskli olduğu için dokunmadım.
+- Dizin izinleri: Yerelde uploads/, p/, p/dist, p/config, p/functions, p/src 777 (herkese yazılabilir) — muhtemelen macOS/XAMPP geliştirme artığı; sunucuda 755/644 (sadece upload klasörleri 775) olmalı.
+- Üretim .env'de APP_PANEL_URL gerçek app.prolyn.net panelinin (eski prolyn klasörü) adresini göstermeli — bu zaten koddaki mantıkla tutarlı, sadece .env dosyasının doğru değerle oluşturulduğundan emin olun.

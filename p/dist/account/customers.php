@@ -504,7 +504,7 @@ function createSortLink($key, $label, $currentSort, $currentDir) {
                                                             class="btn btn-icon btn-sm btn-danger" 
                                                             data-bs-toggle="tooltip" 
                                                             title="Pasif Yap"
-                                                            onclick="deleteCustomer(<?php echo (int)($customer->customer_id ?? 0); ?>, '<?php echo htmlspecialchars($customer->company_name ?? ''); ?>')">
+                                                            onclick="deleteCustomer(<?php echo (int)($customer->customer_id ?? 0); ?>, <?php echo htmlspecialchars(json_encode((string) ($customer->company_name ?? '')), ENT_QUOTES, 'UTF-8'); ?>)">
                                                         <i class="ki-duotone ki-trash fs-4">
                                                             <span class="path1"></span>
                                                             <span class="path2"></span>

@@ -13,8 +13,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
     $setting_id = (int)$_POST['setting_id'];
     $setting_value = $_POST['setting_value'];
     
-    $db->Update("UPDATE sistem_ayarlari SET setting_value = ?, updated_by = ?, updated_at = NOW() WHERE setting_id = ?", 
-        [$setting_value, $_SESSION['user_id'], $setting_id]);
+    $db->Update("UPDATE sistem_ayarlari SET setting_value = ?, updated_by = ?, updated_at = NOW() WHERE setting_id = ?",
+        [$setting_value, $_SESSION['admin_id'] ?? null, $setting_id]);
         
     echo "<script>window.location.href='settings/general.php?success=1';</script>";
     exit;

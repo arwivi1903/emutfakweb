@@ -25,7 +25,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
         $db->Insert("INSERT INTO api_anahtarlari (customer_id, api_key, api_secret, name, rate_limit, status) VALUES (?, ?, ?, ?, ?, 'active')", [
             $customer_id, $api_key, $api_secret, $name, $rate_limit
         ]);
-        
+
+        // Secret sadece bir kez, oluşturulduğu istekten sonraki ilk sayfa
+        // yüklemesinde gösterilir (session flash) — DB'den tekrar okunmaz/gösterilmez.
+        $_SESSION['prolyn_new_api_secret'] = $api_secret;
+        $_SESSION['prolyn_new_api_key'] = $api_key;
+
         echo "<script>window.location.href='settings/api_keys.php?success=created';</script>";
         exit;
     }
@@ -95,6 +100,23 @@ function maskApiKey($key) {
                                 elseif($_GET['success'] == 'revoked') echo 'API Anahtarı başarıyla iptal edildi (revoked).';
                             ?>
                         </span>
+                    </div>
+                </div>
+                <?php endif; ?>
+
+                <?php if (!empty($_SESSION['prolyn_new_api_secret'])):
+                    $__newSecret = $_SESSION['prolyn_new_api_secret'];
+                    $__newKey = $_SESSION['prolyn_new_api_key'] ?? '';
+                    unset($_SESSION['prolyn_new_api_secret'], $_SESSION['prolyn_new_api_key']);
+                ?>
+                <div class="alert alert-warning d-flex flex-column p-5 mb-5">
+                    <h4 class="mb-2 text-warning">API Secret — yalnızca şimdi gösterilir</h4>
+                    <span class="mb-3">Bu değeri güvenli bir yere kaydedin. Sayfa yenilendiğinde tekrar görüntülenemez, yalnızca yeni bir anahtar oluşturarak yenisini alabilirsiniz.</span>
+                    <div class="d-flex align-items-center gap-2 flex-wrap">
+                        <code class="fs-6" style="word-break: break-all;"><?php echo htmlspecialchars($__newKey, ENT_QUOTES, 'UTF-8'); ?></code>
+                    </div>
+                    <div class="d-flex align-items-center gap-2 flex-wrap mt-1">
+                        <code class="fs-6" style="word-break: break-all;"><?php echo htmlspecialchars($__newSecret, ENT_QUOTES, 'UTF-8'); ?></code>
                     </div>
                 </div>
                 <?php endif; ?>

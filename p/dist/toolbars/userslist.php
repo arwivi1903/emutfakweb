@@ -1,17 +1,7 @@
-<?php 
-// Session başlat
-if (session_status() === PHP_SESSION_NONE) {
-    session_start();
-}
-
-// Giriş kontrolü - login olmamışsa login sayfasına yönlendir
-if (!isset($_SESSION['admin_id'])) {
-    header('Location: ../../login.php', true, 302);
-    exit;
-}
-
-require_once '../../config/header.php'; 
-require_once '../../config/sidebar.php'; 
+<?php
+require_once '../../config/header.php';
+Auth::requireModule('manage_admins');
+require_once '../../config/sidebar.php';
 ?>
 
 <div class="app-main flex-column flex-row-fluid" id="kt_app_main">
@@ -154,12 +144,12 @@ document.addEventListener('DOMContentLoaded', function() {
             limit: 10
         });
 
-        fetch(`/prolynweb/p/dist/api/usersapi.php?${params}`)
+        fetch(`../api/usersapi.php?${params}`)
             .then(response => {
                 if (!response.ok) {
                     console.error('HTTP Error:', response.status, response.statusText);
                     if (response.status === 401) {
-                        window.location.href = '/prolynweb/p/login.php';
+                        window.location.href = '../../login.php';
                         return null;
                     }
                 }
@@ -175,7 +165,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     `Toplam: ${data.pagination.total}`;
                 } else {
                     if (data.redirect) {
-                        window.location.href = '/prolynweb/p/login.php';
+                        window.location.href = '../../login.php';
                     } else {
                         showError(data.message || 'Veriler yüklenirken hata oluştu');
                     }
@@ -312,10 +302,11 @@ document.addEventListener('DOMContentLoaded', function() {
     window.deleteUser = function(userId) {
         Swal.fire({title: 'Emin misiniz?', text: 'Bu kullanıcıyı silmek istediğinize emin misiniz?', icon: 'warning', showCancelButton: true, confirmButtonText: 'Evet', cancelButtonText: 'Hayır'}).then((result) => {
         if (result.isConfirmed) {
-            fetch('/prolynweb/p/dist/api/usersapi.php?action=delete', {
+            fetch('../api/usersapi.php?action=delete', {
                     method: 'POST',
                     headers: {
-                        'Content-Type': 'application/json'
+                        'Content-Type': 'application/json',
+                        'X-CSRF-Token': document.querySelector('meta[name="csrf-token"]').content
                     },
                     body: JSON.stringify({
                         admin_id: userId

@@ -1,6 +1,9 @@
 <?php
-require_once __DIR__ . '/../classes/allClass.php';
-require_once __DIR__ . '/../functions/combine.php';
+// DİKKAT: allClass.php/combine.php'yi burada tekrar (ve header.php'den ÖNCE)
+// require etmeyin — combine.php'nin otomatik CSRF kontrolü, header.php'nin
+// güvenli çerez parametreleriyle oturumu başlatmasından önce session_start()
+// tetikleyip admin oturum çerezinin Secure/HttpOnly bayraklarını atlatabilir.
+// header.php zaten doğru sırayla ikisini de require ediyor.
 require_once __DIR__ . '/../config/header.php';
 
 Auth::requireModule('manage_admins');

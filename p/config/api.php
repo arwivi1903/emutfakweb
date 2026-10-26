@@ -1,15 +1,17 @@
 <?php
 
+require_once __DIR__ . '/../functions/auth.php';
+
+// Oturumu, güvenli çerez parametreleri devreye girmeden hiçbir kodun
+// (ör. combine.php'nin otomatik CSRF kontrolü) başlatmadığından emin olmak için
+// combine.php'den ÖNCE açılır.
+start_secure_session();
+
 require_once __DIR__ . '/../classes/allClass.php';
 require_once __DIR__ . '/../functions/combine.php';
-// require_once __DIR__ . '/../functions/auth.php';
-// require_once __DIR__ . '/../functions/logtut.php';
 
 // JSON header
 header('Content-Type: application/json; charset=utf-8');
-
-// Session kontrolü
-start_secure_session();
 
 // Oturumda giriş yapılmış mı kontrol et
 if (!isset($_SESSION['admin_id'])) {
@@ -82,11 +84,15 @@ if ($action === 'deactivate_account' && $_SERVER['REQUEST_METHOD'] === 'POST') {
         $errorMsg = $e->getMessage();
         error_log("Exception in deactivate_account: " . $errorMsg);
         http_response_code(500);
-        echo json_encode([
+        $response = [
             'success' => false,
             'message' => 'Hesap pasifleştirirken bir hata oluştu',
-            'error_debug' => $errorMsg
-        ]);
+        ];
+        // Hata detayı sadece geliştirme ortamında istemciye gönderilir
+        if (filter_var(prolynweb_env('APP_DEBUG', 'false'), FILTER_VALIDATE_BOOLEAN)) {
+            $response['error_debug'] = $errorMsg;
+        }
+        echo json_encode($response);
     }
     exit;
 }

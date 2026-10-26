@@ -1,0 +1,20 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="630" viewBox="0 0 1200 630" role="img" aria-labelledby="title">
+  <title id="title">PROLYN — Profesyonel Üretim Takip ve ERP Sistemi</title>
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#F5F9FF"/>
+      <stop offset="1" stop-color="#DCEBFA"/>
+    </linearGradient>
+  </defs>
+  <rect width="1200" height="630" fill="url(#bg)"/>
+  <circle cx="1000" cy="95" r="270" fill="#0B4E9B" opacity=".08"/>
+  <circle cx="116" cy="600" r="190" fill="#0B4E9B" opacity=".07"/>
+  <g transform="translate(104 156) scale(.88)">
+    <rect width="512" height="512" rx="112" fill="#0B4E9B"/>
+    <path fill="#FFF" fill-rule="evenodd" d="M130 82h132c98 0 164 62 164 154 0 62-30 110-84 136l-68 32v-92l44-21c24-12 36-32 36-58 0-38-28-62-70-62h-56v302h-74V82Zm74 92h58c36 0 58 22 58 56 0 24-12 42-36 53l-80 38V174Z"/>
+  </g>
+  <text x="590" y="298" fill="#123157" font-family="Arial, Helvetica, sans-serif" font-size="104" font-weight="700" letter-spacing="5">PROLYN</text>
+  <rect x="596" y="335" width="145" height="7" rx="3.5" fill="#0B4E9B"/>
+  <text x="596" y="396" fill="#385575" font-family="Arial, Helvetica, sans-serif" font-size="30" font-weight="400">Profesyonel Üretim Takip</text>
+  <text x="596" y="439" fill="#385575" font-family="Arial, Helvetica, sans-serif" font-size="30" font-weight="400">ve ERP Sistemi</text>
+</svg>

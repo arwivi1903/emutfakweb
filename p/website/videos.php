@@ -9,6 +9,7 @@
  */
 
 require_once '../config/header.php';
+Auth::requireModule('manage_settings');
 require_once '../config/sidebar.php';
 
 /** Çeşitli YouTube link formatlarından 11 karakterlik video ID'sini çıkarır. */

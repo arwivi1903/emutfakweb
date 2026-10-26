@@ -169,7 +169,7 @@ $taxes = $db->getRows("SELECT * FROM vergi_oranlari ORDER BY tax_percent ASC");
                                         <td><?= date('d.m.Y H:i', strtotime($tax->created_at)) ?></td>
                                         <td class="text-end">
                                             <button class="btn btn-icon btn-bg-light btn-active-color-primary btn-sm me-1" 
-                                                onclick="editTax(<?= $tax->tax_id ?>, '<?= htmlspecialchars($tax->tax_name, ENT_QUOTES) ?>', <?= $tax->tax_percent ?>, <?= $tax->is_default ?>, <?= $tax->is_active ?>)">
+                                                onclick="editTax(<?= (int) $tax->tax_id ?>, <?= htmlspecialchars(json_encode((string) $tax->tax_name), ENT_QUOTES, 'UTF-8') ?>, <?= (float) $tax->tax_percent ?>, <?= (int) $tax->is_default ?>, <?= (int) $tax->is_active ?>)">
                                                 <i class="ki-duotone ki-pencil fs-2"><span class="path1"></span><span class="path2"></span></i>
                                             </button>
                                         </td>

@@ -72,7 +72,10 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['action'])) {
                     $success_msg = "Yönetici başarıyla güncellendi.";
                 } else {
                     // YENİ EKLEME
-                    $password_hash = password_hash(!empty($password) ? $password : '123456', PASSWORD_DEFAULT);
+                    // Şifre alanı boş bırakılırsa tahmin edilebilir sabit bir varsayılan
+                    // ("123456") ATANMAZ; yerine rastgele, güçlü bir geçici şifre üretilir.
+                    $tempPassword = !empty($password) ? $password : bin2hex(random_bytes(8));
+                    $password_hash = password_hash($tempPassword, PASSWORD_DEFAULT);
                     $sql = "INSERT INTO yoneticiler (username, email, password_hash, full_name, role, status, created_at) VALUES (?, ?, ?, ?, ?, ?, NOW())";
                     $new_admin_id = $db->Insert($sql, [$username, $email, $password_hash, $full_name, $role, $status]);
                     
@@ -98,10 +101,14 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['action'])) {
 
                         xlog('INSERT', 'Yeni yönetici eklendi', $new_admin_id, $logAdminId, $db, null, $newData, 'yoneticiler');
                         $success_msg = "Yönetici başarıyla eklendi.";
+                        if (empty($password)) {
+                            $success_msg .= " Geçici şifre: " . $tempPassword . " (lütfen yöneticiyle güvenli bir kanaldan paylaşın, ilk girişte değiştirmesini isteyin.)";
+                        }
                     }
                 }
             } catch (Exception $e) {
-                $error_msg = "İşlem sırasında bir hata oluştu: " . $e->getMessage();
+                $error_msg = "İşlem sırasında bir hata oluştu.";
+                error_log('[settings/admins] ' . $e->getMessage());
                 xlog('ERROR', 'Yönetici işlemi hatası: ' . $e->getMessage(), $admin_id > 0 ? $admin_id : null, $logAdminId, $db, null, null, 'yoneticiler');
             }
         } else {

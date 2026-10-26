@@ -190,10 +190,13 @@ function csrfTokenMeta()
 }
 
 // CSRF token doğrulama yardımcı fonksiyonu (POST isteklerinde kullanılır)
+// Normal formlar $_POST['csrf_token'] gönderir; application/json ile POST
+// eden fetch() çağrıları ise token'ı X-CSRF-Token başlığında taşır
+// (bkz. csrfTokenMeta() ve header.php'deki meta etiketi).
 function checkCSRF()
 {
     if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-        $token = $_POST['csrf_token'] ?? '';
+        $token = $_POST['csrf_token'] ?? ($_SERVER['HTTP_X_CSRF_TOKEN'] ?? '');
         if (!validateCSRFToken($token)) {
             http_response_code(403);
             die('CSRF token doğrulaması başarısız. Lütfen sayfayı yenileyin ve tekrar deneyin.');

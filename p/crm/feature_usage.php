@@ -5,6 +5,7 @@
  */
 
 require_once '../config/header.php';
+Auth::requireModule('manage_subscriptions');
 require_once '../config/sidebar.php';
 
 // Yeni Kullanım İstatistiklerini Çek (Canlı DB sorguları ile)

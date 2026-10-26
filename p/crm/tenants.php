@@ -15,7 +15,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
         $company_name   = trim($_POST['company_name']);
         $company_email  = trim($_POST['company_email']);
         $company_phone  = trim($_POST['company_phone']);
-        $database_name  = trim($_POST['database_name']);
         $industry       = trim($_POST['industry']);
         $status         = $_POST['status'] ?? 'active';
         $trial_end_date = !empty($_POST['trial_end_date']) ? date('Y-m-d', strtotime($_POST['trial_end_date'])) : null;
@@ -29,21 +28,25 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
         $tenant_alias = trim($_POST['tenant_alias'] ?? '');
         $sozlesme_bitis_tarihi = !empty($_POST['sozlesme_bitis_tarihi']) ? date('Y-m-d', strtotime($_POST['sozlesme_bitis_tarihi'])) : null;
         
+        // database_name kasıtlı olarak $_POST'tan okunmuyor: kiracının bağlandığı
+        // veritabanı adı sadece provisioning akışıyla (tenant_form.php) belirlenir,
+        // aksi halde bir yönetici bu alanı değiştirerek kiracıyı başka bir
+        // veritabanına (potansiyel olarak başka bir kiracının verisine) yönlendirebilir.
         if ($customer_id > 0) {
             $db->Update("
-                UPDATE kurumlar 
-                SET company_name=?, company_email=?, company_phone=?, database_name=?, industry=?, status=?, trial_end_date=?,
+                UPDATE kurumlar
+                SET company_name=?, company_email=?, company_phone=?, industry=?, status=?, trial_end_date=?,
                     musteri_paketi=?, contact_person=?, tax_office=?, tax_number=?, billing_address=?, account_manager_id=?, tenant_alias=?, sozlesme_bitis_tarihi=?
                 WHERE customer_id=?
-            ", [$company_name, $company_email, $company_phone, $database_name, $industry, $status, $trial_end_date, 
+            ", [$company_name, $company_email, $company_phone, $industry, $status, $trial_end_date,
                 $musteri_paketi, $contact_person, $tax_office, $tax_number, $billing_address, $account_manager_id, $tenant_alias, $sozlesme_bitis_tarihi, $customer_id]);
         } else {
             $db->Insert("
-                INSERT INTO kurumlar 
-                (company_name, company_email, company_phone, database_name, industry, status, trial_end_date,
+                INSERT INTO kurumlar
+                (company_name, company_email, company_phone, industry, status, trial_end_date,
                  musteri_paketi, contact_person, tax_office, tax_number, billing_address, account_manager_id, tenant_alias, sozlesme_bitis_tarihi)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-            ", [$company_name, $company_email, $company_phone, $database_name, $industry, $status, $trial_end_date,
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            ", [$company_name, $company_email, $company_phone, $industry, $status, $trial_end_date,
                 $musteri_paketi, $contact_person, $tax_office, $tax_number, $billing_address, $account_manager_id, $tenant_alias, $sozlesme_bitis_tarihi]);
         }
         echo "<script>window.location.href='crm/tenants.php?success=saved';</script>";

@@ -257,7 +257,7 @@ class Auth
 
         // Eğer kullanıcı login olmamışsa (zaten header.php redirect atar ama garanti olsun)
         if (empty($_SESSION['admin_id'])) {
-            header("Location: /prolynweb/p/login.php");
+            header("Location: " . prolynweb_panel_url('login.php'));
             exit;
         }
 
@@ -288,7 +288,7 @@ class Auth
         if (!$hasPermission) {
             // Log the denied access attempt
             xlogSimple('ACCESS_DENIED', "Modül: {$permissionName}", null, $admin_id, $db);
-            header("Location: /prolynweb/p/partials/access_denied.php");
+            header("Location: " . prolynweb_panel_url('partials/access_denied.php'));
             exit;
         }
     }

@@ -38,6 +38,132 @@ if (!function_exists('provision_admin_pdo')) {
         return $pdo;
     }
 
+
+    /* ------------------------------------------------------------------
+     * cPanel modu (paylaşımlı hosting): CPANEL_USER + CPANEL_PASS doluysa
+     * veritabanı cPanel UAPI ile açılır (CREATE DATABASE yetkisi gerekmez).
+     * ------------------------------------------------------------------ */
+    function provision_cpanel_enabled(): bool
+    {
+        return trim((string)prolynweb_env('CPANEL_USER', '')) !== ''
+            && (string)prolynweb_env('CPANEL_PASS', '') !== '';
+    }
+
+    function provision_cpanel_dbname(int $customerId): string
+    {
+        return trim((string)prolynweb_env('CPANEL_USER', '')) . '_prolyn_k' . $customerId;
+    }
+
+    /**
+     * cPanel UAPI çağrısı (oturum açıp /execute/ kullanır).
+     * @return array UAPI 'data' alanı
+     * @throws Exception
+     */
+    function provision_cpanel_call(string $module, string $func, array $params = []): array
+    {
+        if (!function_exists('curl_init')) {
+            throw new Exception('cURL eklentisi yok.');
+        }
+        $host   = trim((string)prolynweb_env('CPANEL_HOST', 'localhost'));
+        $port   = (int)prolynweb_env('CPANEL_PORT', '2083');
+        $verify = strtolower((string)prolynweb_env('CPANEL_VERIFY_SSL', 'true')) !== 'false';
+        $base   = "https://{$host}:{$port}";
+        $jar    = tempnam(sys_get_temp_dir(), 'cpj');
+        @chmod($jar, 0600);
+
+        $do = function (string $url, ?array $post) use ($jar, $verify) {
+            $ch = curl_init($url);
+            curl_setopt_array($ch, [
+                CURLOPT_RETURNTRANSFER => true,
+                CURLOPT_TIMEOUT        => 30,
+                CURLOPT_SSL_VERIFYPEER => $verify,
+                CURLOPT_SSL_VERIFYHOST => $verify ? 2 : 0,
+                CURLOPT_COOKIEJAR      => $jar,
+                CURLOPT_COOKIEFILE     => $jar,
+                CURLOPT_FOLLOWLOCATION => false,
+            ]);
+            if ($post !== null) {
+                curl_setopt($ch, CURLOPT_POST, true);
+                curl_setopt($ch, CURLOPT_POSTFIELDS, http_build_query($post));
+            }
+            $body = curl_exec($ch);
+            $err  = curl_error($ch);
+            curl_close($ch);
+            if ($body === false) { throw new Exception('cPanel bağlantı hatası: ' . $err); }
+            return $body;
+        };
+
+        try {
+            $login = json_decode($do($base . '/login/?login_only=1', [
+                'user' => (string)prolynweb_env('CPANEL_USER', ''),
+                'pass' => (string)prolynweb_env('CPANEL_PASS', ''),
+            ]), true);
+            if (!is_array($login) || empty($login['security_token'])) {
+                throw new Exception('cPanel oturumu açılamadı.');
+            }
+            $url = $base . $login['security_token'] . '/execute/' . rawurlencode($module) . '/' . rawurlencode($func)
+                 . ($params ? '?' . http_build_query($params) : '');
+            $res = json_decode($do($url, null), true);
+            if (!is_array($res) || (int)($res['status'] ?? 0) !== 1) {
+                $msg = is_array($res) && !empty($res['errors']) ? implode('; ', (array)$res['errors']) : 'bilinmeyen hata';
+                throw new Exception("cPanel {$module}::{$func} başarısız: {$msg}");
+            }
+            // oturumu kapat
+            @$do($base . $login['security_token'] . '/logout/', null);
+            return is_array($res['data'] ?? null) ? $res['data'] : [];
+        } finally {
+            @unlink($jar);
+        }
+    }
+
+    /** SQL dosyasını (mysqldump çıktısı, DELIMITER destekli) PDO ile çalıştırır. */
+    function provision_run_sql_file(PDO $pdo, string $file): void
+    {
+        $sql = file_get_contents($file);
+        if ($sql === false) { throw new Exception('Şablon SQL okunamadı.'); }
+        $len = strlen($sql);
+        $delim = ';';
+        $buf = '';
+        $quote = '';
+        $i = 0;
+        while ($i < $len) {
+            $c = $sql[$i];
+            if ($quote !== '') {
+                $buf .= $c;
+                if ($c === '\\' && $quote !== '`' && $i + 1 < $len) { $buf .= $sql[++$i]; }
+                elseif ($c === $quote) { $quote = ''; }
+                $i++;
+                continue;
+            }
+            // satır başı: DELIMITER komutu / satır yorumu
+            $atLineStart = ($i === 0 || $sql[$i - 1] === "\n");
+            if ($atLineStart && strncasecmp(substr($sql, $i, 10), 'DELIMITER ', 10) === 0) {
+                $eol = strpos($sql, "\n", $i);
+                if ($eol === false) { $eol = $len; }
+                $delim = trim(substr($sql, $i + 10, $eol - $i - 10));
+                $i = $eol + 1;
+                continue;
+            }
+            if ($c === '-' && substr($sql, $i, 3) === '-- ') {
+                $eol = strpos($sql, "\n", $i);
+                $i = ($eol === false) ? $len : $eol + 1;
+                continue;
+            }
+            if ($c === "'" || $c === '"' || $c === '`') { $quote = $c; $buf .= $c; $i++; continue; }
+            if (substr($sql, $i, strlen($delim)) === $delim) {
+                $stmt = trim($buf);
+                if ($stmt !== '') { $pdo->exec($stmt); }
+                $buf = '';
+                $i += strlen($delim);
+                continue;
+            }
+            $buf .= $c;
+            $i++;
+        }
+        $stmt = trim($buf);
+        if ($stmt !== '') { $pdo->exec($stmt); }
+    }
+
     /**
      * Kriptografik olarak güçlü, MySQL şifresi için güvenli rastgele parola.
      */
@@ -183,7 +309,8 @@ if (!function_exists('provision_admin_pdo')) {
             $result['error'] = 'Geçersiz customer_id.';
             return $result;
         }
-        $newDbName = 'prolyn_k' . $customerId;
+        $cpanelMode = provision_cpanel_enabled();
+        $newDbName = $cpanelMode ? provision_cpanel_dbname($customerId) : 'prolyn_k' . $customerId;
         $result['database_name'] = $newDbName;
 
         $allowedHost = prolynweb_env('TENANT_DB_ALLOWED_HOST', '%');
@@ -194,6 +321,32 @@ if (!function_exists('provision_admin_pdo')) {
         try {
             $adminPdo = provision_admin_pdo();
 
+            if ($cpanelMode) {
+                // 1) cPanel UAPI ile DB aç + uygulama kullanıcısına yetki ver
+                provision_cpanel_call('Mysql', 'create_database', ['name' => $newDbName]);
+                $dbCreated = true;
+                provision_cpanel_call('Mysql', 'set_privileges_on_database', [
+                    'user' => (string)prolynweb_env('DB_USER', ''),
+                    'database' => $newDbName,
+                    'privileges' => 'ALL PRIVILEGES',
+                ]);
+                // 2) Şablonu PDO ile içe aktar
+                $tplFile = __DIR__ . '/tenant_template.sql';
+                if (!is_readable($tplFile)) { $tplFile = __DIR__ . '/../database/prolyn_default.sql'; }
+                if (!is_readable($tplFile)) { throw new Exception('Şablon SQL dosyası bulunamadı.'); }
+                $impPdo = new PDO(
+                    sprintf('mysql:host=%s;port=%s;dbname=%s;charset=utf8mb4',
+                        prolynweb_env('DB_HOST', 'localhost'), prolynweb_env('DB_PORT', '3306'), $newDbName),
+                    prolynweb_env('DB_USER', ''), prolynweb_env('DB_PASS', ''),
+                    [PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION]);
+                provision_run_sql_file($impPdo, $tplFile);
+                unset($impPdo);
+                // 3) cPanel modunda kiracı, uygulama kullanıcısını paylaşır
+                $tenantUser = (string)prolynweb_env('DB_USER', '');
+                $tenantPass = (string)prolynweb_env('DB_PASS', '');
+                $result['database_user'] = $tenantUser;
+                $result['database_password'] = $tenantPass;
+            } else {
             // 1) Veritabanını oluştur (customer_id benzersiz olduğu için yarış yok)
             $adminPdo->exec("CREATE DATABASE `{$newDbName}` CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci");
             $dbCreated = true;
@@ -206,6 +359,7 @@ if (!function_exists('provision_admin_pdo')) {
             $userCreated = true;
             $result['database_user'] = $tenantUser;
             $result['database_password'] = $tenantPass;
+            }
 
             // 4) Tenant DB'ye bağlan (yönetici bağlantısı) ve tohumla
             $host = prolynweb_env('DB_HOST', '127.0.0.1');
@@ -263,6 +417,11 @@ if (!function_exists('provision_admin_pdo')) {
             error_log('[provision] Başarısız (' . $newDbName . '): ' . $e->getMessage());
             // GERİ ALMA: kullanıcı ve DB'yi temizle
             try {
+                if ($cpanelMode) {
+                    if ($dbCreated) { provision_cpanel_call('Mysql', 'delete_database', ['name' => $newDbName]); }
+                    $result['error'] = $e->getMessage();
+                    return $result;
+                }
                 $adminPdo = isset($adminPdo) ? $adminPdo : provision_admin_pdo();
                 if ($userCreated && $tenantUser !== '') {
                     $adminPdo->exec(sprintf("DROP USER IF EXISTS '%s'@'%s'",

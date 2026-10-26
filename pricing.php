@@ -16,6 +16,10 @@ try {
             'name'           => trim((string)($r['plan_display_name'] ?? '')) !== ''
                                 ? $r['plan_display_name'] : $r['plan_name'],
             'description'    => (string)($r['plan_description'] ?? ''),
+            'modules'        => json_decode((string)($r['allowed_modules'] ?? '[]'), true) ?: [],
+            'storage_gb'     => (int)($r['max_storage_gb'] ?? 0),
+            'support'        => (string)($r['support_level'] ?? 'email'),
+            'support_hours'  => (int)($r['support_response_hours'] ?? 0),
             'price_monthly'  => (float)($r['price'] ?? 0),
             'max_users'      => (int)($r['max_total_users'] ?? 0),
             'max_branches'   => (int)($r['max_branches'] ?? 0),
@@ -39,7 +43,7 @@ if (empty($packages)) {
 }
 
 $varsayilanAciklama = [
-    'basic'      => 'Küçük işletmeler için temel ön muhasebe özellikleri.',
+    'basic'      => 'Küçük işletmeler için müşteri, randevu, cari takip ve sözleşme yönetimi.',
     'pro'        => 'Büyüyen işletmeler için gelişmiş özellikler ve çoklu şube desteği.',
     'enterprise' => 'Büyük ölçekli firmalar için tam donanımlı, sınırsız çözüm.',
 ];
@@ -62,13 +66,13 @@ foreach ($packages as $pk) {
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title><?php echo htmlspecialchars($appSettings['seo_title'] ?? 'Prolyn - Yeni Nesil Bulut ERP Sistemi'); ?> - Fiyatlandırma</title>
-    <meta name="description" content="<?php echo htmlspecialchars($appSettings['seo_description'] ?? 'Kurumsal Kaynak Planlama, CRM, İK ve Ön Muhasebe çözümleri tek bir platformda.'); ?>">
+    <meta name="description" content="<?php echo htmlspecialchars('Prolyn ERP fiyatlandırma planları: Basic, Pro ve Enterprise paketlerini karşılaştırın, işletmenize uygun bulut ERP paketini seçin.'); ?>">
     <meta name="keywords" content="<?php echo htmlspecialchars($appSettings['seo_keywords'] ?? 'erp, bulut erp, crm, ön muhasebe, ik'); ?>">
     <link rel="canonical" href="<?php echo htmlspecialchars(prolynweb_current_url()); ?>">
     <meta property="og:type" content="website">
     <meta property="og:site_name" content="<?php echo htmlspecialchars($appSettings['site_name'] ?? 'Prolyn ERP'); ?>">
     <meta property="og:title" content="<?php echo htmlspecialchars($appSettings['seo_title'] ?? 'Prolyn - Yeni Nesil Bulut ERP Sistemi'); ?> - Fiyatlandırma">
-    <meta property="og:description" content="<?php echo htmlspecialchars($appSettings['seo_description'] ?? 'Kurumsal Kaynak Planlama, CRM, İK ve Ön Muhasebe çözümleri tek bir platformda.'); ?>">
+    <meta property="og:description" content="<?php echo htmlspecialchars('Prolyn ERP fiyatlandırma planları: Basic, Pro ve Enterprise paketlerini karşılaştırın, işletmenize uygun bulut ERP paketini seçin.'); ?>">
     <meta property="og:url" content="<?php echo htmlspecialchars(prolynweb_current_url()); ?>">
     <meta name="twitter:card" content="summary_large_image">
     <link rel="shortcut icon" href="p/dist/assets/media/logos/favicon.ico" />
@@ -76,7 +80,7 @@ foreach ($packages as $pk) {
     <link href="p/dist/assets/plugins/global/plugins.bundle.css" rel="stylesheet" type="text/css" />
     <link href="p/dist/assets/css/style.bundle.css" rel="stylesheet" type="text/css" />
     <!-- New Custom Redesign CSS -->
-    <link href="assets/css/style.css?v=5" rel="stylesheet" type="text/css" />
+    <link href="assets/css/style.css?v=6" rel="stylesheet" type="text/css" />
 <style>
 /* ── Aylık / Yıllık periyot seçimi ─────────────────────────────── */
 .py-periyot-sar{display:flex;flex-direction:column;align-items:center;gap:12px;margin-bottom:44px;}
@@ -280,17 +284,27 @@ foreach ($packages as $pk) {
                                             <i class="ki-duotone ki-check-circle"></i>
                                             <span><strong class="text-white"><?php echo $pkg['max_branches'] > 0 ? $pkg['max_branches'] : 'Sınırsız'; ?></strong> Şube Desteği</span>
                                         </li>
+                                        <?php
+                                            $modAd = ['core'=>'Kullanıcı Yönetimi','customer'=>'Müşteri','commercial'=>'Ticari Müşteri','appointment'=>'Randevu','current_account'=>'Cari Takip','inventory'=>'Ürün Yönetimi','accounting'=>'Ön Muhasebe','invoice'=>'Fatura','contract'=>'Sözleşme','reports'=>'Raporlar','planning'=>'Planlama & İmalat','bank'=>'Banka','statistics'=>'İstatistik'];
+                                            $modListe = [];
+                                            foreach (($pkg['modules'] ?? []) as $mk) { if (isset($modAd[$mk]) && $mk !== 'core') { $modListe[] = $modAd[$mk]; } }
+                                            $destekAd = ['email'=>'E-posta desteği','priority'=>'Öncelikli destek','dedicated'=>'Özel destek'];
+                                        ?>
+                                        <?php if ($modListe): ?>
                                         <li>
                                             <i class="ki-duotone ki-check-circle"></i>
-                                            <span>Ön Muhasebe & Finans</span>
+                                            <span><strong class="text-white"><?php echo count($modListe); ?></strong> Modül<br><small class="text-gray-500"><?php echo htmlspecialchars(implode(' · ', $modListe)); ?></small></span>
                                         </li>
+                                        <?php endif; ?>
+                                        <?php if (!empty($pkg['storage_gb']) && $pkg['storage_gb'] < 900): ?>
                                         <li>
                                             <i class="ki-duotone ki-check-circle"></i>
-                                            <span>Gelişmiş Raporlama</span>
+                                            <span><strong class="text-white"><?php echo (int)$pkg['storage_gb']; ?> GB</strong> Dosya Depolama</span>
                                         </li>
+                                        <?php endif; ?>
                                         <li>
                                             <i class="ki-duotone ki-check-circle"></i>
-                                            <span>7/24 Teknik Destek</span>
+                                            <span><?php echo htmlspecialchars($destekAd[$pkg['support'] ?? 'email'] ?? 'Teknik destek'); ?><?php echo !empty($pkg['support_hours']) ? ' <small class="text-gray-500">(' . (int)$pkg['support_hours'] . ' saat içinde yanıt)</small>' : ''; ?></span>
                                         </li>
                                     </ul>
                                     

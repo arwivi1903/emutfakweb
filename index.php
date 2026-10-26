@@ -15,21 +15,31 @@ $featureColors = ['primary', 'success', 'info', 'warning', 'danger'];
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title><?php echo htmlspecialchars($appSettings['seo_title'] ?? 'Prolyn ERP - Yeni Çağın İş Yönetimi'); ?></title>
-    <meta name="description" content="<?php echo htmlspecialchars($appSettings['seo_description'] ?? ''); ?>">
-    <meta name="keywords" content="<?php echo htmlspecialchars($appSettings['seo_keywords'] ?? ''); ?>">
+    <meta name="description" content="<?php echo htmlspecialchars($appSettings['seo_description'] ?? 'Prolyn ERP: Kurumsal Kaynak Planlama, CRM, İK ve Ön Muhasebe çözümlerini tek bir bulut platformunda birleştiren yeni nesil iş yönetim sistemi.'); ?>">
+    <meta name="keywords" content="<?php echo htmlspecialchars($appSettings['seo_keywords'] ?? 'erp, bulut erp, crm, ön muhasebe, ik'); ?>">
     <link rel="canonical" href="<?php echo htmlspecialchars(prolynweb_current_url()); ?>">
     <meta property="og:type" content="website">
     <meta property="og:site_name" content="<?php echo htmlspecialchars($appSettings['site_name'] ?? 'Prolyn ERP'); ?>">
     <meta property="og:title" content="<?php echo htmlspecialchars($appSettings['seo_title'] ?? 'Prolyn ERP - Yeni Çağın İş Yönetimi'); ?>">
-    <meta property="og:description" content="<?php echo htmlspecialchars($appSettings['seo_description'] ?? ''); ?>">
+    <meta property="og:description" content="<?php echo htmlspecialchars($appSettings['seo_description'] ?? 'Prolyn ERP: Kurumsal Kaynak Planlama, CRM, İK ve Ön Muhasebe çözümlerini tek bir bulut platformunda birleştiren yeni nesil iş yönetim sistemi.'); ?>">
     <meta property="og:url" content="<?php echo htmlspecialchars(prolynweb_current_url()); ?>">
     <meta name="twitter:card" content="summary_large_image">
+    <script type="application/ld+json"><?php echo json_encode([
+        '@context' => 'https://schema.org',
+        '@type'    => 'Organization',
+        'name'     => $appSettings['site_name'] ?? 'Prolyn ERP',
+        'url'      => rtrim((string)prolynweb_env('BASE_URL', 'https://prolyn.net'), '/'),
+        'sameAs'   => array_values(array_filter([
+            $appSettings['social_twitter'] ?? null,
+            $appSettings['social_linkedin'] ?? null,
+        ])),
+    ], JSON_UNESCAPED_UNICODE); ?></script>
     <link rel="shortcut icon" href="p/dist/assets/media/logos/favicon.ico" />
     <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Inter:300,400,500,600,700,800" />
     <link href="p/dist/assets/plugins/global/plugins.bundle.css" rel="stylesheet" type="text/css" />
     <link href="p/dist/assets/css/style.bundle.css" rel="stylesheet" type="text/css" />
     <!-- New Custom Redesign CSS -->
-    <link href="assets/css/style.css" rel="stylesheet" type="text/css" />
+    <link href="assets/css/style.css?v=6" rel="stylesheet" type="text/css" />
 </head>
 <body id="kt_body" class="app-blank">
     <!--begin::Security Check Overlay-->
@@ -151,37 +161,39 @@ $featureColors = ['primary', 'success', 'info', 'warning', 'danger'];
                                 </div>
                                 <div class="dashboard-body">
                                     <div class="sidebar-mock">
-                                        <div class="mock-line w-3-4"></div>
-                                        <div class="mock-line w-full"></div>
-                                        <div class="mock-line w-1-2"></div>
-                                        <div class="mock-line w-full"></div>
-                                        <div class="mock-line w-3-4"></div>
+                                        <div class="mock-nav active"><i class="bi bi-speedometer2"></i> Pano</div>
+                                        <div class="mock-nav"><i class="bi bi-people"></i> Müşteriler</div>
+                                        <div class="mock-nav"><i class="bi bi-calendar-check"></i> Randevular</div>
+                                        <div class="mock-nav"><i class="bi bi-journal-text"></i> Cari</div>
+                                        <div class="mock-nav"><i class="bi bi-wallet2"></i> Kasa</div>
+                                        <div class="mock-nav"><i class="bi bi-file-earmark-text"></i> Sözleşme</div>
                                     </div>
                                     <div class="content-mock">
                                         <div class="metrics-mock">
                                             <div class="metric-card-mock">
-                                                <div class="mock-line w-1-2"></div>
-                                                <div class="mock-line w-3-4"></div>
+                                                <span class="mock-metric-label">Aylık Tahsilat</span>
+                                                <span class="mock-metric-value">₺184.500</span>
                                             </div>
                                             <div class="metric-card-mock">
-                                                <div class="mock-line w-1-2"></div>
-                                                <div class="mock-line w-3-4"></div>
+                                                <span class="mock-metric-label">Açık Randevu</span>
+                                                <span class="mock-metric-value">27</span>
                                             </div>
                                             <div class="metric-card-mock">
-                                                <div class="mock-line w-1-2"></div>
-                                                <div class="mock-line w-3-4"></div>
+                                                <span class="mock-metric-label">Cari Bakiye</span>
+                                                <span class="mock-metric-value">₺96.250</span>
                                             </div>
                                         </div>
                                         <div class="chart-mock">
-                                            <div class="chart-bar" style="height: 40%;"></div>
-                                            <div class="chart-bar" style="height: 70%;"></div>
-                                            <div class="chart-bar" style="height: 55%;"></div>
-                                            <div class="chart-bar" style="height: 90%;"></div>
-                                            <div class="chart-bar" style="height: 65%;"></div>
-                                            <div class="chart-bar" style="height: 80%;"></div>
+                                            <div class="chart-col"><div class="chart-bar" style="height: 40%;"></div><span>Mar</span></div>
+                                            <div class="chart-col"><div class="chart-bar" style="height: 70%;"></div><span>Nis</span></div>
+                                            <div class="chart-col"><div class="chart-bar" style="height: 55%;"></div><span>May</span></div>
+                                            <div class="chart-col"><div class="chart-bar" style="height: 90%;"></div><span>Haz</span></div>
+                                            <div class="chart-col"><div class="chart-bar" style="height: 65%;"></div><span>Tem</span></div>
+                                            <div class="chart-col"><div class="chart-bar" style="height: 80%;"></div><span>Ağu</span></div>
                                         </div>
                                     </div>
                                 </div>
+                                <div class="mock-caption">Örnek ekran · veriler temsilidir</div>
                             </div>
                         </div>
                     </div>
@@ -195,20 +207,20 @@ $featureColors = ['primary', 'success', 'info', 'warning', 'danger'];
             <div class="container-xxl">
                 <div class="row g-8 text-center">
                     <div class="col-6 col-md-3 scroll-reveal">
-                        <div class="stat-number text-white">13+</div>
-                        <div class="stat-label text-gray-500 fw-semibold">Gelişmiş Modül</div>
+                        <div class="stat-number text-white">12</div>
+                        <div class="stat-label text-gray-500 fw-semibold">Entegre Modül</div>
                     </div>
                     <div class="col-6 col-md-3 scroll-reveal delay-1">
-                        <div class="stat-number text-white">99.9%</div>
-                        <div class="text-gray-500 fw-bold fs-5">Uptime Garantisi</div>
+                        <div class="stat-number text-white">30 Gün</div>
+                        <div class="text-gray-500 fw-bold fs-5">Ücretsiz Deneme</div>
                     </div>
                     <div class="col-6 col-md-3 scroll-reveal delay-2">
-                        <div class="stat-number text-white">1sn</div>
-                        <div class="text-gray-500 fw-bold fs-5">Altı Yanıt Süresi</div>
+                        <div class="stat-number text-white">%100</div>
+                        <div class="text-gray-500 fw-bold fs-5">İzole Veritabanı</div>
                     </div>
                     <div class="col-6 col-md-3 scroll-reveal delay-3">
-                        <div class="stat-number text-white">7/24</div>
-                        <div class="text-gray-500 fw-bold fs-5">Teknik Destek</div>
+                        <div class="stat-number text-white">1 Panel</div>
+                        <div class="text-gray-500 fw-bold fs-5">Tüm İşletme Süreçleri</div>
                     </div>
                 </div>
             </div>
@@ -332,7 +344,7 @@ $featureColors = ['primary', 'success', 'info', 'warning', 'danger'];
                                 </h2>
                                 <div id="faqBody3" class="accordion-collapse collapse" data-bs-parent="#prolynFaqAccordion">
                                     <div class="accordion-body text-gray-400 fs-6 lh-lg">
-                                        Evet. Sözleşmeli müşterilerimiz panelden paket yükseltme talebinde bulunabilir; kalan süreye göre fiyat farkı otomatik hesaplanır, ek bir kurulum sürecine gerek kalmaz.
+                                        Evet. Paket yükseltme talebinizi bize iletmeniz yeterli; ek bir kurulum sürecine gerek kalmadan paketiniz güncellenir.
                                     </div>
                                 </div>
                             </div>
@@ -345,7 +357,7 @@ $featureColors = ['primary', 'success', 'info', 'warning', 'danger'];
                                 </h2>
                                 <div id="faqBody4" class="accordion-collapse collapse" data-bs-parent="#prolynFaqAccordion">
                                     <div class="accordion-body text-gray-400 fs-6 lh-lg">
-                                        Kayıt sonrası kurulum ekibimiz sizinle iletişime geçerek mevcut müşteri, cari ve stok verilerinizin aktarım sürecini birlikte planlar.
+                                        Kayıt sonrası kurulum ekibimiz sizinle iletişime geçerek mevcut müşteri ve cari verilerinizin aktarım sürecini birlikte planlar.
                                     </div>
                                 </div>
                             </div>
@@ -462,7 +474,7 @@ $featureColors = ['primary', 'success', 'info', 'warning', 'danger'];
     <script src="p/dist/assets/plugins/global/plugins.bundle.js"></script>
     <script src="p/dist/assets/js/scripts.bundle.js"></script>
     <!--end::Global Javascript Bundle-->
-    <script src="assets/js/site.js"></script>
+    <script src="assets/js/site.js?v=6"></script>
     <script src="assets/js/boot-check.js"></script>
 
 <!-- Floating Action Buttons -->

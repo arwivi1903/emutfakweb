@@ -15,7 +15,7 @@ INSERT INTO website_modules (title, description, icon, status, order_no, created
 ('Ticari Müşteri Takibi', 'Ticari müşterilerinizin cari alacak, borç ve durum bilgilerini ayrı takip edin.', 'bi bi-briefcase', 1, 3, NOW(), NOW()),
 ('Randevu ve Saha Yönetimi', 'Randevu, ziyaret ve sevkiyat süreçlerini planlayın; ekibinizin saha operasyonunu tek ekrandan yönetin.', 'bi bi-calendar-check', 1, 4, NOW(), NOW()),
 ('Cari Hesap Yönetimi', 'Cari kartlar, dekontlar ve taksit takibiyle tüm alacak-borç durumunuzu anlık görün.', 'bi bi-journal-text', 1, 5, NOW(), NOW()),
-('Stok ve Ürün Yönetimi', 'Ürün ve stok kartlarını oluşturun, giriş-çıkış hareketlerini ve toplu Excel yüklemelerini yönetin.', 'bi bi-box-seam', 1, 6, NOW(), NOW()),
+('Ürün Yönetimi', 'Ürün kartlarınızı oluşturun; randevu ve sözleşmelerde kullanın. Stok takibi çok yakında.', 'bi bi-box-seam', 1, 6, NOW(), NOW()),
 ('Ön Muhasebe ve Personel Giderleri', 'Kasa ve virman hareketlerinin yanı sıra personel maaş, prim ve gider ödemelerini de tek modülden takip edin.', 'bi bi-bank', 1, 7, NOW(), NOW()),
 ('Fatura ve Tahsilat', 'Alış, satış ve iade faturalarınızı saniyeler içinde oluşturun, tahsilat sürecini takip edin.', 'bi bi-receipt', 1, 8, NOW(), NOW()),
 ('Sözleşme Yönetimi', 'Hazır şablonlarla dijital sözleşmeler oluşturun, müşteri bazlı arşivleyin.', 'bi bi-file-earmark-text', 1, 9, NOW(), NOW()),

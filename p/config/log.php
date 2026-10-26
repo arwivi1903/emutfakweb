@@ -6,10 +6,11 @@
  * Sistemin tamamında kullanılacak logging ayarları
  */
 
-// Log dosya yolu
-define('LOG_FILE_PATH', '/Applications/XAMPP/xamppfiles/logs/prolyn.log');
-define('LOG_ERROR_PATH', '/Applications/XAMPP/xamppfiles/logs/prolyn_error.log');
-define('LOG_DEBUG_PATH', '/Applications/XAMPP/xamppfiles/logs/prolyn_debug.log');
+// Log dosya yolu (üretim sunucusunda da çalışsın diye proje-relatif;
+// eskiden yerel XAMPP'a sabitlenmişti ve sunucuda dizin bulunamıyordu)
+define('LOG_FILE_PATH', __DIR__ . '/../logs/prolyn.log');
+define('LOG_ERROR_PATH', __DIR__ . '/../logs/prolyn_error.log');
+define('LOG_DEBUG_PATH', __DIR__ . '/../logs/prolyn_debug.log');
 
 // Log seviyeleri
 define('LOG_LEVEL_DEBUG', 1);
@@ -50,7 +51,7 @@ class Logger {
                     @mkdir($dir, 0755, true);
                 }
                 @touch($logFile);
-                @chmod($logFile, 0666);
+                @chmod($logFile, 0644);
             }
         }
     }

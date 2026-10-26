@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-labelledby="title">
+  <title id="title">Prolyn app icon</title>
+  <rect width="512" height="512" rx="112" fill="#0B4E9B"/>
+  <path fill="#FFF" fill-rule="evenodd" d="M130 82h132c98 0 164 62 164 154 0 62-30 110-84 136l-68 32v-92l44-21c24-12 36-32 36-58 0-38-28-62-70-62h-56v302h-74V82Zm74 92h58c36 0 58 22 58 56 0 24-12 42-36 53l-80 38V174Z"/>
+</svg>

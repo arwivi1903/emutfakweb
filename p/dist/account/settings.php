@@ -54,7 +54,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['full_name'])) {
                                         <div class="image-input image-input-outline" data-kt-image-input="true"
                                             style="background-image: url('dist/assets/media/svg/avatars/blank.svg')">
                                             <div class="image-input-wrapper w-125px h-125px"
-                                                style="background-image: url('<?php echo $_SESSION['admin_pic'] ?? 'dist/assets/media/svg/avatars/blank.svg'; ?>')"></div>
+                                                style="background-image: url('<?php echo htmlspecialchars((string) ($_SESSION['admin_pic'] ?? 'dist/assets/media/svg/avatars/blank.svg'), ENT_QUOTES, 'UTF-8'); ?>')"></div>
                                             <label
                                                 class="btn btn-icon btn-circle btn-active-color-primary w-25px h-25px bg-body shadow"
                                                 data-kt-image-input-action="change" data-bs-toggle="tooltip"

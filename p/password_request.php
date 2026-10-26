@@ -1,12 +1,16 @@
 <?php
-if (session_status() === PHP_SESSION_NONE) {
-    session_start();
-}
+require_once __DIR__ . '/../env.php';
+require_once __DIR__ . '/functions/auth.php';
+
+// Oturumu, güvenli çerez parametreleri devreye girmeden hiçbir kodun
+// (ör. combine.php'nin otomatik CSRF kontrolü) başlatmadığından emin olmak için
+// combine.php'den ÖNCE açılır.
+start_secure_session();
 
 require_once __DIR__ . '/functions/combine.php';
 
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
-    header('Location: /prolynweb/p/login.php', true, 302);
+    header('Location: ' . prolynweb_panel_url('login.php'), true, 302);
     exit;
 }
 
@@ -16,7 +20,7 @@ $identifier = trim($_POST['identifier'] ?? '');
 $companyEmail = trim($_POST['company_email'] ?? '');
 
 if (!in_array($accountType, ['admin', 'customer'], true) || $identifier === '') {
-    header('Location: /prolynweb/p/login.php?islem=hata', true, 302);
+    header('Location: ' . prolynweb_panel_url('login.php') . '?islem=hata', true, 302);
     exit;
 }
 
@@ -107,5 +111,5 @@ try {
     error_log('[PASSWORD_REQUEST] ' . $e->getMessage());
 }
 
-header('Location: /prolynweb/p/login.php?islem=talep_ok', true, 302);
+header('Location: ' . prolynweb_panel_url('login.php') . '?islem=talep_ok', true, 302);
 exit;

@@ -3,6 +3,15 @@ require_once __DIR__ . '/env.php';
 require_once 'db.php'; // $pdo, $appSettings
 
 if (session_status() === PHP_SESSION_NONE) {
+    $secureCookie = filter_var(prolynweb_env('APP_ENV', 'development'), FILTER_DEFAULT) === 'production'
+        || (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off');
+    session_set_cookie_params([
+        'lifetime' => 0,
+        'path'     => '/',
+        'secure'   => $secureCookie,
+        'httponly' => true,
+        'samesite' => 'Lax',
+    ]);
     session_start();
 }
 if (empty($_SESSION['contact_csrf'])) {
@@ -57,7 +66,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             ]);
 
             // Bildirim e-postasını kuyruğa ekle (mail worker gönderecek). Best-effort.
-            $notifyTo = prolynweb_env('MAIL_FROM', 'noreply@prolyn.net');
+            $notifyTo = trim((string)prolynweb_env('CONTACT_NOTIFY_TO', '')) ?: prolynweb_env('MAIL_FROM', 'noreply@prolyn.net');
             try {
                 $mailSubject = 'Yeni İletişim Mesajı: ' . $subject;
                 $mailBody = "Ad: {$name}\nE-posta: {$email}\nKonu: {$subject}\n\n{$body}";
@@ -86,12 +95,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title><?php echo htmlspecialchars($appSettings['seo_title'] ?? 'Prolyn - Yeni Nesil Bulut ERP Sistemi'); ?> - İletişim</title>
-    <meta name="description" content="<?php echo htmlspecialchars($appSettings['seo_description'] ?? 'Kurumsal Kaynak Planlama, CRM, İK ve Ön Muhasebe çözümleri tek bir platformda.'); ?>">
+    <meta name="description" content="<?php echo htmlspecialchars('Prolyn ERP ekibiyle iletişime geçin: sorularınız, demo talepleriniz ve kurumsal teklif istekleriniz için bize ulaşın.'); ?>">
     <link rel="canonical" href="<?php echo htmlspecialchars(prolynweb_current_url()); ?>">
     <meta property="og:type" content="website">
     <meta property="og:site_name" content="<?php echo htmlspecialchars($appSettings['site_name'] ?? 'Prolyn ERP'); ?>">
     <meta property="og:title" content="<?php echo htmlspecialchars($appSettings['seo_title'] ?? 'Prolyn - Yeni Nesil Bulut ERP Sistemi'); ?> - İletişim">
-    <meta property="og:description" content="<?php echo htmlspecialchars($appSettings['seo_description'] ?? 'Kurumsal Kaynak Planlama, CRM, İK ve Ön Muhasebe çözümleri tek bir platformda.'); ?>">
+    <meta property="og:description" content="<?php echo htmlspecialchars('Prolyn ERP ekibiyle iletişime geçin: sorularınız, demo talepleriniz ve kurumsal teklif istekleriniz için bize ulaşın.'); ?>">
     <meta property="og:url" content="<?php echo htmlspecialchars(prolynweb_current_url()); ?>">
     <meta name="twitter:card" content="summary_large_image">
     <meta name="keywords" content="<?php echo htmlspecialchars($appSettings['seo_keywords'] ?? 'erp, bulut erp, crm, ön muhasebe, ik'); ?>">
@@ -100,7 +109,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <link href="p/dist/assets/plugins/global/plugins.bundle.css" rel="stylesheet" type="text/css" />
     <link href="p/dist/assets/css/style.bundle.css" rel="stylesheet" type="text/css" />
     <!-- New Custom Redesign CSS -->
-    <link href="assets/css/style.css?v=5" rel="stylesheet" type="text/css" />
+    <link href="assets/css/style.css?v=6" rel="stylesheet" type="text/css" />
 </head>
 <body id="kt_body" class="app-blank">
     <!--begin::Root-->

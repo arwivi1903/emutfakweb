@@ -3,25 +3,32 @@ error_reporting(E_ALL);
 ini_set('display_errors', 0);
 ini_set('log_errors', 1);
 
+require_once __DIR__ . '/../../functions/auth.php';
+
+// Oturumu, güvenli çerez parametreleri devreye girmeden hiçbir kodun
+// (ör. combine.php'nin otomatik CSRF kontrolü) başlatmadığından emin olmak için
+// combine.php'den ÖNCE açılır.
+start_secure_session();
+
 require_once __DIR__ . '/../../classes/allClass.php';
 require_once __DIR__ . '/../../functions/combine.php';
 
 // JSON header
 header('Content-Type: application/json; charset=utf-8');
 
-// Session kontrolü
-if (function_exists('start_secure_session')) {
-    start_secure_session();
-} else {
-    if (session_status() === PHP_SESSION_NONE) {
-        session_start();
-    }
-}
-
 // Yetkisiz erişim kontrolü
 if (!isset($_SESSION['admin_id'])) {
     http_response_code(401);
     echo json_encode(['success' => false, 'message' => 'Yetkisiz erişim. Lütfen giriş yapınız.', 'redirect' => true]);
+    exit;
+}
+
+// Bu API yönetici hesaplarını oluşturur/günceller/siler - sadece superadmin
+// erişebilir (aksi halde herhangi bir personel kendine superadmin rolü
+// verebilir veya başka yöneticilerin şifresini/e-postasını değiştirebilirdi).
+if (!isAdmin(['superadmin'])) {
+    http_response_code(403);
+    echo json_encode(['success' => false, 'message' => 'Bu işlem için yetkiniz yok.']);
     exit;
 }
 

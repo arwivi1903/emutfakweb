@@ -1,6 +1,7 @@
 <?php
-require_once '../../config/header.php'; 
-require_once '../../config/sidebar.php'; 
+require_once '../../config/header.php';
+Auth::requireModule('manage_tenants');
+require_once '../../config/sidebar.php';
 ?>
 
 <div class="app-main flex-column flex-row-fluid" id="kt_app_main">
@@ -30,12 +31,11 @@ require_once '../../config/sidebar.php';
                     $db_master = new Database('prolyn_master');
                     
                     $tenantDbs = $db_master->allAssoc("
-                        SELECT 
-                            customer_id as id, 
-                            database_name as db_name, 
-                            database_password as db_password,
-                            company_name, 
-                            status 
+                        SELECT
+                            customer_id as id,
+                            database_name as db_name,
+                            company_name,
+                            status
                         FROM customers
                     ");
                     
@@ -131,7 +131,6 @@ require_once '../../config/sidebar.php';
                             $tenantSummaries[] = [
                                 'id' => $tenant['id'],
                                 'db_name' => $tenant['db_name'],
-                                'db_password' => $tenant['db_password'] ?? '-',
                                 'company_name' => $tenant['company_name'],
                                 'status' => $tenant['status'],
                                 'customers' => $customerCount,
@@ -146,7 +145,6 @@ require_once '../../config/sidebar.php';
                             $tenantSummaries[] = [
                                 'id' => $tenant['id'],
                                 'db_name' => $tenant['db_name'],
-                                'db_password' => $tenant['db_password'] ?? '-',
                                 'company_name' => $tenant['company_name'],
                                 'status' => $tenant['status'],
                                 'error' => $e->getMessage(),
@@ -374,7 +372,6 @@ require_once '../../config/sidebar.php';
                                                 <th class="min-w-50px">ID</th>
                                                 <th class="min-w-150px">Şirket Adı</th>
                                                 <th class="min-w-125px">DB Adı</th>
-                                                <th class="min-w-125px">DB Şifre</th>
                                                 <th class="min-w-75px text-center">Müşteri</th>
                                                 <th class="min-w-75px text-center">Sözleşme</th>
                                                 <th class="min-w-75px text-center">Tablo</th>
@@ -392,7 +389,6 @@ require_once '../../config/sidebar.php';
                                                     </div>
                                                 </td>
                                                 <td><code class="text-gray-700"><?= htmlspecialchars($summary['db_name'] ?? 'N/A') ?></code></td>
-                                                <td><code class="text-gray-700"><?= htmlspecialchars(!empty($summary['db_password']) ? $summary['db_password'] : '-') ?></code></td>
                                                 <td class="text-center"><?= $summary['error'] ? '-' : number_format($summary['customers']) ?></td>
                                                 <td class="text-center"><?= $summary['error'] ? '-' : number_format($summary['contracts']) ?></td>
                                                 <td class="text-center">

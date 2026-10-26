@@ -4,16 +4,17 @@
  * Prolyn/p/login.php
  */
 
-// Session başlat
-if (session_status() === PHP_SESSION_NONE) {
-    session_start();
-}
+require_once __DIR__ . '/../env.php';
+require_once __DIR__ . '/functions/auth.php';
+
+// Güvenli oturum başlat (Secure/HttpOnly/SameSite çerez bayraklarıyla)
+start_secure_session();
 
 require_once __DIR__ . '/functions/combine.php';
 
 // Zaten giriş yapıldıysa index'e yönlendir
 if (isset($_SESSION['admin_id'])) {
-    header('Location: /prolynweb/p/index.php', true, 302);
+    header('Location: ' . prolynweb_panel_url('index.php'), true, 302);
     exit;
 }
 
@@ -30,6 +31,7 @@ if (isset($_GET['islem'])) {
         'kullanici_yok' => ['type' => 'danger', 'text' => 'Kullanıcı mail veya şifreniz yanlış'],
         'pasif'         => ['type' => 'warning', 'text' => 'Kullanıcı pasif veya erişim kapalı'],
         'sifre'         => ['type' => 'danger', 'text' => 'Kullanıcı mail veya şifreniz yanlış'],
+        'rate_limit'    => ['type' => 'danger', 'text' => 'Çok fazla başarısız deneme yapıldı. Lütfen bir süre sonra tekrar deneyin.'],
     ];
     
     if (isset($messages[$_GET['islem']])) {
@@ -41,7 +43,7 @@ if (isset($_GET['islem'])) {
 <!DOCTYPE html>
 <html lang="tr">
 <head>
-    <base href="/prolynweb/p/"/>
+    <base href="<?= htmlspecialchars(prolynweb_panel_url() . '/', ENT_QUOTES, 'UTF-8') ?>"/>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>Prolyn ERP - Giriş</title>

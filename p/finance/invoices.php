@@ -11,8 +11,14 @@ require_once '../config/sidebar.php';
 // Fatura Durumu Güncelleme
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['action'] === 'update_status') {
     $invoice_id = (int)$_POST['invoice_id'];
-    $new_status = $_POST['status'];
-    
+    $new_status = $_POST['status'] ?? '';
+
+    $allowed_statuses = ['draft', 'issued', 'paid', 'cancelled'];
+    if (!in_array($new_status, $allowed_statuses, true)) {
+        echo "<script>window.location.href='finance/invoices.php';</script>";
+        exit;
+    }
+
     $db->Update("UPDATE faturalar SET status = ?, updated_at = NOW() WHERE invoice_id = ?", [$new_status, $invoice_id]);
     echo "<script>window.location.href='finance/invoices.php?success=status';</script>";
     exit;
@@ -122,7 +128,7 @@ $invoices = $db->getRowsAssoc($query);
                                             </td>
                                             <td class="text-end">
                                                 <button type="button" class="btn btn-icon btn-light-primary btn-sm me-1" title="Durum Güncelle" 
-                                                    onclick="updateStatusModal(<?php echo $inv['invoice_id']; ?>, '<?php echo $inv['status']; ?>', '<?php echo htmlspecialchars($inv['invoice_number']); ?>')">
+                                                    onclick="updateStatusModal(<?php echo (int) $inv['invoice_id']; ?>, <?php echo htmlspecialchars(json_encode((string) $inv['status']), ENT_QUOTES, 'UTF-8'); ?>, <?php echo htmlspecialchars(json_encode((string) $inv['invoice_number']), ENT_QUOTES, 'UTF-8'); ?>)">
                                                     <i class="ki-duotone ki-pencil fs-3"><span class="path1"></span><span class="path2"></span></i>
                                                 </button>
                                                 <?php if($inv['pdf_url']): ?>

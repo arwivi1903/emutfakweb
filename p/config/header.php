@@ -1,6 +1,7 @@
 <?php
 
 require_once __DIR__ . '/../../env.php';
+require_once __DIR__ . '/../functions/auth.php';
 
 // Hata gösterimi ortama göre (üretimde kapalı)
 $__appDebug = filter_var(prolynweb_env('APP_DEBUG', 'false'), FILTER_VALIDATE_BOOLEAN);
@@ -9,7 +10,7 @@ ini_set('display_startup_errors', $__appDebug ? '1' : '0');
 error_reporting($__appDebug ? E_ALL : (E_ALL & ~E_DEPRECATED & ~E_NOTICE));
 
 // Panel taban adresi (sabit /prolynweb/ yerine .env'den)
-$__panelBase = rtrim((string)prolynweb_env('BASE_URL', ''), '/') . '/p/';
+$__panelBase = prolynweb_panel_url() . '/';
 
 // Güvenlik Başlıkları
 header("X-Frame-Options: SAMEORIGIN");
@@ -17,14 +18,16 @@ header("X-XSS-Protection: 1; mode=block");
 header("X-Content-Type-Options: nosniff");
 header("Referrer-Policy: strict-origin-when-cross-origin");
 
+// Oturumu, güvenli çerez parametreleri (Secure/HttpOnly/SameSite) devreye girmeden
+// hiçbir kodun (ör. otomatik CSRF kontrolü) başlatmadığından emin olmak için
+// combine.php'den ÖNCE açılır.
+start_secure_session();
 
 require_once __DIR__ . '/../classes/allClass.php';
 require_once __DIR__ . '/../functions/combine.php';
 
 $db = new Database();
 
-// güvenli oturum açıp oturum kontrolü yap (rol kısıtı olmadan)
-start_secure_session();
 oturumkontrol();
 
 // Aktif oturum takibini güncelle (Sistem Geneli Aktif Oturumlar Takibi)
@@ -116,6 +119,7 @@ try {
     <base href="<?= htmlspecialchars($__panelBase, ENT_QUOTES, 'UTF-8') ?>" />
     <title>Prolyn ERP</title>
     <meta charset="utf-8" />
+    <?= csrfTokenMeta() ?>
     <meta name="description" content="" />
     <meta name="keywords" content="" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
@@ -3710,7 +3714,8 @@ target="_blank">
                                     const response = await fetch('dist/api/notifications_api.php', {
                                         method: 'POST',
                                         headers: {
-                                            'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8'
+                                            'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8',
+                                            'X-CSRF-Token': document.querySelector('meta[name="csrf-token"]').content
                                         },
                                         credentials: 'same-origin',
                                         body: form.toString()
@@ -3768,7 +3773,7 @@ target="_blank">
                                     data-kt-menu-trigger="{default: 'click', lg: 'hover'}" data-kt-menu-attach="parent"
                                     data-kt-menu-placement="bottom-end">
                                     <?php if (!empty($_SESSION['admin_pic'])): ?>
-                                        <img src="<?php echo $_SESSION['admin_pic']; ?>" class="rounded-3" alt="user" />
+                                        <img src="<?php echo htmlspecialchars($_SESSION['admin_pic'], ENT_QUOTES, 'UTF-8'); ?>" class="rounded-3" alt="user" />
                                     <?php else: ?>
                                         <div class="symbol-label fs-3 fw-bold bg-light-primary text-primary">
                                             <?= mb_substr($_SESSION['full_name'] ?? 'A', 0, 1, 'UTF-8') ?>
@@ -3781,7 +3786,7 @@ target="_blank">
                                         <div class="menu-content d-flex align-items-center px-3">
                                             <div class="symbol symbol-50px me-5">
                                                 <?php if (!empty($_SESSION['admin_pic'])): ?>
-                                                    <img alt="Logo" src="<?php echo $_SESSION['admin_pic']; ?>" />
+                                                    <img alt="Logo" src="<?php echo htmlspecialchars($_SESSION['admin_pic'], ENT_QUOTES, 'UTF-8'); ?>" />
                                                 <?php else: ?>
                                                     <div class="symbol-label fs-2 fw-bold bg-light-primary text-primary">
                                                         <?= mb_substr($_SESSION['full_name'] ?? 'A', 0, 1, 'UTF-8') ?>
@@ -3789,8 +3794,8 @@ target="_blank">
                                                 <?php endif; ?>
                                             </div>
                                             <div class="d-flex flex-column">
-                                                <div class="fw-bold d-flex align-items-center fs-5"><?php echo $_SESSION['full_name'] ?? 'Yönetici'; ?></div>
-                                                <a href="#" class="fw-semibold text-muted text-hover-primary fs-7"><?php echo $_SESSION['email'] ?? 'admin@prolyn.net'; ?></a>
+                                                <div class="fw-bold d-flex align-items-center fs-5"><?php echo htmlspecialchars($_SESSION['full_name'] ?? 'Yönetici', ENT_QUOTES, 'UTF-8'); ?></div>
+                                                <a href="#" class="fw-semibold text-muted text-hover-primary fs-7"><?php echo htmlspecialchars($_SESSION['email'] ?? 'admin@prolyn.net', ENT_QUOTES, 'UTF-8'); ?></a>
                                             </div>
                                         </div>
                                     </div>

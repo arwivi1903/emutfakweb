@@ -163,7 +163,7 @@ body#kt_body {
     padding: 20px;
     display: flex;
     gap: 20px;
-    height: 200px;
+    height: 250px;
 }
 .sidebar-mock {
     width: 20%;
@@ -593,3 +593,29 @@ a {
 @media (max-width: 991.98px) {
     .hero-visual { margin-top: 3rem; }
 }
+
+
+/* Hero örnek panel (metinli) */
+.mock-nav { font-size: 11px; color: rgba(255,255,255,0.65); display: flex; align-items: center; gap: 6px; padding: 5px 6px; border-radius: 6px; white-space: nowrap; }
+.mock-nav.active { background: rgba(102,126,234,0.25); color: #fff; }
+.sidebar-mock { width: 26%; gap: 4px; }
+.mock-metric-label { font-size: 10px; color: rgba(255,255,255,0.6); }
+.mock-metric-value { font-size: 16px; font-weight: 700; color: #fff; }
+.metric-card-mock { height: 64px; padding: 10px 12px; }
+.chart-mock { gap: 12px; padding: 14px 16px 8px; }
+.chart-col { flex: 1; height: 100%; display: flex; flex-direction: column; justify-content: flex-end; align-items: stretch; gap: 4px; }
+.chart-col .chart-bar { flex: none; }
+.chart-col span { font-size: 9px; text-align: center; color: rgba(255,255,255,0.5); }
+.mock-caption { font-size: 10px; text-align: center; color: rgba(255,255,255,0.4); padding: 6px 0 8px; }
+
+/* Hero örnek panel — düzeltme */
+.dashboard-body { height: 280px; align-items: stretch; }
+.sidebar-mock { padding: 10px 8px; overflow: hidden; }
+.mock-nav { font-size: 11px; }
+.mock-nav i { font-size: 12px; opacity: .85; flex: none; }
+.chart-mock { align-items: stretch !important; min-height: 0; }
+.chart-col { height: auto; align-self: stretch; }
+.chart-col .chart-bar { flex: none; width: 100%; margin-top: auto; }
+.chart-col { position: relative; }
+.chart-col .chart-bar { position: relative; }
+.mock-caption { position: static; }

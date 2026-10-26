@@ -4,6 +4,7 @@
  */
 
 require_once '../config/header.php';
+Auth::requireModule('manage_settings');
 require_once '../config/sidebar.php';
 
 function prolyn_blog_slug(string $title): string
@@ -43,10 +44,9 @@ function prolyn_blog_kapak_yukle(array $file): ?string
     }
 
     $kok = dirname(__DIR__, 2) . '/uploads/blog';
-    if (!is_dir($kok) && !@mkdir($kok, 0777, true) && !is_dir($kok)) {
+    if (!is_dir($kok) && !@mkdir($kok, 0755, true) && !is_dir($kok)) {
         return null;
     }
-    @chmod($kok, 0777);
 
     $dosyaAdi = bin2hex(random_bytes(8)) . '.' . $uz;
     if (!@move_uploaded_file($file['tmp_name'], $kok . '/' . $dosyaAdi)) {

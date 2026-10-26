@@ -11,7 +11,12 @@ require_once '../config/sidebar.php';
 // Ödeme Durumu Güncelleme
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['action'] === 'update_status') {
     $payment_id = (int)$_POST['payment_id'];
-    $new_status = $_POST['payment_status'];
+    $new_status = $_POST['payment_status'] ?? '';
+
+    if (!in_array($new_status, ['pending', 'completed', 'failed', 'refunded'], true)) {
+        echo "<script>window.location.href='finance/payments.php';</script>";
+        exit;
+    }
 
     $db->Update("UPDATE odemeler SET payment_status = ?, updated_at = NOW() WHERE payment_id = ?", [$new_status, $payment_id]);
     echo "<script>window.location.href='finance/payments.php?success=status_updated';</script>";
@@ -187,7 +192,7 @@ $payments = $db->getRowsAssoc($query);
                                                     <i class="ki-duotone ki-eye fs-3"><span class="path1"></span><span class="path2"></span><span class="path3"></span></i>
                                                 </button>
                                                 <button type="button" class="btn btn-icon btn-light-primary btn-sm" title="Durum Güncelle" 
-                                                    onclick="updateStatusModal(<?php echo $pay['payment_id']; ?>, '<?php echo $pay['payment_status']; ?>')">
+                                                    onclick="updateStatusModal(<?php echo (int) $pay['payment_id']; ?>, <?php echo htmlspecialchars(json_encode((string) $pay['payment_status']), ENT_QUOTES, 'UTF-8'); ?>)">
                                                     <i class="ki-duotone ki-pencil fs-3"><span class="path1"></span><span class="path2"></span></i>
                                                 </button>
                                             </td>

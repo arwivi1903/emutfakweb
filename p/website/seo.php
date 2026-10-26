@@ -4,6 +4,7 @@
  */
 
 require_once '../config/header.php';
+Auth::requireModule('manage_settings');
 require_once '../config/sidebar.php';
 
 // Form gönderildiyse güncelle

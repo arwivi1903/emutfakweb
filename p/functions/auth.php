@@ -5,6 +5,32 @@ if (!defined('admin_users')) {
     define('admin_users', 'admin_users');
 }
 
+/**
+ * Basit dosya tabanlı IP rate-limit (register.php'deki reg_rate_limit_check ile aynı desen).
+ * Admin login formuna karşı kaba kuvvet (brute-force) denemelerini yavaşlatır.
+ */
+function admin_login_rate_limit_check(int $limit = 5, int $windowSeconds = 900): bool
+{
+    $dir = __DIR__ . '/../config/rate_limit';
+    if (!is_dir($dir)) {
+        @mkdir($dir, 0770, true);
+    }
+    $ip = $_SERVER['REMOTE_ADDR'] ?? '0.0.0.0';
+    $file = $dir . '/login_' . md5($ip) . '.json';
+    $now = time();
+    $hits = [];
+    if (is_readable($file)) {
+        $hits = json_decode((string) @file_get_contents($file), true) ?: [];
+    }
+    $hits = array_values(array_filter($hits, static fn($t) => ($now - (int) $t) < $windowSeconds));
+    if (count($hits) >= $limit) {
+        return false;
+    }
+    $hits[] = $now;
+    @file_put_contents($file, json_encode($hits), LOCK_EX);
+    return true;
+}
+
 // Güvenli oturum başlatma (cookie parametreleri ile)
 function start_secure_session(): void
 {

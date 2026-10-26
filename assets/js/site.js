@@ -17,7 +17,14 @@ document.addEventListener('DOMContentLoaded', function () {
                 obs.unobserve(entry.target);
             }
         });
-    }, { threshold: 0.15, rootMargin: '0px 0px -40px 0px' });
+    }, { threshold: 0.05, rootMargin: '0px 0px 0px 0px' });
 
     items.forEach(function (el) { observer.observe(el); });
+    // Güvenlik ağı: hızlı kaydırmada atlanan bölümler boş kalmasın
+    window.addEventListener('scroll', function () {
+        var h = window.innerHeight;
+        items.forEach(function (el) {
+            if (el.getBoundingClientRect().top < h) { el.classList.add('is-visible'); }
+        });
+    }, { passive: true });
 });

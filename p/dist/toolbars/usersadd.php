@@ -1,6 +1,7 @@
-<?php 
-require_once '../../config/header.php'; 
-require_once '../../config/sidebar.php'; 
+<?php
+require_once '../../config/header.php';
+Auth::requireModule('manage_admins');
+require_once '../../config/sidebar.php';
 ?>
 
 <div class="app-main flex-column flex-row-fluid" id="kt_app_main">
@@ -184,7 +185,10 @@ document.getElementById('addUserForm').addEventListener('submit', function(e) {
 
     fetch('../api/usersapi.php?action=create', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRF-Token': document.querySelector('meta[name="csrf-token"]').content
+        },
         body: JSON.stringify(formData)
     })
     .then(response => response.json())
