@@ -13,21 +13,25 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
     $keys = [
         'seo_title', 'seo_description', 'seo_keywords', 
         'website_footer_text', 'website_hero_badge', 
-        'website_hero_title', 'website_hero_subtitle'
+        'website_hero_title', 'website_hero_subtitle',
+        'contact_email', 'contact_phone', 'contact_address'
     ];
+    $contactKeys = ['contact_email', 'contact_phone', 'contact_address'];
 
     foreach ($keys as $k) {
         if (isset($_POST[$k])) {
             $val = trim($_POST[$k]);
+            $cat = in_array($k, $contactKeys, true) ? 'contact' : 'seo';
+            if ($k === 'contact_email' && $val !== '' && !filter_var($val, FILTER_VALIDATE_EMAIL)) { continue; }
             /* Satır hiç yoksa UPDATE sessizce 0 satır etkiler ve hiçbir şey
                kaydedilmez (sistem_ayarlari boş kurulduğunda tam olarak bu
                oluyordu). INSERT ... ON DUPLICATE KEY UPDATE ile satır yoksa
                oluşturuluyor, varsa güncelleniyor. */
             $db->Insert(
                 "INSERT INTO sistem_ayarlari (setting_key, setting_value, category, is_public, updated_at)
-                 VALUES (?, ?, 'seo', 1, NOW())
+                 VALUES (?, ?, ?, 1, NOW())
                  ON DUPLICATE KEY UPDATE setting_value = VALUES(setting_value), updated_at = NOW()",
-                [$k, $val]
+                [$k, $val, $cat]
             );
         }
     }
@@ -37,7 +41,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
 }
 
 // Verileri çek
-$settings = $db->getRowsAssoc("SELECT setting_key, setting_value FROM sistem_ayarlari WHERE setting_key IN ('seo_title', 'seo_description', 'seo_keywords', 'website_footer_text', 'website_hero_badge', 'website_hero_title', 'website_hero_subtitle')");
+$settings = $db->getRowsAssoc("SELECT setting_key, setting_value FROM sistem_ayarlari WHERE setting_key IN ('seo_title', 'seo_description', 'seo_keywords', 'website_footer_text', 'website_hero_badge', 'website_hero_title', 'website_hero_subtitle', 'contact_email', 'contact_phone', 'contact_address')");
 $seo = [];
 if($settings) {
     foreach($settings as $s) {
@@ -122,6 +126,29 @@ if($settings) {
                                     <div class="mb-10">
                                         <label class="form-label">Footer Hakkımızda Metni</label>
                                         <textarea name="website_footer_text" class="form-control form-control-solid" rows="4"><?= htmlspecialchars($seo['website_footer_text'] ?? '') ?></textarea>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="card mb-5 mb-xl-8">
+                                <div class="card-header border-0 pt-5">
+                                    <h3 class="card-title align-items-start flex-column">
+                                        <span class="card-label fw-bold fs-3 mb-1">İletişim Bilgileri</span>
+                                        <span class="text-muted fw-semibold fs-7">İletişim sayfasında gösterilir. Telefon ve adres boşsa o kart gizlenir.</span>
+                                    </h3>
+                                </div>
+                                <div class="card-body py-3">
+                                    <div class="mb-10">
+                                        <label class="form-label">E-posta</label>
+                                        <input type="email" name="contact_email" class="form-control form-control-solid" placeholder="info@prolyn.net" value="<?= htmlspecialchars($seo['contact_email'] ?? '') ?>" />
+                                    </div>
+                                    <div class="mb-10">
+                                        <label class="form-label">Telefon</label>
+                                        <input type="text" name="contact_phone" class="form-control form-control-solid" placeholder="+90 850 000 00 00" value="<?= htmlspecialchars($seo['contact_phone'] ?? '') ?>" />
+                                    </div>
+                                    <div class="mb-10">
+                                        <label class="form-label">Adres</label>
+                                        <textarea name="contact_address" class="form-control form-control-solid" rows="3"><?= htmlspecialchars($seo['contact_address'] ?? '') ?></textarea>
                                     </div>
                                 </div>
                             </div>

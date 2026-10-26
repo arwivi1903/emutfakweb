@@ -1,0 +1,15 @@
+# Prolyn ERP
+
+> Prolyn, işletmeler için geliştirilmiş bulut tabanlı ERP ve ön muhasebe yazılımıdır. Müşteri (CRM), randevu, cari hesap, kasa ve banka, çek ve sözleşme, personel giderleri ve destek talebi süreçlerini tek panelden yönetir. Her kurum kendi izole veritabanında çalışır. İlk 30 gün ücretsiz denenebilir, kredi kartı istenmez.
+
+## Ana sayfalar
+- [Ana sayfa](https://prolyn.net/): Ürüne genel bakış, öne çıkan özellikler ve sıkça sorulan sorular
+- [Modüller](https://prolyn.net/moduller): Prolyn ile gelen modüllerin güncel listesi
+- [Fiyatlandırma](https://prolyn.net/pricing): Paketler, dahil modüller, depolama ve destek seviyeleri
+- [30 Günlük Ücretsiz Deneme](https://prolyn.net/register): Kayıt ve deneme başlatma
+- [İletişim](https://prolyn.net/contact): Demo, teklif ve soru talepleri
+- [Blog](https://prolyn.net/blog): Bulut ERP, işletme yönetimi ve dijitalleşme yazıları
+- [Videolar](https://prolyn.net/video): Tanıtım ve eğitim videoları
+
+## Uygulama
+- [Müşteri paneli](https://app.prolyn.net/): Mevcut müşteriler için giriş (herkese açık içerik değildir)

@@ -188,29 +188,39 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     
                     <div class="col-lg-4 animate-fade-in-up delay-100">
                         <div class="d-flex flex-column gap-8">
+<?php
+                            $cEmail = trim((string)($appSettings['contact_email'] ?? '')) ?: 'info@prolyn.net';
+                            $cPhone = trim((string)($appSettings['contact_phone'] ?? ''));
+                            $cAddr  = trim((string)($appSettings['contact_address'] ?? ''));
+                            $cTel   = preg_replace('/[^0-9+]/', '', $cPhone);
+                            ?>
                             <div class="glass-card p-8">
                                 <div class="feature-icon-box text-primary">
                                     <i class="ki-duotone ki-sms fs-2x"><span class="path1"></span><span class="path2"></span></i>
                                 </div>
                                 <h4 class="text-white fs-4 fw-bold mb-2">E-posta</h4>
-                                <a href="mailto:info@prolyn.com" class="text-gray-400 fs-5 text-hover-primary">info@prolyn.com</a>
+                                <a href="mailto:<?= htmlspecialchars($cEmail, ENT_QUOTES, 'UTF-8') ?>" class="text-gray-400 fs-5 text-hover-primary"><?= htmlspecialchars($cEmail, ENT_QUOTES, 'UTF-8') ?></a>
                             </div>
                             
+                            <?php if ($cPhone !== ''): ?>
                             <div class="glass-card p-8">
                                 <div class="feature-icon-box text-success">
                                     <i class="ki-duotone ki-phone fs-2x"><span class="path1"></span><span class="path2"></span></i>
                                 </div>
                                 <h4 class="text-white fs-4 fw-bold mb-2">Telefon</h4>
-                                <a href="tel:+908501234567" class="text-gray-400 fs-5 text-hover-primary">+90 (850) 123 45 67</a>
+                                <a href="tel:<?= htmlspecialchars($cTel, ENT_QUOTES, 'UTF-8') ?>" class="text-gray-400 fs-5 text-hover-primary"><?= htmlspecialchars($cPhone, ENT_QUOTES, 'UTF-8') ?></a>
                             </div>
+                            <?php endif; ?>
                             
+                            <?php if ($cAddr !== ''): ?>
                             <div class="glass-card p-8">
                                 <div class="feature-icon-box text-info">
                                     <i class="ki-duotone ki-geolocation fs-2x"><span class="path1"></span><span class="path2"></span></i>
                                 </div>
                                 <h4 class="text-white fs-4 fw-bold mb-2">Adres</h4>
-                                <p class="text-gray-400 fs-5 mb-0">Teknoloji Geliştirme Bölgesi, İstanbul / Türkiye</p>
+                                <p class="text-gray-400 fs-5 mb-0"><?= nl2br(htmlspecialchars($cAddr, ENT_QUOTES, 'UTF-8')) ?></p>
                             </div>
+                            <?php endif; ?>
                         </div>
                     </div>
 

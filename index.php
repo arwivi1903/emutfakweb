@@ -9,6 +9,17 @@ try {
 }
 $featureColors = ['primary', 'success', 'info', 'warning', 'danger'];
 ?>
+<?php
+$faqItems = [
+    ['Prolyn nedir?', 'Prolyn, işletmeler için geliştirilmiş bulut tabanlı bir ERP ve ön muhasebe yazılımıdır. Müşteri (CRM), randevu, cari hesap, kasa ve banka, sözleşme, personel ve destek süreçlerini tek panelden yönetmenizi sağlar. Her kurum kendi izole veritabanında çalışır ve ilk 30 gün ücretsiz denenebilir.'],
+    ['Prolyn hangi modülleri içerir?', 'Müşteri ve cari yönetimi, randevu ve servis takibi, kasa ve banka hareketleri, çek ve sözleşme yönetimi, personel giderleri, raporlama ve denetim kayıtları ile destek talebi modülü Prolyn ile birlikte gelir. Kullanabileceğiniz modüller seçtiğiniz pakete göre belirlenir; güncel liste Modüller sayfasında yer alır.'],
+    ['30 günlük deneme sürümünde kısıtlama var mı?', 'Hayır. Deneme sürecinde de kendi izole veritabanınızla, seçtiğiniz pakete uygun modüllerle çalışırsınız. Kredi kartı istemiyoruz; süre sonunda dilerseniz sözleşmeli müşteriye geçersiniz, dilerseniz vazgeçersiniz.'],
+    ['Verilerimiz başka firmalarla aynı veritabanında mı tutuluyor?', 'Hayır. Prolyn\'de her kurum için ayrı, tamamen izole bir veritabanı (Multi-DB mimari) oluşturulur. Verileriniz hiçbir şekilde başka bir müşteriyle aynı tabloyu paylaşmaz.'],
+    ['Paketler arasında sonradan geçiş yapabilir miyim?', 'Evet. Paket yükseltme talebinizi bize iletmeniz yeterli; ek bir kurulum sürecine gerek kalmadan paketiniz güncellenir.'],
+    ['Mevcut sistemimizdeki verileri Prolyn\'e aktarabilir miyiz?', 'Kayıt sonrası kurulum ekibimiz sizinle iletişime geçerek mevcut müşteri ve cari verilerinizin aktarım sürecini birlikte planlar.'],
+    ['Destek talebi açtığımda ne kadar sürede dönüş alırım?', 'Paketinize göre değişen öncelik seviyelerimiz var; panel üzerinden açtığınız destek talepleri ekibimiz tarafından takip edilip yanıtlanır.'],
+];
+?>
 <!DOCTYPE html>
 <html lang="tr" data-bs-theme="dark">
 <head>
@@ -24,16 +35,39 @@ $featureColors = ['primary', 'success', 'info', 'warning', 'danger'];
     <meta property="og:description" content="<?php echo htmlspecialchars($appSettings['seo_description'] ?? 'Prolyn ERP: Kurumsal Kaynak Planlama, CRM, İK ve Ön Muhasebe çözümlerini tek bir bulut platformunda birleştiren yeni nesil iş yönetim sistemi.'); ?>">
     <meta property="og:url" content="<?php echo htmlspecialchars(prolynweb_current_url()); ?>">
     <meta name="twitter:card" content="summary_large_image">
-    <script type="application/ld+json"><?php echo json_encode([
+    <?php
+    $ldBase  = rtrim((string)prolynweb_env('BASE_URL', 'https://prolyn.net'), '/');
+    $ldName  = $appSettings['site_name'] ?? 'Prolyn ERP';
+    $ldMail  = trim((string)($appSettings['contact_email'] ?? '')) ?: 'info@prolyn.net';
+    $ldPhone = trim((string)($appSettings['contact_phone'] ?? ''));
+    $ldOrg = [
+        '@type' => 'Organization', '@id' => $ldBase . '/#org', 'name' => $ldName, 'url' => $ldBase,
+        'logo' => $ldBase . '/p/dist/assets/media/logos/favicon.ico',
+        'email' => $ldMail,
+        'sameAs' => array_values(array_filter([$appSettings['social_twitter'] ?? null, $appSettings['social_linkedin'] ?? null])),
+    ];
+    if ($ldPhone !== '') {
+        $ldOrg['contactPoint'] = [['@type' => 'ContactPoint', 'contactType' => 'customer support', 'telephone' => $ldPhone, 'email' => $ldMail, 'availableLanguage' => 'Turkish']];
+    }
+    $ldFaq = [];
+    foreach ($faqItems as $fq) {
+        $ldFaq[] = ['@type' => 'Question', 'name' => $fq[0], 'acceptedAnswer' => ['@type' => 'Answer', 'text' => $fq[1]]];
+    }
+    $ldGraph = [
         '@context' => 'https://schema.org',
-        '@type'    => 'Organization',
-        'name'     => $appSettings['site_name'] ?? 'Prolyn ERP',
-        'url'      => rtrim((string)prolynweb_env('BASE_URL', 'https://prolyn.net'), '/'),
-        'sameAs'   => array_values(array_filter([
-            $appSettings['social_twitter'] ?? null,
-            $appSettings['social_linkedin'] ?? null,
-        ])),
-    ], JSON_UNESCAPED_UNICODE); ?></script>
+        '@graph' => [
+            $ldOrg,
+            ['@type' => 'WebSite', '@id' => $ldBase . '/#website', 'url' => $ldBase, 'name' => $ldName, 'inLanguage' => 'tr-TR', 'publisher' => ['@id' => $ldBase . '/#org']],
+            ['@type' => 'SoftwareApplication', 'name' => $ldName, 'applicationCategory' => 'BusinessApplication',
+             'operatingSystem' => 'Web', 'inLanguage' => 'tr-TR', 'url' => $ldBase,
+             'description' => $appSettings['seo_description'] ?? 'Bulut tabanlı ERP, CRM ve ön muhasebe yazılımı.',
+             'offers' => ['@type' => 'Offer', 'price' => '0', 'priceCurrency' => 'TRY', 'description' => '30 gün ücretsiz deneme'],
+             'publisher' => ['@id' => $ldBase . '/#org']],
+            ['@type' => 'FAQPage', 'mainEntity' => $ldFaq],
+        ],
+    ];
+    ?>
+    <script type="application/ld+json"><?php echo json_encode($ldGraph, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_HEX_TAG); ?></script>
     <link rel="shortcut icon" href="p/dist/assets/media/logos/favicon.ico" />
     <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Inter:300,400,500,600,700,800" />
     <link href="p/dist/assets/plugins/global/plugins.bundle.css" rel="stylesheet" type="text/css" />
@@ -310,70 +344,20 @@ $featureColors = ['primary', 'success', 'info', 'warning', 'danger'];
                 <div class="row justify-content-center">
                     <div class="col-lg-9">
                         <div class="accordion scroll-reveal" id="prolynFaqAccordion">
-                            <div class="glass-card mb-4 p-2">
-                                <h2 class="accordion-header" id="faqHead1">
-                                    <button class="accordion-button collapsed bg-transparent text-white fw-bold fs-5" type="button" data-bs-toggle="collapse" data-bs-target="#faqBody1">
-                                        30 günlük deneme sürümünde kısıtlama var mı?
+                            <?php foreach ($faqItems as $fi => $faq): $n = $fi + 1; ?>
+                            <div class="glass-card <?= $fi < count($faqItems) - 1 ? 'mb-4 ' : '' ?>p-2">
+                                <h3 class="accordion-header fs-5" id="faqHead<?= $n ?>">
+                                    <button class="accordion-button collapsed bg-transparent text-white fw-bold fs-5" type="button" data-bs-toggle="collapse" data-bs-target="#faqBody<?= $n ?>">
+                                        <?= htmlspecialchars($faq[0]) ?>
                                     </button>
-                                </h2>
-                                <div id="faqBody1" class="accordion-collapse collapse" data-bs-parent="#prolynFaqAccordion">
+                                </h3>
+                                <div id="faqBody<?= $n ?>" class="accordion-collapse collapse" data-bs-parent="#prolynFaqAccordion">
                                     <div class="accordion-body text-gray-400 fs-6 lh-lg">
-                                        Hayır. Deneme sürecinde de kendi izole veritabanınızla, seçtiğiniz pakete uygun modüllerle çalışırsınız. Kredi kartı istemiyoruz; süre sonunda dilerseniz sözleşmeli müşteriye geçersiniz, dilerseniz vazgeçersiniz.
+                                        <?= htmlspecialchars($faq[1]) ?>
                                     </div>
                                 </div>
                             </div>
-
-                            <div class="glass-card mb-4 p-2">
-                                <h2 class="accordion-header" id="faqHead2">
-                                    <button class="accordion-button collapsed bg-transparent text-white fw-bold fs-5" type="button" data-bs-toggle="collapse" data-bs-target="#faqBody2">
-                                        Verilerimiz başka firmalarla aynı veritabanında mı tutuluyor?
-                                    </button>
-                                </h2>
-                                <div id="faqBody2" class="accordion-collapse collapse" data-bs-parent="#prolynFaqAccordion">
-                                    <div class="accordion-body text-gray-400 fs-6 lh-lg">
-                                        Hayır. Prolyn'de her kurum için ayrı, tamamen izole bir veritabanı (Multi-DB mimari) oluşturulur. Verileriniz hiçbir şekilde başka bir müşteriyle aynı tabloyu paylaşmaz.
-                                    </div>
-                                </div>
-                            </div>
-
-                            <div class="glass-card mb-4 p-2">
-                                <h2 class="accordion-header" id="faqHead3">
-                                    <button class="accordion-button collapsed bg-transparent text-white fw-bold fs-5" type="button" data-bs-toggle="collapse" data-bs-target="#faqBody3">
-                                        Paketler arasında sonradan geçiş yapabilir miyim?
-                                    </button>
-                                </h2>
-                                <div id="faqBody3" class="accordion-collapse collapse" data-bs-parent="#prolynFaqAccordion">
-                                    <div class="accordion-body text-gray-400 fs-6 lh-lg">
-                                        Evet. Paket yükseltme talebinizi bize iletmeniz yeterli; ek bir kurulum sürecine gerek kalmadan paketiniz güncellenir.
-                                    </div>
-                                </div>
-                            </div>
-
-                            <div class="glass-card mb-4 p-2">
-                                <h2 class="accordion-header" id="faqHead4">
-                                    <button class="accordion-button collapsed bg-transparent text-white fw-bold fs-5" type="button" data-bs-toggle="collapse" data-bs-target="#faqBody4">
-                                        Mevcut sistemimizdeki verileri Prolyn'e aktarabilir miyiz?
-                                    </button>
-                                </h2>
-                                <div id="faqBody4" class="accordion-collapse collapse" data-bs-parent="#prolynFaqAccordion">
-                                    <div class="accordion-body text-gray-400 fs-6 lh-lg">
-                                        Kayıt sonrası kurulum ekibimiz sizinle iletişime geçerek mevcut müşteri ve cari verilerinizin aktarım sürecini birlikte planlar.
-                                    </div>
-                                </div>
-                            </div>
-
-                            <div class="glass-card p-2">
-                                <h2 class="accordion-header" id="faqHead5">
-                                    <button class="accordion-button collapsed bg-transparent text-white fw-bold fs-5" type="button" data-bs-toggle="collapse" data-bs-target="#faqBody5">
-                                        Destek talebi açtığımda ne kadar sürede dönüş alırım?
-                                    </button>
-                                </h2>
-                                <div id="faqBody5" class="accordion-collapse collapse" data-bs-parent="#prolynFaqAccordion">
-                                    <div class="accordion-body text-gray-400 fs-6 lh-lg">
-                                        Paketinize göre değişen öncelik seviyelerimiz var; panel üzerinden açtığınız destek talepleri ekibimiz tarafından takip edilip yanıtlanır.
-                                    </div>
-                                </div>
-                            </div>
+                            <?php endforeach; ?>
                         </div>
                     </div>
                 </div>

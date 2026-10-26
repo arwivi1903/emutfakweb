@@ -12,7 +12,9 @@ $staticPages = [
     ['loc' => '/blog', 'priority' => '0.7'],
     ['loc' => '/video', 'priority' => '0.6'],
     ['loc' => '/contact', 'priority' => '0.5'],
+    ['loc' => '/register', 'priority' => '0.6'],
 ];
+$lastmod = date('Y-m-d');
 
 $posts = [];
 try {
@@ -28,6 +30,7 @@ echo '<?xml version="1.0" encoding="UTF-8"?>' . "\n";
 <?php foreach ($staticPages as $page): ?>
     <url>
         <loc><?= htmlspecialchars($base . $page['loc']) ?></loc>
+        <lastmod><?= $lastmod ?></lastmod>
         <priority><?= $page['priority'] ?></priority>
     </url>
 <?php endforeach; ?>

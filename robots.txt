@@ -3,4 +3,40 @@ Allow: /
 Disallow: /p/
 Disallow: /uploads/
 
+# Yapay zeka arama ve yanıt motorları (GEO): herkese açık sayfaları okuyabilir
+User-agent: GPTBot
+Allow: /
+Disallow: /p/
+Disallow: /uploads/
+
+User-agent: OAI-SearchBot
+Allow: /
+Disallow: /p/
+Disallow: /uploads/
+
+User-agent: ChatGPT-User
+Allow: /
+Disallow: /p/
+Disallow: /uploads/
+
+User-agent: ClaudeBot
+Allow: /
+Disallow: /p/
+Disallow: /uploads/
+
+User-agent: Claude-SearchBot
+Allow: /
+Disallow: /p/
+Disallow: /uploads/
+
+User-agent: PerplexityBot
+Allow: /
+Disallow: /p/
+Disallow: /uploads/
+
+User-agent: Google-Extended
+Allow: /
+Disallow: /p/
+Disallow: /uploads/
+
 Sitemap: https://prolyn.net/sitemap.xml
