@@ -23,7 +23,9 @@ try {
     <meta property="og:description" content="Prolyn ERP tanıtım ve eğitim videoları.">
     <meta property="og:url" content="<?php echo htmlspecialchars(prolynweb_current_url()); ?>">
     <meta name="twitter:card" content="summary_large_image">
-    <link rel="shortcut icon" href="p/dist/assets/media/logos/favicon.ico" />
+    <link rel="icon" href="p/dist/logo/favicon.ico" sizes="any" />
+    <link rel="icon" type="image/png" sizes="32x32" href="p/dist/logo/favicon-32x32.png" />
+    <link rel="apple-touch-icon" href="p/dist/logo/apple-touch-icon.png" />
     <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Inter:300,400,500,600,700,800" />
     <link href="p/dist/assets/plugins/global/plugins.bundle.css" rel="stylesheet" type="text/css" />
     <link href="p/dist/assets/css/style.bundle.css" rel="stylesheet" type="text/css" />
@@ -46,7 +48,7 @@ try {
             <div class="container-xxl">
                 <nav class="navbar navbar-dark w-100 py-4 py-lg-6">
                     <a class="navbar-brand d-flex align-items-center" href="index.php">
-                        <h1 class="text-white fs-1 fw-bolder m-0">Prolyn<span class="text-primary">.</span></h1>
+                        <img src="p/dist/logo/prolyn-logo-horizontal-white-sm.png" alt="Prolyn" style="height:38px;width:auto;display:block;" />
                     </a>
                     <button class="btn btn-icon btn-active-color-primary d-lg-none" type="button" data-bs-toggle="offcanvas" data-bs-target="#mobileMenu" aria-controls="mobileMenu">
                         <i class="bi bi-list fs-1 text-white"></i>
@@ -123,7 +125,7 @@ try {
             <div class="container-xxl">
                 <div class="row pt-9 pb-5">
                     <div class="col-lg-4 mb-10 mb-lg-0">
-                        <h1 class="text-white fs-2x fw-bolder mb-5">Prolyn<span class="text-primary">.</span></h1>
+                        <img src="p/dist/logo/prolyn-logo-horizontal-white-sm.png" alt="Prolyn" class="mb-5" style="height:46px;width:auto;display:block;" />
                         <p class="text-gray-500 fs-6 fw-semibold lh-lg mb-5">
                             <?php echo htmlspecialchars($appSettings['website_footer_text'] ?? 'Kurumsal kaynak planlamasında yeni nesil çözüm ortağınız. Hız, güvenlik ve esnekliği bir arada sunuyoruz.'); ?>
                         </p>
@@ -177,7 +179,7 @@ try {
     <!-- Offcanvas Mobile Menu -->
     <div class="offcanvas offcanvas-end offcanvas-glass border-0" tabindex="-1" id="mobileMenu" aria-labelledby="mobileMenuLabel">
         <div class="offcanvas-header border-bottom border-gray-800 p-6">
-            <h5 class="offcanvas-title text-white fs-2 fw-bolder" id="mobileMenuLabel">Prolyn<span class="text-primary">.</span></h5>
+            <h5 class="offcanvas-title m-0" id="mobileMenuLabel"><img src="p/dist/logo/prolyn-logo-horizontal-white-sm.png" alt="Prolyn" style="height:32px;width:auto;" /></h5>
             <button type="button" class="btn-close btn-close-white" data-bs-dismiss="offcanvas" aria-label="Kapat"></button>
         </div>
         <div class="offcanvas-body p-6">

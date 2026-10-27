@@ -129,7 +129,9 @@ try {
     <meta property="og:url" content="" />
     <meta property="og:site_name" content="" />
     <link rel="canonical" href="" />
-    <link rel="shortcut icon" href="dist/assets/media/logos/favicon.ico" />
+    <link rel="icon" href="dist/logo/favicon.ico" sizes="any" />
+    <link rel="icon" type="image/png" sizes="32x32" href="dist/logo/favicon-32x32.png" />
+    <link rel="apple-touch-icon" href="dist/logo/apple-touch-icon.png" />
     <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Inter:300,400,500,600,700" />
     <link href="dist/assets/plugins/custom/fullcalendar/fullcalendar.bundle.css" rel="stylesheet" type="text/css" />
     <link href="dist/assets/plugins/custom/datatables/datatables.bundle.css" rel="stylesheet" type="text/css" />
@@ -186,7 +188,7 @@ try {
 
                     <div class="d-flex align-items-center flex-grow-1 flex-lg-grow-0">
                         <a href="index.php" class="d-lg-none">
-                            <img alt="Logo" src="dist/assets/media/logos/default-small.svg" class="h-30px" />
+                            <img alt="Logo" src="dist/logo/prolyn-icon.png" class="h-30px" />
                         </a>
                     </div>
                     <div class="d-flex align-items-stretch justify-content-between flex-lg-grow-1"
@@ -4043,10 +4045,10 @@ target="_blank">
                     data-kt-drawer-toggle="#kt_app_sidebar_mobile_toggle">
                     <div class="app-sidebar-logo px-6" id="kt_app_sidebar_logo">
                         <a href="index.php">
-                            <img alt="Logo" src="dist/assets/media/logos/default-dark.svg"
-                                class="h-25px app-sidebar-logo-default" />
-                            <img alt="Logo" src="dist/assets/media/logos/default-small.svg"
-                                class="h-20px app-sidebar-logo-minimize" />
+                            <img alt="Prolyn" src="dist/logo/prolyn-logo-horizontal-white-sm.png"
+                                class="h-30px app-sidebar-logo-default" />
+                            <img alt="Prolyn" src="dist/logo/prolyn-icon.png"
+                                class="h-25px app-sidebar-logo-minimize" />
                         </a>
 
                         <div id="kt_app_sidebar_toggle"

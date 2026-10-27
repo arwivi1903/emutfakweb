@@ -48,7 +48,9 @@ if (isset($_GET['islem'])) {
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>Prolyn ERP - Giriş</title>
-    <link rel="shortcut icon" href="dist/assets/media/logos/favicon.ico" />
+    <link rel="icon" href="dist/logo/favicon.ico" sizes="any" />
+    <link rel="icon" type="image/png" sizes="32x32" href="dist/logo/favicon-32x32.png" />
+    <link rel="apple-touch-icon" href="dist/logo/apple-touch-icon.png" />
     <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Inter:300,400,500,600,700" />
     <link href="dist/assets/plugins/global/plugins.bundle.css" rel="stylesheet" type="text/css" />
     <link href="dist/assets/css/style.bundle.css" rel="stylesheet" type="text/css" />
@@ -142,7 +144,7 @@ if (isset($_GET['islem'])) {
             display: inline-flex;
             align-items: center;
             justify-content: center;
-            background: linear-gradient(135deg, #0f172a 0%, #1d4ed8 100%);
+            background: transparent;
             color: #fff;
             font-weight: 800;
             font-size: 1.2rem;
@@ -226,7 +228,7 @@ if (isset($_GET['islem'])) {
                                 <div class="p-10 p-lg-14">
                                     <div class="d-flex align-items-center justify-content-between mb-10">
                                         <div class="d-flex align-items-center gap-4">
-                                            <div class="brand-mark">P</div>
+                                            <div class="brand-mark"><img src="dist/logo/prolyn-icon.png" alt="Prolyn" style="width:56px;height:56px;object-fit:contain;" /></div>
                                             <div>
                                                 <div class="text-white fw-bolder fs-2 mb-1"><a href="http://prolyn.net"
                                                         rel="noopener noreferrer">Prolyn</a></div>
