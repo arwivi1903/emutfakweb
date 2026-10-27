@@ -16,7 +16,7 @@ RewriteRule (^|/)\.git(/|$) - [F]
 
 <IfModule mod_rewrite.c>
     RewriteEngine On
-    RewriteBase /prolynweb/p/
+    # RewriteBase bilinçli olarak YOK: Apache dizin yolunu kendisi çözer (yerel /prolynweb/p/ ve canlı /p/ ikisinde de çalışır)
 
     # assets -> dist/assets
     RewriteRule ^assets/(.*)$ dist/assets/$1 [L]
