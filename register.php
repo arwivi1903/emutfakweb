@@ -6,6 +6,9 @@
 require_once __DIR__ . '/env.php';
 require_once 'db.php'; // $pdo (prolyn_master), $appSettings
 require_once __DIR__ . '/p/functions/provision.php';
+require_once __DIR__ . '/partials/recaptcha.php';
+$recaptcha = recaptcha_ayarlar($pdo);
+$recaptchaAktif = recaptcha_aktif($recaptcha);
 
 if (session_status() === PHP_SESSION_NONE) {
     $secureCookie = filter_var(prolynweb_env('APP_ENV', 'development'), FILTER_DEFAULT) === 'production'
@@ -79,7 +82,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     } elseif (!empty($_POST['website'])) {
         $message = "İstek reddedildi.";
         $messageType = "danger";
-    // 3) Rate limit
+    // 3) Google reCAPTCHA (panelden açıldıysa)
+    } elseif ($recaptchaAktif && !($__rc = recaptcha_dogrula($recaptcha, (string)($_POST['g_recaptcha_token'] ?? ''), 'register'))[0]) {
+        error_log('[register] reCAPTCHA reddetti: ' . $__rc[1] . ' | ip: ' . ($_SERVER['REMOTE_ADDR'] ?? '-'));
+        $message = "Güvenlik doğrulaması tamamlanamadı. Sayfayı yenileyip tekrar deneyin.";
+        $messageType = "danger";
+    // 4) Rate limit
     } elseif (!reg_rate_limit_check((int)prolynweb_env('REGISTER_RATE_LIMIT', 5))) {
         $message = "Çok fazla deneme yaptınız. Lütfen bir süre sonra tekrar deneyin.";
         $messageType = "danger";
@@ -569,7 +577,8 @@ $iller = $stmtCities->fetchAll(PDO::FETCH_ASSOC);
                                     </div>
                                 <?php endif; ?>
 
-                                <form action="" method="POST" autocomplete="off">
+                                <form action="" method="POST" autocomplete="off" id="registerForm">
+                                    <input type="hidden" name="g_recaptcha_token" value="">
                                     <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($_SESSION['reg_csrf'], ENT_QUOTES, 'UTF-8') ?>">
                                     <!-- Honeypot: gerçek kullanıcılar görmez, botlar doldurur -->
                                     <div style="position:absolute;left:-9999px;top:-9999px;" aria-hidden="true">
@@ -646,6 +655,13 @@ $iller = $stmtCities->fetchAll(PDO::FETCH_ASSOC);
                                     <div class="text-end">
                                         <button type="submit" class="btn btn-primary-glow btn-lg px-10 py-4 fs-5 fw-bold w-100">Kurulumu Başlat & Dene</button>
                                     </div>
+                                    <?php if ($recaptchaAktif): ?>
+                                    <p class="text-gray-500 fs-7 mt-5 mb-0 text-center recaptcha-note">
+                                        <i class="bi bi-shield-check text-success me-1"></i>Bu form Google reCAPTCHA ile korunur. Google
+                                        <a href="https://policies.google.com/privacy" target="_blank" rel="noopener" class="text-gray-400 text-hover-primary">Gizlilik Politikası</a> ve
+                                        <a href="https://policies.google.com/terms" target="_blank" rel="noopener" class="text-gray-400 text-hover-primary">Hizmet Şartları</a> geçerlidir.
+                                    </p>
+                                    <?php endif; ?>
                                 </form>
                             <?php endif; ?>
                         </div>
@@ -689,6 +705,7 @@ $iller = $stmtCities->fetchAll(PDO::FETCH_ASSOC);
     </div>
 
     <!--begin::Global Javascript Bundle(mandatory for all pages)-->
+<?php if ($recaptchaAktif) { echo recaptcha_istemci_kodu($recaptcha, 'registerForm', 'register', 'Kurulum başlatılıyor…'); } ?>
     <script src="p/dist/assets/plugins/global/plugins.bundle.js"></script>
     <script src="p/dist/assets/js/scripts.bundle.js"></script>
     <!--end::Global Javascript Bundle-->

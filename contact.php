@@ -1,6 +1,9 @@
 <?php
 require_once __DIR__ . '/env.php';
 require_once 'db.php'; // $pdo, $appSettings
+require_once __DIR__ . '/partials/recaptcha.php';
+$recaptcha = recaptcha_ayarlar($pdo);
+$recaptchaAktif = recaptcha_aktif($recaptcha);
 
 if (session_status() === PHP_SESSION_NONE) {
     $secureCookie = filter_var(prolynweb_env('APP_ENV', 'development'), FILTER_DEFAULT) === 'production'
@@ -34,6 +37,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     } elseif (!empty($hp)) {
         // Honeypot dolu → bot
         $contactMsg = 'İstek reddedildi.';
+        $contactType = 'danger';
+    } elseif ($recaptchaAktif && !($__rc = recaptcha_dogrula($recaptcha, (string)($_POST['g_recaptcha_token'] ?? ''), 'contact'))[0]) {
+        error_log('[contact] reCAPTCHA reddetti: ' . $__rc[1] . ' | ip: ' . ($_SERVER['REMOTE_ADDR'] ?? '-'));
+        $contactMsg = 'Güvenlik doğrulaması tamamlanamadı. Sayfayı yenileyip tekrar deneyin.';
         $contactType = 'danger';
     } elseif ($name === '' || $subject === '' || $body === '' || !filter_var($email, FILTER_VALIDATE_EMAIL)) {
         $contactMsg = 'Lütfen tüm alanları doğru şekilde doldurun.';
@@ -70,7 +77,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             try {
                 $mailSubject = 'Yeni İletişim Mesajı: ' . $subject;
                 $mailBody = "Ad: {$name}\nE-posta: {$email}\nKonu: {$subject}\n\n{$body}";
-                $pdo->prepare("INSERT INTO mail_kuyrugu (channel, recipient, subject, message, status, attempts, created_at) VALUES ('email', ?, ?, ?, 'pending', 0, NOW())")
+                $pdo->prepare("INSERT INTO mail_kuyrugu (channel, recipient, subject, message, source, status, attempts, created_at) VALUES ('email', ?, ?, ?, 'iletisim_formu', 'pending', 0, NOW())")
                     ->execute([$notifyTo, $mailSubject, $mailBody]);
             } catch (\Throwable $qe) {
                 // mail_kuyrugu tablosu yoksa yoksay; mesaj yine DB'ye kaydedildi.
@@ -232,7 +239,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                                     <?= htmlspecialchars($contactMsg) ?>
                                 </div>
                             <?php endif; ?>
-                            <form action="contact.php" method="POST" autocomplete="off">
+                            <form action="contact.php" method="POST" autocomplete="off" id="contactForm">
+                                <input type="hidden" name="g_recaptcha_token" value="">
                                 <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($_SESSION['contact_csrf'], ENT_QUOTES, 'UTF-8') ?>">
                                 <div style="position:absolute;left:-9999px;top:-9999px;" aria-hidden="true">
                                     <label>Web Siteniz</label>
@@ -256,7 +264,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                                     <label class="form-label fs-6 fw-semibold text-gray-300">Mesajınız</label>
                                     <textarea name="message" class="form-control glass-input form-control-lg" rows="6" maxlength="5000" placeholder="Nasıl yardımcı olabiliriz?" required></textarea>
                                 </div>
-                                <div class="text-end">
+                                <div class="d-flex flex-wrap align-items-center justify-content-between gap-4">
+                                    <?php if ($recaptchaAktif): ?>
+                                    <p class="text-gray-500 fs-7 mb-0 recaptcha-note" style="max-width:420px">
+                                        <i class="bi bi-shield-check text-success me-1"></i>Bu form Google reCAPTCHA ile korunur. Google
+                                        <a href="https://policies.google.com/privacy" target="_blank" rel="noopener" class="text-gray-400 text-hover-primary">Gizlilik Politikası</a> ve
+                                        <a href="https://policies.google.com/terms" target="_blank" rel="noopener" class="text-gray-400 text-hover-primary">Hizmet Şartları</a> geçerlidir.
+                                    </p>
+                                    <?php else: ?><span></span><?php endif; ?>
                                     <button type="submit" class="btn btn-primary-glow px-10 py-4 fs-5 fw-bold">Mesajı Gönder</button>
                                 </div>
                             </form>
@@ -344,6 +359,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     </div>
 
     <!--begin::Global Javascript Bundle(mandatory for all pages)-->
+<?php if ($recaptchaAktif) { echo recaptcha_istemci_kodu($recaptcha, 'contactForm', 'contact', 'Gönderiliyor…'); } ?>
     <script src="p/dist/assets/plugins/global/plugins.bundle.js"></script>
     <script src="p/dist/assets/js/scripts.bundle.js"></script>
     <!--end::Global Javascript Bundle-->

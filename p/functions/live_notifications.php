@@ -59,6 +59,44 @@ if (!function_exists('prolyn_canli_bildirimler')) {
             // Canlı bildirimler hesaplanamazsa sessizce boş dönülür
         }
 
+        // Okunmamış iletişim formu mesajları (mesaj açılınca kendiliğinden düşer)
+        try {
+            if (method_exists($db, 'tableExists') && $db->tableExists('iletisim_mesajlari')) {
+                $mesajlar = $db->getRowsAssoc("SELECT id, ad, konu, created_at FROM iletisim_mesajlari WHERE status = 'new' ORDER BY id DESC LIMIT 5");
+                foreach ((array)$mesajlar as $m) {
+                    $sonuc[] = [
+                        'notification_id' => 0,
+                        'title' => 'Yeni İletişim Mesajı',
+                        'message' => (string)$m['ad'] . ' — ' . (string)$m['konu'],
+                        'type' => 'info',
+                        'action_url' => 'crm/messages.php?id=' . (int)$m['id'],
+                        'created_at' => $m['created_at'],
+                    ];
+                }
+            }
+        } catch (Throwable $e) {
+        }
+
+        // Bugün takip edilecek potansiyel müşteriler (tek özet bildirim)
+        try {
+            if (method_exists($db, 'tableExists') && $db->tableExists('potansiyel_musteriler')) {
+                $takip = (int)$db->getColumn("SELECT COUNT(*) FROM potansiyel_musteriler WHERE sonraki_takip IS NOT NULL AND sonraki_takip <= CURDATE() AND durum NOT IN ('deneme','musteri','olumsuz','ret')");
+                if ($takip > 0) {
+                    $sonuc[] = [
+                        'notification_id' => 0,
+                        'title' => 'Bugün Takip',
+                        'message' => $takip . ' potansiyel müşterinin takip günü geldi.',
+                        'type' => 'warning',
+                        'action_url' => 'crm/leads.php?takip=bugun',
+                        'created_at' => date('Y-m-d H:i:s'),
+                    ];
+                }
+            }
+        } catch (Throwable $e) {
+        }
+
+        // En yeni üstte
+        usort($sonuc, static fn($a, $b) => strcmp((string)$b['created_at'], (string)$a['created_at']));
         return $sonuc;
     }
 }

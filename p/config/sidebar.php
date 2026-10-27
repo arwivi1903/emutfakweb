@@ -19,6 +19,14 @@ function showAccordion($keywords) {
 $sidebarResetRequestPending = 0;
 $sidebarResetQueuePending = 0;
 $sidebarResetTokenOpen = 0;
+$sidebarYeniMesaj = 0;
+try {
+    if (isset($db) && method_exists($db, 'tableExists') && $db->tableExists('iletisim_mesajlari')) {
+        $sidebarYeniMesaj = (int)$db->getColumn("SELECT COUNT(*) FROM iletisim_mesajlari WHERE status = 'new'");
+    }
+} catch (Throwable $e) {
+    $sidebarYeniMesaj = 0;
+}
 
 try {
     if (isset($db) && method_exists($db, 'tableExists') && $db->tableExists('sifre_sifirlama_talepleri')) {
@@ -62,6 +70,13 @@ try {
                 <!-- 2. CRM / MÜŞTERİ YÖNETİMİ -->
                 <div class="menu-item pt-5">
                     <div class="menu-content"><span class="menu-heading fw-bold text-uppercase fs-7">CRM Yönetimi</span></div>
+                </div>
+                <div class="menu-item">
+                    <a class="menu-link <?= isActive('crm/messages.php') ?>" href="crm/messages.php">
+                        <span class="menu-icon"><i class="ki-duotone ki-sms fs-2"><span class="path1"></span><span class="path2"></span></i></span>
+                        <span class="menu-title">Gelen Mesajlar</span>
+                        <?php if ($sidebarYeniMesaj > 0): ?><span class="menu-badge"><span class="badge badge-primary badge-circle fw-bold fs-8"><?= (int)$sidebarYeniMesaj ?></span></span><?php endif; ?>
+                    </a>
                 </div>
                 <div data-kt-menu-trigger="click" class="menu-item menu-accordion <?= showAccordion(['leads.php', 'lead_detail.php', 'lead_import.php', 'lead_templates.php']) ?>">
                     <span class="menu-link">
@@ -200,6 +215,7 @@ try {
                     </span>
                     <div class="menu-sub menu-sub-accordion">
                         <div class="menu-item"><a class="menu-link <?= isActive('website/seo.php') ?>" href="website/seo.php"><span class="menu-bullet"><span class="bullet bullet-dot"></span></span><span class="menu-title">SEO ve Temel Ayarlar</span></a></div>
+                        <div class="menu-item"><a class="menu-link <?= isActive('website/form_security.php') ?>" href="website/form_security.php"><span class="menu-bullet"><span class="bullet bullet-dot"></span></span><span class="menu-title">Form Güvenliği (reCAPTCHA)</span></a></div>
                         <div class="menu-item"><a class="menu-link <?= isActive('website/features.php') ?>" href="website/features.php"><span class="menu-bullet"><span class="bullet bullet-dot"></span></span><span class="menu-title">Ana Sayfa Özellikleri</span></a></div>
                         <div class="menu-item"><a class="menu-link <?= isActive('website/modules.php') ?>" href="website/modules.php"><span class="menu-bullet"><span class="bullet bullet-dot"></span></span><span class="menu-title">Web Modülleri</span></a></div>
                         <div class="menu-item"><a class="menu-link <?= isActive('website/blog.php') ?>" href="website/blog.php"><span class="menu-bullet"><span class="bullet bullet-dot"></span></span><span class="menu-title">Blog</span></a></div>

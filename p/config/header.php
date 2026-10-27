@@ -3591,7 +3591,7 @@ target="_blank">
                                                         <div class="d-flex flex-column border-bottom border-gray-200 py-4" data-notification-id="<?= (int)($notif['notification_id'] ?? 0) ?>">
                                                             <div class="d-flex align-items-center justify-content-between mb-1">
                                                                 <span class="fw-bold text-gray-800"><?= htmlspecialchars((string)$notif['title']) ?></span>
-                                                                <span class="badge <?= $notifBadgeClass ?>"><?= htmlspecialchars(strtoupper((string)$notifType)) ?></span>
+                                                                <span class="badge <?= $notifBadgeClass ?>"><?= htmlspecialchars(['info' => 'Bilgi', 'warning' => 'Uyarı', 'error' => 'Hata', 'success' => 'Başarılı'][$notifType] ?? (string)$notifType) ?></span>
                                                             </div>
                                                             <span class="text-muted fs-7 mb-2"><?= htmlspecialchars((string)$notif['message']) ?></span>
                                                             <div class="d-flex align-items-center justify-content-between">
@@ -3599,7 +3599,10 @@ target="_blank">
                                                                 <?php if ($notifCanli): ?>
                                                                     <a href="<?= htmlspecialchars((string)($notif['action_url'] ?? '#')) ?>" class="btn btn-sm btn-light-primary py-1 px-2">Görüntüle</a>
                                                                 <?php else: ?>
-                                                                    <button type="button" class="btn btn-sm btn-light-primary py-1 px-2 mark-notification-read-btn">Okundu</button>
+                                                                    <span class="d-flex gap-2">
+                                                                        <?php if (!empty($notif['action_url'])): ?><a href="<?= htmlspecialchars((string)$notif['action_url']) ?>" class="btn btn-sm btn-light py-1 px-2">Görüntüle</a><?php endif; ?>
+                                                                        <button type="button" class="btn btn-sm btn-light-primary py-1 px-2 mark-notification-read-btn">Okundu</button>
+                                                                    </span>
                                                                 <?php endif; ?>
                                                             </div>
                                                         </div>
