@@ -3471,7 +3471,7 @@ target="_blank">
                                                 </i>
                                                 <input type="text"
                                                     class="search-input form-control form-control-flush ps-10"
-                                                    name="search" value="" placeholder="Arama..."
+                                                    name="search" value="" placeholder="Menülerde ara... (Ctrl+K)"
                                                     data-kt-search-element="input" />
                                                 <span
                                                     class="search-spinner position-absolute top-50 end-0 translate-middle-y lh-0 d-none me-1"
@@ -3481,8 +3481,11 @@ target="_blank">
                                                 </span>
                                             </form>
                                             
+                                            <!-- Menü arama sonuçları (JS doldurur) -->
+                                            <div id="menuSearchResults" class="d-none mb-2"></div>
+
                                             <!-- Hızlı Bağlantılar -->
-                                            <div class="mb-2">
+                                            <div class="mb-2" id="quickLinksBlock">
                                                 <div class="fs-7 text-muted fw-semibold mb-3">Hızlı Bağlantılar</div>
                                                 <div class="d-flex flex-column gap-2">
                                                     <a href="crm/tenants.php" class="d-flex align-items-center text-gray-700 text-hover-primary py-2 fs-6">
@@ -3520,6 +3523,137 @@ target="_blank">
                                     </div>
                                 </div>
                             </div>
+
+                            <style>
+                                #menuSearchResults .ms-sonuc{display:flex;align-items:center;gap:.75rem;padding:.55rem .6rem;border-radius:.5rem;text-decoration:none;}
+                                #menuSearchResults .ms-sonuc:hover,#menuSearchResults .ms-sonuc.ms-aktif{background:rgba(var(--bs-primary-rgb),.1);}
+                                #menuSearchResults .ms-baslik{color:var(--bs-gray-800);font-weight:600;font-size:.95rem;line-height:1.2;}
+                                #menuSearchResults .ms-yol{color:var(--bs-gray-500);font-size:.75rem;}
+                                #menuSearchResults mark{background:transparent;color:var(--bs-primary);padding:0;font-weight:700;}
+                            </style>
+                            <script>
+                            /* Menü arama: sidebar'daki bağlantıları tarar, yazdıkça filtreler.
+                               Türkçe karakter ve büyük/küçük harf duyarsız. Ok tuşları + Enter çalışır.
+                               Kısayol: Ctrl/Cmd + K */
+                            document.addEventListener('DOMContentLoaded', function () {
+                                var kutu    = document.getElementById('kt_header_search');
+                                var girdi   = kutu && kutu.querySelector('input[name="search"]');
+                                var sonucEl = document.getElementById('menuSearchResults');
+                                var hizli   = document.getElementById('quickLinksBlock');
+                                var menu    = document.getElementById('kt_app_sidebar_menu');
+                                if (!kutu || !girdi || !sonucEl || !menu) { return; }
+
+                                function norm(t) {
+                                    return String(t || '').replace(/İ/g, 'i').replace(/I/g, 'ı').toLowerCase()
+                                        .replace(/ı/g, 'i').replace(/ş/g, 's').replace(/ğ/g, 'g')
+                                        .replace(/ü/g, 'u').replace(/ö/g, 'o').replace(/ç/g, 'c')
+                                        .replace(/\s+/g, ' ').trim();
+                                }
+                                function esc(t) {
+                                    return String(t).replace(/[&<>"]/g, function (c) {
+                                        return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];
+                                    });
+                                }
+
+                                // Sidebar'dan dizin çıkar (başlık > üst menü > bağlantı)
+                                var dizin = [];
+                                function dizinKur() {
+                                    dizin = [];
+                                    var bolum = '';
+                                    menu.querySelectorAll('.menu-heading, a.menu-link[href]').forEach(function (el) {
+                                        if (el.classList.contains('menu-heading')) { bolum = el.textContent.trim(); return; }
+                                        var href = el.getAttribute('href');
+                                        if (!href || href === '#' || href.indexOf('javascript:') === 0) { return; }
+                                        var baslikEl = el.querySelector('.menu-title');
+                                        var baslik = (baslikEl ? baslikEl.textContent : el.textContent).trim();
+                                        if (!baslik) { return; }
+                                        var yol = bolum;
+                                        var ust = el.closest('.menu-sub');
+                                        if (ust && ust.parentElement) {
+                                            var ustBaslik = ust.parentElement.querySelector(':scope > .menu-link .menu-title');
+                                            if (ustBaslik) { yol = (bolum ? bolum + ' › ' : '') + ustBaslik.textContent.trim(); }
+                                        }
+                                        dizin.push({ baslik: baslik, yol: yol, href: el.href, n: norm(baslik + ' ' + yol) });
+                                    });
+                                }
+
+                                var secili = -1, liste = [];
+                                function vurgula(metin, kelimeler) {
+                                    var n = norm(metin), bas = -1, uz = 0;
+                                    for (var i = 0; i < kelimeler.length; i++) {
+                                        var p = n.indexOf(kelimeler[i]);
+                                        if (p > -1) { bas = p; uz = kelimeler[i].length; break; }
+                                    }
+                                    if (bas < 0 || n.length !== metin.length) { return esc(metin); }
+                                    return esc(metin.slice(0, bas)) + '<mark>' + esc(metin.slice(bas, bas + uz)) + '</mark>' + esc(metin.slice(bas + uz));
+                                }
+                                function ciz(kelimeler) {
+                                    if (!liste.length) {
+                                        sonucEl.innerHTML = '<div class="text-gray-500 fs-6 py-4 text-center">Sonuç bulunamadı</div>';
+                                        return;
+                                    }
+                                    sonucEl.innerHTML = '<div class="fs-7 text-muted fw-semibold mb-2">Menüler (' + liste.length + ')</div>' +
+                                        liste.map(function (r, i) {
+                                            return '<a class="ms-sonuc' + (i === secili ? ' ms-aktif' : '') + '" href="' + esc(r.href) + '">' +
+                                                '<span><span class="ms-baslik d-block">' + vurgula(r.baslik, kelimeler) + '</span>' +
+                                                (r.yol ? '<span class="ms-yol">' + esc(r.yol) + '</span>' : '') + '</span></a>';
+                                        }).join('');
+                                }
+                                function ara() {
+                                    var q = norm(girdi.value);
+                                    if (!q) {
+                                        sonucEl.classList.add('d-none'); sonucEl.innerHTML = '';
+                                        if (hizli) { hizli.classList.remove('d-none'); }
+                                        liste = []; secili = -1; return;
+                                    }
+                                    if (!dizin.length) { dizinKur(); }
+                                    var kelimeler = q.split(' ');
+                                    liste = dizin.filter(function (r) {
+                                        return kelimeler.every(function (k) { return r.n.indexOf(k) > -1; });
+                                    }).sort(function (a, b) {
+                                        // başlıkta geçenler önde
+                                        var A = norm(a.baslik).indexOf(kelimeler[0]) > -1 ? 0 : 1;
+                                        var B = norm(b.baslik).indexOf(kelimeler[0]) > -1 ? 0 : 1;
+                                        return A - B;
+                                    }).slice(0, 12);
+                                    secili = liste.length ? 0 : -1;
+                                    sonucEl.classList.remove('d-none');
+                                    if (hizli) { hizli.classList.add('d-none'); }
+                                    ciz(kelimeler);
+                                }
+                                function gezin(yon) {
+                                    if (!liste.length) { return; }
+                                    secili = (secili + yon + liste.length) % liste.length;
+                                    sonucEl.querySelectorAll('.ms-sonuc').forEach(function (a, i) {
+                                        a.classList.toggle('ms-aktif', i === secili);
+                                        if (i === secili) { a.scrollIntoView({ block: 'nearest' }); }
+                                    });
+                                }
+
+                                girdi.addEventListener('input', ara);
+                                girdi.addEventListener('keydown', function (e) {
+                                    if (e.key === 'ArrowDown') { e.preventDefault(); gezin(1); }
+                                    else if (e.key === 'ArrowUp') { e.preventDefault(); gezin(-1); }
+                                    else if (e.key === 'Enter') {
+                                        e.preventDefault(); e.stopPropagation();
+                                        if (secili > -1 && liste[secili]) { window.location.href = liste[secili].href; }
+                                    }
+                                }, true);
+                                var form = girdi.closest('form');
+                                if (form) { form.addEventListener('submit', function (e) { e.preventDefault(); }); }
+
+                                // Aç butonuna basınca kutuya odaklan
+                                var dugme = document.getElementById('kt_header_search_toggle');
+                                if (dugme) { dugme.addEventListener('click', function () { setTimeout(function () { girdi.focus(); }, 150); }); }
+                                // Ctrl/Cmd + K
+                                document.addEventListener('keydown', function (e) {
+                                    if ((e.ctrlKey || e.metaKey) && (e.key === 'k' || e.key === 'K')) {
+                                        e.preventDefault();
+                                        if (dugme) { dugme.click(); }
+                                    }
+                                });
+                            });
+                            </script>
 
                             <!-- Destek Talepleri -->
                             <div class="app-navbar-item ms-1 ms-md-4">
