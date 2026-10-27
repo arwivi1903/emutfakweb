@@ -37,7 +37,14 @@ $message = '';
 $messageType = '';
 $successData = null;
 
-$selectedPlan = $_GET['plan'] ?? '';
+/* Paket belirtilmezse (ör. ana sayfadaki "30 Gün Ücretsiz Dene") deneme en KÜÇÜK paketle açılır.
+   Eskiden varsayılan 'pro' idi: deneme kurumları neredeyse tüm modüllere açık geliyordu. */
+const KAYIT_VARSAYILAN_PLAN = 'basic';
+$selectedPlan = strtolower(trim((string)($_GET['plan'] ?? '')));
+if (!in_array($selectedPlan, ['basic', 'pro', 'enterprise'], true)) {
+    $selectedPlan = KAYIT_VARSAYILAN_PLAN;
+}
+$planEtiketleri = ['basic' => 'Başlangıç', 'pro' => 'Profesyonel', 'enterprise' => 'Kurumsal'];
 
 /* Fiyatlandırma sayfasındaki Aylık/Yıllık seçimi buraya `?periyot=yillik`
    olarak gelir. Deneme süreci her hâlükârda 30 gün ve ücretsizdir; seçim
@@ -180,8 +187,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 }
                 $messageType = "danger";
             } else {
-                $planNameToInsert = !empty($selectedPlan) ? strtolower($selectedPlan) : 'pro';
-                if (!in_array($planNameToInsert, ['basic', 'pro', 'enterprise'])) $planNameToInsert = 'pro';
+                $planNameToInsert = $selectedPlan;   // yukarıda doğrulandı; belirtilmemişse 'basic'
 
                 /* ── Paket modülleri: TEK KAYNAK paket_ozellikleri ────────────────
                    Önceden burada sabit bir modül listesi yazılıydı; seçilen paket
@@ -547,7 +553,7 @@ $iller = $stmtCities->fetchAll(PDO::FETCH_ASSOC);
                                                 <div class="flex-grow-1">
                                                     <div class="text-gray-500 fs-7 fw-semibold mb-1">Seçilen Plan</div>
                                                     <div class="text-white fs-5 fw-bold">
-                                                        <?= htmlspecialchars(!empty($selectedPlan) ? ucfirst($selectedPlan) : 'Pro') ?>
+                                                        <?= htmlspecialchars($planEtiketleri[$selectedPlan] ?? ucfirst($selectedPlan)) ?>
                                                         <span class="badge badge-light-primary ms-2"><?= $secilenPeriyot === 'yillik' ? 'Yıllık' : 'Aylık' ?></span>
                                                     </div>
                                                 </div>

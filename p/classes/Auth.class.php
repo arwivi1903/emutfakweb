@@ -184,7 +184,10 @@ class Auth
             ],
             null,
             $adminId,
-            $this->db
+            $this->db,
+            null,
+            null,
+            'yoneticiler'   // Sistem Logları'nda "Tablo" sütunu boş kalmasın
         );
     }
 
