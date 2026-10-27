@@ -49,11 +49,30 @@ foreach ($requiredMailSettings as $settingKey => $defaultValue) {
 }
 
 // Ayarları güncelle
+/* ESKİ HATA: yalnızca UPDATE yapılıyordu. system_settings'e sadece mail anahtarları
+   tohumlandığı için site_name / currency / trial_period_days satırları hiç yoktu:
+   alan boş geliyor, UPDATE de hiçbir satıra denk gelmeyip sessizce atlanıyordu.
+   Artık izinli anahtarlar UPSERT ediliyor. Ana site site adını sistem_ayarlari'ndan
+   okuduğu için site_name orayla da eşitleniyor. */
+$kayit_ok = false; $kayit_hata = '';
 if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['action']) && $_POST['action'] == 'save_settings') {
-    foreach ($_POST as $key => $value) {
-        if ($key == 'action' || $key == 'csrf_token') continue;
-        // System settings güncelleme
-        $db->Update("UPDATE system_settings SET setting_value = ? WHERE setting_key = ?", [$value, $key]);
+    $izinli = array_merge(array_keys($requiredMailSettings), ['site_name', 'currency', 'trial_period_days']);
+    try {
+        foreach ($izinli as $key) {
+            if (!array_key_exists($key, $_POST)) continue;
+            $value = trim((string)$_POST[$key]);
+            $db->Update("INSERT INTO system_settings (setting_key, setting_value) VALUES (?, ?)
+                         ON DUPLICATE KEY UPDATE setting_value = VALUES(setting_value)", [$key, $value]);
+        }
+        if (isset($_POST['site_name']) && trim((string)$_POST['site_name']) !== '') {
+            $db->Update("INSERT INTO sistem_ayarlari (setting_key, setting_value, setting_type, category, description, is_public, updated_at)
+                         VALUES ('site_name', ?, 'string', 'general', 'Footer ve copyright metninde kullanılan site adı', 1, NOW())
+                         ON DUPLICATE KEY UPDATE setting_value = VALUES(setting_value), updated_at = NOW()",
+                [trim((string)$_POST['site_name'])]);
+        }
+        $kayit_ok = true;
+    } catch (Throwable $e) {
+        $kayit_hata = 'Ayarlar kaydedilemedi: ' . $e->getMessage();
     }
 }
 
@@ -64,6 +83,12 @@ foreach ($settings as $s) {
         $config[$s['setting_key']] = $s['setting_value'];
     }
 }
+if (empty($config['site_name'])) {
+    try {
+        $config['site_name'] = (string)$db->getColumn("SELECT setting_value FROM sistem_ayarlari WHERE setting_key = 'site_name'");
+    } catch (Throwable $e) { $config['site_name'] = ''; }
+}
+if (!isset($config['currency']) || $config['currency'] === '') $config['currency'] = 'TRY';
 ?>
 <div class="app-main flex-column flex-row-fluid" id="kt_app_main">
     <div class="d-flex flex-column flex-column-fluid">
@@ -77,6 +102,8 @@ foreach ($settings as $s) {
                         </div>
                     </div>
                     <div id="kt_account_settings_profile_details" class="collapse show">
+                        <?php if ($kayit_ok): ?><div class="alert alert-success m-9 mb-0">Ayarlar kaydedildi.</div><?php endif; ?>
+                        <?php if ($kayit_hata !== ''): ?><div class="alert alert-danger m-9 mb-0"><?= htmlspecialchars($kayit_hata) ?></div><?php endif; ?>
                         <form id="kt_account_profile_details_form" class="form" method="POST">
                             <?= csrfTokenField() ?>
                             <input type="hidden" name="action" value="save_settings">

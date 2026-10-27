@@ -9,15 +9,45 @@ Auth::requireModule('manage_settings');
 require_once '../config/sidebar.php';
 
 // Güncelleme
+$kayit_hatasi = '';
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['action'] === 'save_setting') {
-    $setting_id = (int)$_POST['setting_id'];
-    $setting_value = $_POST['setting_value'];
-    
-    $db->Update("UPDATE sistem_ayarlari SET setting_value = ?, updated_by = ?, updated_at = NOW() WHERE setting_id = ?",
-        [$setting_value, $_SESSION['admin_id'] ?? null, $setting_id]);
-        
-    echo "<script>window.location.href='settings/general.php?success=1';</script>";
-    exit;
+    $setting_id = (int)($_POST['setting_id'] ?? 0);
+    $setting_value = trim((string)($_POST['setting_value'] ?? ''));
+
+    /* ESKİ HATA: sorgu `updated_by` kolonunu yazıyordu; tabloda bu kolon yoksa UPDATE
+       hata verir, Database::Update() hatayı yutup 0 döner ve sayfa yine de
+       "Başarılı" gösterirdi (ayar hiç değişmezdi). Kolon varsa yaz, yoksa atla;
+       sonucu da gerçekten kontrol et. */
+    $updated_by_var = false;
+    try {
+        $updated_by_var = (bool)$db->getRow("SHOW COLUMNS FROM sistem_ayarlari LIKE 'updated_by'");
+    } catch (Throwable $e) { $updated_by_var = false; }
+
+    $mevcut = $setting_id > 0
+        ? $db->getRow("SELECT setting_id FROM sistem_ayarlari WHERE setting_id = ?", [$setting_id])
+        : null;
+
+    if (!$mevcut) {
+        $kayit_hatasi = 'Ayar bulunamadı.';
+    } else {
+        if ($updated_by_var) {
+            $db->Update("UPDATE sistem_ayarlari SET setting_value = ?, updated_by = ?, updated_at = NOW() WHERE setting_id = ?",
+                [$setting_value, $_SESSION['admin_id'] ?? null, $setting_id]);
+        } else {
+            $db->Update("UPDATE sistem_ayarlari SET setting_value = ?, updated_at = NOW() WHERE setting_id = ?",
+                [$setting_value, $setting_id]);
+        }
+        // Değer gerçekten yazıldı mı? (aynı değer girildiyse de eşleşir)
+        $kontrol = $db->getRow("SELECT setting_value FROM sistem_ayarlari WHERE setting_id = ?", [$setting_id]);
+        if (!$kontrol || (string)$kontrol->setting_value !== $setting_value) {
+            $kayit_hatasi = 'Ayar kaydedilemedi. Veritabanı hatası: ' . ($db->getLastError() ?: 'bilinmiyor');
+        }
+    }
+
+    if ($kayit_hatasi === '') {
+        echo "<script>window.location.href='settings/general.php?success=1';</script>";
+        exit;
+    }
 }
 
 $query = "SELECT * FROM sistem_ayarlari ORDER BY category ASC, setting_key ASC";
@@ -55,6 +85,10 @@ if($settings) {
         <!-- Content -->
         <div id="kt_app_content" class="app-content flex-column-fluid">
             <div id="kt_app_content_container" class="app-container container-fluid">
+
+                <?php if ($kayit_hatasi !== ''): ?>
+                <div class="alert alert-danger p-5 mb-5"><?= htmlspecialchars($kayit_hatasi) ?></div>
+                <?php endif; ?>
 
                 <?php if(isset($_GET['success'])): ?>
                 <div class="alert alert-success d-flex align-items-center p-5 mb-5">
