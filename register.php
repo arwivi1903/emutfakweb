@@ -370,7 +370,7 @@ $iller = $stmtCities->fetchAll(PDO::FETCH_ASSOC);
     <link href="p/dist/assets/plugins/global/plugins.bundle.css" rel="stylesheet" type="text/css" />
     <link href="p/dist/assets/css/style.bundle.css" rel="stylesheet" type="text/css" />
     <!-- New Custom Redesign CSS -->
-    <link href="assets/css/style.css?v=6" rel="stylesheet" type="text/css" />
+    <link href="assets/css/style.css?v=8" rel="stylesheet" type="text/css" />
 </head>
 <body id="kt_body" class="app-blank">
     <!--begin::Root-->
@@ -434,7 +434,7 @@ $iller = $stmtCities->fetchAll(PDO::FETCH_ASSOC);
                     <h1 class="text-white fw-bolder fs-2hx fs-lg-3x mb-6">
                         Bulut ERP <span class="text-gradient-primary">30 Günlük Deneme</span> Sürümü
                     </h1>
-                    <div class="fw-medium fs-4 text-gray-400 mb-10 mx-auto" style="max-width: 600px;">
+                    <div class="fw-medium fs-4 text-gray-400 mb-10 mx-auto" style="max-width: 800px;">
                         Kredi kartı gerekmeden, hiçbir ücret ödemeden tüm özellikleri hemen kullanmaya başlayın.
                     </div>
                 </div>

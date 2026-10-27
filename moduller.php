@@ -28,7 +28,7 @@ try {
     <link href="p/dist/assets/plugins/global/plugins.bundle.css" rel="stylesheet" type="text/css" />
     <link href="p/dist/assets/css/style.bundle.css" rel="stylesheet" type="text/css" />
     <!-- New Custom Redesign CSS -->
-    <link href="assets/css/style.css?v=6" rel="stylesheet" type="text/css" />
+    <link href="assets/css/style.css?v=8" rel="stylesheet" type="text/css" />
 </head>
 <body id="kt_body" class="app-blank">
     <!--begin::Root-->
@@ -85,14 +85,14 @@ try {
         <!--end::Header-->
 
         <!--begin::Hero-->
-        <div class="hero-section text-center">
+        <div class="hero-section hero-compact text-center">
             <div class="hero-glow-1"></div>
             <div class="container-xxl position-relative z-index-2">
                 <div class="mb-5 animate-fade-in-up">
                     <h1 class="text-white fw-bolder fs-2hx fs-lg-3x mb-6">
                         Prolyn <span class="text-gradient-primary">Modülleri</span>
                     </h1>
-                    <div class="fw-medium fs-4 text-gray-400 mb-10 mx-auto" style="max-width: 600px;">
+                    <div class="fw-medium fs-4 text-gray-400 mb-10 mx-auto" style="max-width: 800px;">
                         İşletmenizin tüm ihtiyaçlarını tek bir platformda birleştiren, esnek ve güçlü çözümler.
                     </div>
                 </div>

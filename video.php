@@ -27,7 +27,7 @@ try {
     <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Inter:300,400,500,600,700,800" />
     <link href="p/dist/assets/plugins/global/plugins.bundle.css" rel="stylesheet" type="text/css" />
     <link href="p/dist/assets/css/style.bundle.css" rel="stylesheet" type="text/css" />
-    <link href="assets/css/style.css?v=6" rel="stylesheet" type="text/css" />
+    <link href="assets/css/style.css?v=8" rel="stylesheet" type="text/css" />
     <style>
         .video-thumb { position: relative; cursor: pointer; overflow: hidden; border-radius: 1rem 1rem 0 0; aspect-ratio: 16/9; background: #000; }
         .video-thumb img { width: 100%; height: 100%; object-fit: cover; transition: transform .3s ease; }
@@ -72,12 +72,12 @@ try {
         <!--end::Header-->
 
         <!--begin::Hero-->
-        <div class="hero-section text-center">
+        <div class="hero-section hero-compact text-center">
             <div class="hero-glow-1"></div>
             <div class="container-xxl position-relative z-index-2">
                 <div class="mb-5 animate-fade-in-up">
                     <h1 class="text-white fw-bolder fs-2hx fs-lg-3x mb-6">Prolyn <span class="text-gradient-primary">Videolar</span></h1>
-                    <div class="fw-medium fs-4 text-gray-400 mb-10 mx-auto" style="max-width: 600px;">
+                    <div class="fw-medium fs-4 text-gray-400 mb-10 mx-auto" style="max-width: 800px;">
                         Tanıtım ve eğitim videolarımızı
                         <a href="https://www.youtube.com/@echoLabs2" target="_blank" class="text-primary text-hover-primary">YouTube kanalımızdan</a>
                         izleyebilirsiniz.

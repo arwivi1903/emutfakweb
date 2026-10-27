@@ -80,7 +80,7 @@ foreach ($packages as $pk) {
     <link href="p/dist/assets/plugins/global/plugins.bundle.css" rel="stylesheet" type="text/css" />
     <link href="p/dist/assets/css/style.bundle.css" rel="stylesheet" type="text/css" />
     <!-- New Custom Redesign CSS -->
-    <link href="assets/css/style.css?v=6" rel="stylesheet" type="text/css" />
+    <link href="assets/css/style.css?v=9" rel="stylesheet" type="text/css" />
 <style>
 /* ── Aylık / Yıllık periyot seçimi ─────────────────────────────── */
 .py-periyot-sar{display:flex;flex-direction:column;align-items:center;gap:12px;margin-bottom:44px;}
@@ -172,14 +172,14 @@ foreach ($packages as $pk) {
 
         
         <!--begin::Hero-->
-        <div class="hero-section text-center">
+        <div class="hero-section hero-compact text-center">
             <div class="hero-glow-1"></div>
             <div class="container-xxl position-relative z-index-2">
                 <div class="mb-5 animate-fade-in-up">
                     <h1 class="text-white fw-bolder fs-2hx fs-lg-3x mb-6">
                         Sade ve Şeffaf <span class="text-gradient-primary">Fiyatlandırma</span>
                     </h1>
-                    <div class="fw-medium fs-4 text-gray-400 mb-10 mx-auto" style="max-width: 600px;">
+                    <div class="fw-medium fs-4 text-gray-400 mb-10 mx-auto" style="max-width: 800px;">
                         İşletmenizin ölçeğine en uygun planı seçin. Gizli ücret yok, sürpriz maliyetler yok.
                     </div>
                 </div>
@@ -190,26 +190,6 @@ foreach ($packages as $pk) {
         <!--begin::Pricing-->
         <div class="py-10 mb-20">
             <div class="container-xxl">
-
-                <!-- Aylık / Yıllık periyot seçimi -->
-                <div class="py-periyot-sar">
-                    <div class="py-periyot" id="pyPeriyot">
-                        <span class="py-periyot-kaydirak" id="pyKaydirak"></span>
-                        <button type="button" class="py-periyot-btn aktif" data-periyot="aylik">Aylık</button>
-                        <button type="button" class="py-periyot-btn" data-periyot="yillik">
-                            Yıllık
-                            <?php if ($enYuksekIndirim > 0): ?>
-                            <span class="py-rozet">%<?php echo (int)$enYuksekIndirim; ?> indirim</span>
-                            <?php endif; ?>
-                        </button>
-                    </div>
-                    <?php if ($enYuksekIndirim > 0): ?>
-                    <div class="py-periyot-not">
-                        Yıllık peşin ödemede <strong class="text-success">%<?php echo (int)$enYuksekIndirim; ?></strong> avantaj
-                        &mdash; yılda yaklaşık <strong class="text-success"><?php echo rtrim(rtrim(number_format(12 * $enYuksekIndirim / 100, 1, ',', '.'), '0'), ','); ?> ay</strong> bedava.
-                    </div>
-                    <?php endif; ?>
-                </div>
 
                 <div class="row g-10 justify-content-center">
                     <?php if(empty($packages)): ?>
@@ -243,38 +223,26 @@ foreach ($packages as $pk) {
                                         $yillikAylik  = $aylikFiyat * (1 - $indirim / 100);   // yıllıkta aya düşen
                                         $yillikToplam = $yillikAylik * 12;
                                         $yillikKazanc = ($aylikFiyat * 12) - $yillikToplam;
+                                        $yillikToplamTam = round($yillikToplam / 50) * 50;   // yıllık peşin: en yakın 50 ₺'ye yuvarlanır
+                                        $aylikYaklasik   = round($yillikToplamTam / 12 / 10) * 10;  // aylık karşılığı: en yakın 10 ₺
                                     ?>
                                     <div class="py-fiyat-kutu mb-10">
-                                        <div class="d-flex align-items-end">
+                                        <div class="d-flex align-items-end flex-wrap">
                                             <span class="fs-3 fw-bold text-gray-500 me-1 mb-2">₺</span>
-                                            <span class="py-fiyat fw-bolder text-white me-2"
-                                                  data-aylik="<?php echo number_format($aylikFiyat, 2, ',', '.'); ?>"
-                                                  data-yillik="<?php echo number_format($yillikAylik, 2, ',', '.'); ?>"><?php echo number_format($aylikFiyat, 2, ',', '.'); ?></span>
-                                            <span class="fs-6 fw-bold text-gray-500 mb-2">/ ay</span>
+                                            <span class="py-fiyat fw-bolder text-white me-2"><?php echo number_format($yillikToplamTam, 0, ',', '.'); ?></span>
+                                            <span class="fs-6 fw-bold text-gray-500 mb-2">/ YIL</span>
                                         </div>
-
-                                        <!-- Aylık seçiliyken -->
-                                        <div class="py-not py-aylik-not">
-                                            <span class="text-gray-500">Aylık ödeme &middot; taahhüt yok</span>
-                                        </div>
-
-                                        <!-- Yıllık seçiliyken -->
-                                        <div class="py-not py-yillik-not">
+                                        <div class="py-not">
+                                            <span class="text-gray-300 fw-semibold">Aylık &asymp; ₺<?php echo number_format($aylikYaklasik, 0, ',', '.'); ?></span>
                                             <?php if ($indirim > 0): ?>
-                                            <div class="d-flex align-items-center flex-wrap gap-2 mb-1">
-                                                <span class="text-gray-500 text-decoration-line-through"><?php echo number_format($aylikFiyat, 2, ',', '.'); ?> ₺</span>
-                                                <span class="py-rozet-yesil">%<?php echo $indirim; ?> indirim</span>
+                                            <div class="d-flex align-items-center flex-wrap gap-2 mt-2">
+                                                <span class="text-gray-500 text-decoration-line-through">₺<?php echo number_format($aylikFiyat * 12, 0, ',', '.'); ?></span>
+                                                <span class="py-rozet-yesil">%<?php echo $indirim; ?> yıllık indirim</span>
                                             </div>
-                                            <span class="text-gray-400">
-                                                Yıllık <strong class="text-white"><?php echo number_format($yillikToplam, 2, ',', '.'); ?> ₺</strong> peşin
-                                                &middot; <span class="text-success">yılda <?php echo number_format($yillikKazanc, 2, ',', '.'); ?> ₺ tasarruf</span>
-                                            </span>
-                                            <?php else: ?>
-                                            <span class="text-gray-400">Yıllık <strong class="text-white"><?php echo number_format($aylikFiyat * 12, 2, ',', '.'); ?> ₺</strong> peşin</span>
                                             <?php endif; ?>
                                         </div>
                                     </div>
-                                    
+
                                     <ul class="check-list list-unstyled d-flex flex-column mb-10">
                                         <li>
                                             <i class="ki-duotone ki-check-circle"></i>
@@ -308,7 +276,7 @@ foreach ($packages as $pk) {
                                         </li>
                                     </ul>
                                     
-                                    <a href="register.php?plan=<?php echo urlencode($planCode); ?>" data-py-kayit="<?php echo urlencode($planCode); ?>" class="btn w-100 py-4 fs-5 <?php echo $isPopular ? 'btn-primary-glow' : 'btn-light-primary'; ?>">
+                                    <a href="register.php?plan=<?php echo urlencode($planCode); ?>&amp;periyot=yillik" class="btn w-100 py-4 fs-5 <?php echo $isPopular ? 'btn-primary-glow' : 'btn-light-primary'; ?>">
                                         Hemen Başla
                                     </a>
                                 </div>
@@ -318,6 +286,11 @@ foreach ($packages as $pk) {
                         <?php endforeach; ?>
                     <?php endif; ?>
                 </div>
+
+                <p class="text-center text-gray-400 fs-6 mt-12 mb-0">
+                    Belirtilen fiyatlara %20 KDV dahildir. Farklı bir ihtiyacınız varsa
+                    <a href="contact.php" class="text-primary fw-semibold">bize ulaşın</a>.
+                </p>
             </div>
         </div>
         <!--end::Pricing-->
@@ -404,72 +377,5 @@ foreach ($packages as $pk) {
     <!--end::Global Javascript Bundle-->
 
 <?php require __DIR__ . '/partials/fab.php'; ?>
-<script>
-/* Aylık / Yıllık periyot seçimi.
-   Kaydırak seçili düğmenin üzerine oturur; fiyatlar kısa bir sönümlemeyle
-   değişir; kayıt bağlantısına ?periyot=yillik eklenir. */
-(function () {
-    var kutu = document.getElementById('pyPeriyot');
-    if (!kutu) { return; }
-
-    var kaydirak = document.getElementById('pyKaydirak');
-    var butonlar = kutu.querySelectorAll('.py-periyot-btn');
-
-    function kaydiragiKonumla() {
-        var aktif = kutu.querySelector('.py-periyot-btn.aktif');
-        if (!aktif || !kaydirak) { return; }
-        kaydirak.style.width = aktif.offsetWidth + 'px';
-        kaydirak.style.left  = aktif.offsetLeft + 'px';
-    }
-
-    function periyotSec(periyot) {
-        var yillikMi = (periyot === 'yillik');
-
-        butonlar.forEach(function (b) {
-            b.classList.toggle('aktif', b.dataset.periyot === periyot);
-        });
-        kaydiragiKonumla();
-
-        // Fiyatları kısa bir sönümlemeyle değiştir
-        var fiyatlar = document.querySelectorAll('.py-fiyat');
-        fiyatlar.forEach(function (el) { el.classList.add('py-gecis'); });
-        setTimeout(function () {
-            fiyatlar.forEach(function (el) {
-                el.textContent = yillikMi ? el.dataset.yillik : el.dataset.aylik;
-                el.classList.remove('py-gecis');
-            });
-        }, 130);
-
-        document.querySelectorAll('.py-yillik-not').forEach(function (el) {
-            el.style.display = yillikMi ? 'block' : 'none';
-        });
-        document.querySelectorAll('.py-aylik-not').forEach(function (el) {
-            el.style.display = yillikMi ? 'none' : 'block';
-        });
-        document.querySelectorAll('[data-py-kayit]').forEach(function (a) {
-            a.href = 'register.php?plan=' + a.dataset.pyKayit + (yillikMi ? '&periyot=yillik' : '');
-        });
-
-        try {
-            var u = new URL(window.location.href);
-            if (yillikMi) { u.searchParams.set('periyot', 'yillik'); }
-            else { u.searchParams.delete('periyot'); }
-            history.replaceState(null, '', u.toString());
-        } catch (e) { /* eski tarayıcı — adres güncellenmese de olur */ }
-    }
-
-    butonlar.forEach(function (b) {
-        b.addEventListener('click', function () { periyotSec(b.dataset.periyot); });
-    });
-
-    window.addEventListener('resize', kaydiragiKonumla);
-    window.addEventListener('load', kaydiragiKonumla);
-    kaydiragiKonumla();
-
-    if (new URLSearchParams(window.location.search).get('periyot') === 'yillik') {
-        periyotSec('yillik');
-    }
-})();
-</script>
 </body>
 </html>

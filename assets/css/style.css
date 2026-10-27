@@ -619,3 +619,67 @@ a {
 .chart-col { position: relative; }
 .chart-col .chart-bar { position: relative; }
 .mock-caption { position: static; }
+
+/* ===== Mobil menü (offcanvas) düzeltmesi: opak zemin, görünür linkler ===== */
+#mobileMenu.offcanvas {
+    z-index: 1060;
+    width: min(320px, 85vw) !important;
+    background: #0f141e !important;
+    background-image: none !important;
+    color: #fff;
+    border-left: 1px solid rgba(255, 255, 255, 0.08) !important;
+    visibility: hidden;
+}
+#mobileMenu.offcanvas.show,
+#mobileMenu.offcanvas.showing,
+#mobileMenu.offcanvas.hiding { visibility: visible; }
+#mobileMenu .offcanvas-header { display: flex !important; }
+#mobileMenu .offcanvas-body { display: block !important; overflow-y: auto; }
+#mobileMenu .nav { display: flex; flex-direction: column; flex-wrap: nowrap; }
+#mobileMenu .nav-link,
+#mobileMenu .nav-link i {
+    opacity: 1 !important;
+}
+#mobileMenu .nav-link {
+    display: block !important;
+    color: #fff !important;
+    padding: 0.85rem 0.5rem !important;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+    border-radius: 0;
+    transform: none;
+}
+#mobileMenu .nav-link:hover,
+#mobileMenu .nav-link:focus {
+    color: #a5b4fc !important;
+    background: rgba(255, 255, 255, 0.04);
+    transform: none;
+}
+#mobileMenu .btn-close { filter: invert(1) grayscale(1) brightness(2); opacity: .9; }
+.offcanvas-backdrop { z-index: 1055; }
+
+/* Hamburger ikonu: koyu zeminde beyaz çizgiler */
+.navbar-toggler {
+    border: 1px solid rgba(255, 255, 255, 0.35) !important;
+    padding: 0.4rem 0.6rem;
+}
+.navbar-toggler .navbar-toggler-icon {
+    background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 30 30'%3e%3cpath stroke='%23ffffff' stroke-linecap='round' stroke-miterlimit='10' stroke-width='2' d='M4 7h22M4 15h22M4 23h22'/%3e%3c/svg%3e") !important;
+}
+
+/* İç sayfa hero alanı: ana sayfaya göre daha kompakt */
+.hero-section.hero-compact { padding: 130px 0 10px 0 !important; }
+.hero-section.hero-compact .hero-glow-1 { opacity: .6; }
+.hero-section.hero-compact h1 { margin-bottom: 1rem !important; }
+.hero-section.hero-compact .fs-4.text-gray-400 { margin-bottom: 1.5rem !important; }
+@media (max-width: 991.98px) {
+    .hero-section.hero-compact { padding: 105px 0 5px 0 !important; }
+}
+
+/* Fiyat kartları: iç yazılar kenara yapışmasın */
+.pricing-card .card-header { padding: 2.25rem 2rem 0 2rem !important; }
+.pricing-card .card-body   { padding: 1.25rem 2rem 2rem 2rem !important; }
+.pricing-card .py-not .text-gray-300 { color: #cdd5df !important; }
+@media (max-width: 575.98px) {
+    .pricing-card .card-header { padding: 1.75rem 1.5rem 0 1.5rem !important; }
+    .pricing-card .card-body   { padding: 1rem 1.5rem 1.5rem 1.5rem !important; }
+}

@@ -66,7 +66,7 @@ $sayfaAciklama = 'Ölçü ve montaj randevuları, montaj ekipleri, eksik malzeme
     <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Inter:300,400,500,600,700,800" />
     <link href="p/dist/assets/plugins/global/plugins.bundle.css" rel="stylesheet" type="text/css" />
     <link href="p/dist/assets/css/style.bundle.css" rel="stylesheet" type="text/css" />
-    <link href="assets/css/style.css?v=7" rel="stylesheet" type="text/css" />
+    <link href="assets/css/style.css?v=8" rel="stylesheet" type="text/css" />
     <link href="assets/css/sektor.css?v=1" rel="stylesheet" type="text/css" />
 </head>
 <body id="kt_body" class="app-blank">

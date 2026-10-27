@@ -28,7 +28,7 @@ try {
     <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Inter:300,400,500,600,700,800" />
     <link href="p/dist/assets/plugins/global/plugins.bundle.css" rel="stylesheet" type="text/css" />
     <link href="p/dist/assets/css/style.bundle.css" rel="stylesheet" type="text/css" />
-    <link href="assets/css/style.css?v=7" rel="stylesheet" type="text/css" />
+    <link href="assets/css/style.css?v=8" rel="stylesheet" type="text/css" />
     <link href="assets/css/blog.css?v=1" rel="stylesheet" type="text/css" />
 </head>
 <body id="kt_body" class="app-blank">
@@ -65,12 +65,12 @@ try {
         <!--end::Header-->
 
         <!--begin::Hero-->
-        <div class="hero-section text-center">
+        <div class="hero-section hero-compact text-center">
             <div class="hero-glow-1"></div>
             <div class="container-xxl position-relative z-index-2">
                 <div class="mb-5 animate-fade-in-up">
                     <h1 class="text-white fw-bolder fs-2hx fs-lg-3x mb-6">Prolyn <span class="text-gradient-primary">Blog</span></h1>
-                    <div class="fw-medium fs-4 text-gray-400 mb-10 mx-auto" style="max-width: 600px;">
+                    <div class="fw-medium fs-4 text-gray-400 mb-10 mx-auto" style="max-width: 800px;">
                         Randevu, montaj, tahsilat ve ön muhasebe üzerine sahada işe yarayan rehberler.
                     </div>
                 </div>
