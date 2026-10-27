@@ -301,8 +301,10 @@ $logs = $db->getRows("
 <?php require_once __DIR__ . '/../config/footer.php'; ?>
 
 <script>
-document.querySelectorAll('.view-log-details').forEach(btn => {
-    btn.addEventListener('click', function() {
+document.addEventListener('click', function(ev) {
+    const btn = ev.target.closest('.view-log-details');
+    if (!btn) return;
+    (function() {
         const oldValStr = this.getAttribute('data-old');
         const newValStr = this.getAttribute('data-new');
         
@@ -340,6 +342,16 @@ document.querySelectorAll('.view-log-details').forEach(btn => {
         
         document.getElementById('log_details_body').innerHTML = html;
         new bootstrap.Modal(document.getElementById('kt_modal_log_details')).show();
-    });
+    }).call(btn);
+});
+
+document.addEventListener('DOMContentLoaded', function () {
+    <?php if (!empty($logs)): ?>
+    if (typeof window.initDataTable === 'function') {
+        window.initDataTable('#kt_logs_table', {
+            order: [[0, 'desc']]
+        });
+    }
+    <?php endif; ?>
 });
 </script>

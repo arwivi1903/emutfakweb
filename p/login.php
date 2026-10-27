@@ -265,9 +265,17 @@ if (isset($_GET['islem'])) {
 
                                         <div class="fv-row mb-3">
                                             <label class="form-label fw-bold text-white fs-6 mb-2">Şifre</label>
-                                            <input type="password" name="password"
-                                                class="form-control form-control-solid form-control-lg border-0 prolyn-auth-input"
-                                                placeholder="Şifrenizi giriniz" required autocomplete="off" />
+                                            <div class="position-relative">
+                                                <input type="password" name="password" id="loginPassword"
+                                                    class="form-control form-control-solid form-control-lg border-0 prolyn-auth-input pe-12"
+                                                    placeholder="Şifrenizi giriniz" required autocomplete="off" />
+                                                <button type="button" id="togglePassword" aria-label="Şifreyi göster"
+                                                    class="btn btn-icon position-absolute top-50 end-0 translate-middle-y me-2 p-0 border-0 bg-transparent"
+                                                    style="width:36px;height:36px;color:#9aa0b4;">
+                                                    <svg id="pwEyeOn" xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+                                                    <svg id="pwEyeOff" style="display:none" xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17.94 17.94A10.94 10.94 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></svg>
+                                                </button>
+                                            </div>
                                         </div>
 
                                         <div class="d-grid mt-8">
@@ -308,6 +316,21 @@ if (isset($_GET['islem'])) {
     </script>
     <script src="dist/assets/plugins/global/plugins.bundle.js"></script>
     <script src="dist/assets/js/scripts.bundle.js"></script>
+    <script>
+    (function () {
+        var btn = document.getElementById('togglePassword');
+        var inp = document.getElementById('loginPassword');
+        if (!btn || !inp) return;
+        btn.addEventListener('click', function () {
+            var goster = inp.type === 'password';
+            inp.type = goster ? 'text' : 'password';
+            document.getElementById('pwEyeOn').style.display = goster ? 'none' : '';
+            document.getElementById('pwEyeOff').style.display = goster ? '' : 'none';
+            btn.setAttribute('aria-label', goster ? 'Şifreyi gizle' : 'Şifreyi göster');
+            inp.focus();
+        });
+    })();
+    </script>
 </body>
 
 </html>
