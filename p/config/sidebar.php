@@ -2,16 +2,22 @@
 // Sidebar Menu Structure - 13-Module Pro SaaS Layout
 $current_page = basename($_SERVER['PHP_SELF']);
 $current_dir = dirname($_SERVER['PHP_SELF']);
+$current_path = (string)$_SERVER['PHP_SELF'];
 
 function isActive($keyword) {
-    global $current_page, $current_dir;
-    return (strpos($current_page, $keyword) !== false || strpos($current_dir, $keyword) !== false) ? 'active' : '';
+    global $current_page, $current_dir, $current_path;
+    /* $current_page yalnızca dosya adı, $current_dir yalnızca klasördür; 'crm/feature_usage.php'
+       gibi "klasör/dosya" anahtarları ikisinde de geçmediği için hiç aktif olmuyordu.
+       Tam yola da bakılır. */
+    return (strpos($current_page, $keyword) !== false || strpos($current_dir, $keyword) !== false
+        || strpos($current_path, $keyword) !== false) ? 'active' : '';
 }
 
 function showAccordion($keywords) {
-    global $current_page, $current_dir;
+    global $current_page, $current_dir, $current_path;
     foreach ($keywords as $keyword) {
-        if (strpos($current_page, $keyword) !== false || strpos($current_dir, $keyword) !== false) return 'here show';
+        if (strpos($current_page, $keyword) !== false || strpos($current_dir, $keyword) !== false
+            || strpos($current_path, $keyword) !== false) return 'here show';
     }
     return '';
 }
@@ -92,7 +98,7 @@ try {
                     </div>
                 </div>
 
-                <div data-kt-menu-trigger="click" class="menu-item menu-accordion <?= showAccordion(['tenants.php', 'tenant_detail.php']) ?>">
+                <div data-kt-menu-trigger="click" class="menu-item menu-accordion <?= showAccordion(['tenants.php', 'tenant_detail.php', 'crm/feature_usage.php']) ?>">
                     <span class="menu-link">
                         <span class="menu-icon"><i class="ki-duotone ki-briefcase fs-2"><span class="path1"></span><span class="path2"></span></i></span>
                         <span class="menu-title">Kurum / Müşteriler</span>
