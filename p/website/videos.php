@@ -75,7 +75,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
                          VALUES (?, ?, ?, ?, ?, 'published', ?, NOW())",
                         [$videoId, $meta['title'], $meta['thumbnail_url'], $meta['author_name'], $maxOrder + 1, $_SESSION['admin_id'] ?? null]
                     );
-                    echo "<script>window.location.href='videos.php?success=1';</script>";
+                    echo "<script>window.location.href='website/videos.php?success=1';</script>";
                     exit;
                 }
             }
@@ -87,12 +87,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
         $status = ($_POST['status'] ?? 'published') === 'draft' ? 'draft' : 'published';
 
         $db->Update("UPDATE videolar SET title = ?, order_no = ?, status = ? WHERE id = ?", [$title, $order_no, $status, $id]);
-        echo "<script>window.location.href='videos.php?success=2';</script>";
+        echo "<script>window.location.href='website/videos.php?success=2';</script>";
         exit;
     } elseif ($_POST['action'] === 'delete_video') {
         $id = (int)$_POST['id'];
         $db->Delete("DELETE FROM videolar WHERE id = ?", [$id]);
-        echo "<script>window.location.href='videos.php?success=3';</script>";
+        echo "<script>window.location.href='website/videos.php?success=3';</script>";
         exit;
     }
 }

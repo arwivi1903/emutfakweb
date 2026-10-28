@@ -41,7 +41,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
         }
     }
     
-    echo "<script>window.location.href='seo.php?success=1';</script>";
+    echo "<script>window.location.href='website/seo.php?success=1';</script>";
     exit;
 }
 

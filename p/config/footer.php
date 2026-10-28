@@ -3284,18 +3284,9 @@ var hostUrl = "dist/assets/";
 </script>
 <script src="dist/assets/plugins/global/plugins.bundle.js"></script>
 <script src="dist/assets/js/scripts.bundle.js"></script>
+<script src="dist/assets/js/custom/panel-tema.js?v=1"></script>
 <script src="dist/assets/plugins/custom/fullcalendar/fullcalendar.bundle.js"></script>
-<script src="https://cdn.amcharts.com/lib/5/index.js"></script>
-<script src="https://cdn.amcharts.com/lib/5/xy.js"></script>
-<script src="https://cdn.amcharts.com/lib/5/percent.js"></script>
-<script src="https://cdn.amcharts.com/lib/5/radar.js"></script>
-<script src="https://cdn.amcharts.com/lib/5/themes/Animated.js"></script>
-<script src="https://cdn.amcharts.com/lib/5/map.js"></script>
-<script src="https://cdn.amcharts.com/lib/5/geodata/worldLow.js"></script>
-<script src="https://cdn.amcharts.com/lib/5/geodata/continentsLow.js"></script>
-<script src="https://cdn.amcharts.com/lib/5/geodata/usaLow.js"></script>
-<script src="https://cdn.amcharts.com/lib/5/geodata/worldTimeZonesLow.js"></script>
-<script src="https://cdn.amcharts.com/lib/5/geodata/worldTimeZoneAreasLow.js"></script>
+<?php /* amCharts (11 harici CDN betiği) kaldırıldı: panelde kullanılmıyor (yalnızca Metronic demo widget kaynaklarında geçiyor) ve site CSP'si (script-src) bu adreslere zaten izin vermiyor; her sayfada 11 engellenen istek ve konsol hatası üretiyordu. Grafik gerekirse CSP'ye ekleyip yerel kopyadan yükleyin. */ ?>
 <script src="dist/assets/plugins/custom/datatables/datatables.bundle.js"></script>
 <script>
 // Reusable DataTable initializer
@@ -3308,7 +3299,15 @@ window.initDataTable = function(selector, opts) {
     var defaults = {
         pageLength: 25,
         lengthMenu: [10, 25, 50, 100],
-        language: { url: 'https://cdn.datatables.net/plug-ins/1.13.6/i18n/tr.json' }
+        /* Türkçe metinler yerelde: harici tr.json CSP (default-src 'self') tarafından engelleniyordu */
+        language: {
+            decimal: ',', thousands: '.',
+            search: 'Ara:', lengthMenu: 'Sayfada _MENU_ kayıt göster',
+            info: '_TOTAL_ kayıttan _START_ - _END_ arası gösteriliyor', infoEmpty: 'Kayıt yok',
+            infoFiltered: '(_MAX_ kayıt içinden bulunan)', zeroRecords: 'Eşleşen kayıt bulunamadı',
+            emptyTable: 'Tabloda veri yok', loadingRecords: 'Yükleniyor...', processing: 'İşleniyor...',
+            paginate: { first: 'İlk', previous: 'Önceki', next: 'Sonraki', last: 'Son' }
+        }
     };
     $table.DataTable($.extend(true, {}, defaults, opts || {}));
 };

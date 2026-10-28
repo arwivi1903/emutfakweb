@@ -10,38 +10,41 @@
  *  - Bekleyen sayılar "(3)" metni yerine rozet; grup kapalıyken de rozet görünür (içinde bekleyen iş var).
  *  - Menü veri olarak tanımlandı; yeni sayfa eklemek tek satır.
  * NOT: Menüde göstermek/gizlemek yetkilendirme DEĞİLDİR; her sayfa kendi yetki kontrolünü yapmaya devam eder.
+ * DEĞİŞKEN ADLARI: sayfa kodundan (ör. $e kapanışı, $a, $sql) sızıp onları ezmesin diye hepsi $sb önekli.
+ *   (Eskiden foreach ... as $e, sayfadaki $e closure'unu ezip messages/lead_templates'i boş bırakıyordu.)
  * Bağlantılar header.php'deki mevcut yapıya göre köke göre görecelidir (değiştirilmedi).
  */
 $sbPath = (string)($_SERVER['PHP_SELF'] ?? '');
 
 /** Bağlantı bu sayfa mı? Sorgu parametresi tanımlıysa o da eşleşmeli (örn. Bugün Takip). */
-function sbAktifMi(array $oge): bool {
+function sbAktifMi(array $sbOge): bool {
     global $sbPath;
-    $yol = strtok($oge['href'], '?');
+    $yol = strtok($sbOge['href'], '?');
     $son = '/' . ltrim($yol, '/');
     if (substr($sbPath, -strlen($son)) !== $son) { return false; }
-    if (!empty($oge['q'])) {
-        foreach ($oge['q'] as $k => $v) { if (($_GET[$k] ?? null) !== $v) { return false; } }
+    if (!empty($sbOge['q'])) {
+        foreach ($sbOge['q'] as $k => $v) { if (($_GET[$k] ?? null) !== $v) { return false; } }
         return true;
     }
     // Sorgu parametreli kardeş (Bugün Takip) açıkken ana liste aktif görünmesin
-    return empty($oge['digerQ']) || empty($_GET[$oge['digerQ']]);
+    return empty($sbOge['digerQ']) || empty($_GET[$sbOge['digerQ']]);
 }
 
 // Bekleyen iş sayaçları (tablo yoksa veya hata olursa 0: menü hiçbir zaman sayfayı bozmaz)
-$sbSay = ['mesaj' => 0, 'sifreTalep' => 0, 'sifreToken' => 0, 'mailKuyruk' => 0];
+$sbSay = ['mesaj' => 0, 'destek' => 0, 'sifreTalep' => 0, 'sifreToken' => 0, 'mailKuyruk' => 0];
 $sbSor = [
     'mesaj'      => ['iletisim_mesajlari', "SELECT COUNT(*) FROM iletisim_mesajlari WHERE status = 'new'"],
+    'destek'     => ['destek_talepleri', "SELECT COUNT(*) FROM destek_talepleri WHERE del_status = 1 AND status IN ('new', 'open', 'in_progress')"],
     'sifreTalep' => ['sifre_sifirlama_talepleri', "SELECT COUNT(*) FROM sifre_sifirlama_talepleri WHERE request_status IN ('pending','in_review','matched')"],
     'sifreToken' => ['sifre_sifirlama', "SELECT COUNT(*) FROM sifre_sifirlama WHERE used = 0 AND expires_at >= NOW()"],
     'mailKuyruk' => ['mail_kuyrugu', "SELECT COUNT(*) FROM mail_kuyrugu WHERE status IN ('pending','queued')"],
 ];
-foreach ($sbSor as $anahtar => [$tablo, $sql]) {
+foreach ($sbSor as $sbAnahtar => [$sbTablo, $sbSql]) {
     try {
-        if (isset($db) && method_exists($db, 'tableExists') && $db->tableExists($tablo)) {
-            $sbSay[$anahtar] = (int)$db->getColumn($sql);
+        if (isset($db) && method_exists($db, 'tableExists') && $db->tableExists($sbTablo)) {
+            $sbSay[$sbAnahtar] = (int)$db->getColumn($sbSql);
         }
-    } catch (Throwable $e) { $sbSay[$anahtar] = 0; }
+    } catch (Throwable $sbE) { $sbSay[$sbAnahtar] = 0; }
 }
 
 // ikon: ki-duotone adı + path sayısı (Metronic duotone ikonları için gerekli)
@@ -140,8 +143,8 @@ function sbIkon(array $ikon): string {
     for ($i = 1; $i <= (int)$ikon[1]; $i++) { $p .= '<span class="path' . $i . '"></span>'; }
     return '<span class="menu-icon"><i class="ki-duotone ki-' . htmlspecialchars($ikon[0], ENT_QUOTES, 'UTF-8') . ' fs-2">' . $p . '</i></span>';
 }
-function sbRozet(?string $anahtar, string $renk, int $sayi): string {
-    if (!$anahtar || $sayi < 1) { return ''; }
+function sbRozet(?string $sbAnahtar, string $renk, int $sayi): string {
+    if (!$sbAnahtar || $sayi < 1) { return ''; }
     return '<span class="menu-badge"><span class="badge badge-' . htmlspecialchars($renk, ENT_QUOTES, 'UTF-8')
         . ' badge-circle fw-bold fs-8">' . ($sayi > 99 ? '99+' : $sayi) . '</span></span>';
 }
@@ -153,44 +156,71 @@ function sbH(string $s): string { return htmlspecialchars($s, ENT_QUOTES, 'UTF-8
             data-kt-scroll-activate="true" data-kt-scroll-height="auto"
             data-kt-scroll-dependencies="#kt_app_sidebar_logo, #kt_app_sidebar_footer"
             data-kt-scroll-wrappers="#kt_app_sidebar_menu" data-kt-scroll-offset="5px" data-kt-scroll-save-state="true">
+<?php
+// Üst blok: bekleyen işler (yalnızca >0 olanlar) + menüde ara. Bağlantılar menüdekilerle aynıdır.
+$sbBekleyen = [
+    ['mesaj',       'crm/messages.php',                'Mesaj',         ''],
+    ['destek',      'crm/tickets.php',                 'Destek',        'pl-uyari'],
+    ['sifreTalep',  'settings/password_reset.php',     'Şifre talebi',  'pl-kirmizi'],
+    ['mailKuyruk',  'settings/email_queue.php',        'Mail kuyruğu',  'pl-uyari'],
+];
+$sbBekleyenVar = false;
+foreach ($sbBekleyen as $sbB) { if (($sbSay[$sbB[0]] ?? 0) > 0) { $sbBekleyenVar = true; } }
+?>
+            <div class="pl-sb-ust">
+                <div class="pl-sb-ara" role="search">
+                    <i class="ki-duotone ki-magnifier" aria-hidden="true"><span class="path1"></span><span class="path2"></span></i>
+                    <input type="search" id="plSbAra" placeholder="Menüde ara" autocomplete="off" aria-label="Menüde ara" />
+                </div>
+                <?php if ($sbBekleyenVar): ?>
+                <div class="pl-sb-bekleyen" aria-label="Bekleyen işler">
+                    <?php foreach ($sbBekleyen as $sbB): $sbN = (int)($sbSay[$sbB[0]] ?? 0); if ($sbN < 1) { continue; } ?>
+                    <a href="<?= sbH($sbB[1]) ?>" class="<?= sbH($sbB[3]) ?>" title="<?= sbH($sbB[2]) ?>: <?= $sbN ?> bekliyor"><b><?= $sbN > 99 ? '99+' : $sbN ?></b><?= sbH($sbB[2]) ?></a>
+                    <?php endforeach; ?>
+                </div>
+                <?php else: ?>
+                <div class="pl-sb-temiz"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M8 12.5l3 3 5-6"/></svg>Bekleyen iş yok</div>
+                <?php endif; ?>
+            </div>
+            <div class="pl-sb-bos" id="plSbBos">Eşleşen menü bulunamadı.</div>
             <div class="menu menu-column menu-rounded menu-sub-indention fw-semibold fs-6" id="kt_app_sidebar_menu"
                 data-kt-menu="true" data-kt-menu-expand="false">
-<?php foreach ($sbMenu as $oge): ?>
-<?php if (isset($oge['bolum'])): ?>
+<?php foreach ($sbMenu as $sbOge): ?>
+<?php if (isset($sbOge['bolum'])): ?>
                 <div class="menu-item pt-5">
-                    <div class="menu-content"><span class="menu-heading fw-bold text-uppercase fs-7"><?= sbH($oge['bolum']) ?></span></div>
+                    <div class="menu-content"><span class="menu-heading fw-bold text-uppercase fs-7"><?= sbH($sbOge['bolum']) ?></span></div>
                 </div>
-<?php elseif (isset($oge['alt'])): ?>
+<?php elseif (isset($sbOge['alt'])): ?>
 <?php
-    $acik = false; $toplam = 0; $rozetRenk = 'primary';
-    foreach ($oge['alt'] as $a) {
-        if (sbAktifMi($a)) { $acik = true; }
-        if (!empty($a['rozet'])) { $toplam += $sbSay[$a['rozet']] ?? 0; $rozetRenk = $a['rozetRenk'] ?? 'primary'; }
+    $sbAcik = false; $sbToplam = 0; $sbRozetRenk = 'primary';
+    foreach ($sbOge['alt'] as $sbA) {
+        if (sbAktifMi($sbA)) { $sbAcik = true; }
+        if (!empty($sbA['rozet'])) { $sbToplam += $sbSay[$sbA['rozet']] ?? 0; $sbRozetRenk = $sbA['rozetRenk'] ?? 'primary'; }
     }
 ?>
-                <div data-kt-menu-trigger="click" class="menu-item menu-accordion<?= $acik ? ' here show' : '' ?>">
+                <div data-kt-menu-trigger="click" class="menu-item menu-accordion<?= $sbAcik ? ' here show' : '' ?>">
                     <span class="menu-link">
-                        <?= sbIkon($oge['ikon']) ?>
-                        <span class="menu-title"><?= sbH($oge['baslik']) ?></span>
-                        <?php if ($toplam > 0 && !$acik): ?><?= sbRozet('x', $rozetRenk, $toplam) ?><?php endif; ?>
+                        <?= sbIkon($sbOge['ikon']) ?>
+                        <span class="menu-title"><?= sbH($sbOge['baslik']) ?></span>
+                        <?php if ($sbToplam > 0 && !$sbAcik): ?><?= sbRozet('x', $sbRozetRenk, $sbToplam) ?><?php endif; ?>
                         <span class="menu-arrow"></span>
                     </span>
                     <div class="menu-sub menu-sub-accordion">
-<?php foreach ($oge['alt'] as $a): if (!empty($a['gizli'])) { continue; } ?>
-                        <div class="menu-item"><a class="menu-link<?= sbAktifMi($a) ? ' active' : '' ?>" href="<?= sbH($a['href']) ?>"><span class="menu-bullet"><span class="bullet bullet-dot"></span></span><span class="menu-title"><?= sbH($a['baslik']) ?></span><?= sbRozet($a['rozet'] ?? null, $a['rozetRenk'] ?? 'primary', $sbSay[$a['rozet'] ?? ''] ?? 0) ?></a></div>
+<?php foreach ($sbOge['alt'] as $sbA): if (!empty($sbA['gizli'])) { continue; } ?>
+                        <div class="menu-item"><a class="menu-link<?= sbAktifMi($sbA) ? ' active' : '' ?>" href="<?= sbH($sbA['href']) ?>"><span class="menu-bullet"><span class="bullet bullet-dot"></span></span><span class="menu-title"><?= sbH($sbA['baslik']) ?></span><?= sbRozet($sbA['rozet'] ?? null, $sbA['rozetRenk'] ?? 'primary', $sbSay[$sbA['rozet'] ?? ''] ?? 0) ?></a></div>
 <?php endforeach; ?>
                     </div>
                 </div>
 <?php else: ?>
 <?php
-    $aktif = sbAktifMi($oge);
-    foreach (($oge['ek'] ?? []) as $e) { if (sbAktifMi(['href' => $e])) { $aktif = true; } }
+    $sbAktif = sbAktifMi($sbOge);
+    foreach (($sbOge['ek'] ?? []) as $sbE) { if (sbAktifMi(['href' => $sbE])) { $sbAktif = true; } }
 ?>
                 <div class="menu-item">
-                    <a class="menu-link<?= $aktif ? ' active' : '' ?>" href="<?= sbH($oge['href']) ?>">
-                        <?= sbIkon($oge['ikon']) ?>
-                        <span class="menu-title"><?= sbH($oge['baslik']) ?></span>
-                        <?= sbRozet($oge['rozet'] ?? null, $oge['rozetRenk'] ?? 'primary', $sbSay[$oge['rozet'] ?? ''] ?? 0) ?>
+                    <a class="menu-link<?= $sbAktif ? ' active' : '' ?>" href="<?= sbH($sbOge['href']) ?>">
+                        <?= sbIkon($sbOge['ikon']) ?>
+                        <span class="menu-title"><?= sbH($sbOge['baslik']) ?></span>
+                        <?= sbRozet($sbOge['rozet'] ?? null, $sbOge['rozetRenk'] ?? 'primary', $sbSay[$sbOge['rozet'] ?? ''] ?? 0) ?>
                     </a>
                 </div>
 <?php endif; ?>

@@ -381,6 +381,12 @@ $iller = $stmtCities->fetchAll(PDO::FETCH_ASSOC);
     <!-- New Custom Redesign CSS -->
     <link href="assets/css/style.css?v=12" rel="stylesheet" type="text/css" />
     <link href="assets/css/tema.css?v=2" rel="stylesheet" type="text/css" />
+    <style>
+    /* Şifre göster/gizle düğmesi */
+    .sifre-goz { position:absolute; top:50%; right:.5rem; transform:translateY(-50%); width:38px; height:38px; display:inline-flex; align-items:center; justify-content:center; border:0; background:transparent; color:var(--pw-muted, #6b7a99); border-radius:10px; cursor:pointer; }
+    .sifre-goz:hover { color:var(--pw-ink, #1b2a4e); background:rgba(127,127,127,.12); }
+    .sifre-goz:focus-visible { outline:2px solid var(--pw-primary, #2f5bea); outline-offset:1px; }
+    </style>
 </head>
 <body id="kt_body" class="app-blank">
     <!--begin::Root-->
@@ -611,7 +617,14 @@ $iller = $stmtCities->fetchAll(PDO::FETCH_ASSOC);
                                     
                                     <div class="mb-10">
                                         <label class="form-label fs-6 fw-semibold text-gray-300">Yönetici Giriş Şifresi <span class="text-danger">*</span></label>
-                                        <input type="password" name="admin_password" class="form-control form-control-lg glass-input" placeholder="En az 8 karakter (harf + rakam)" required minlength="8">
+                                        <div class="position-relative">
+                                            <input type="password" name="admin_password" id="admin_password" class="form-control form-control-lg glass-input pe-12" placeholder="En az 8 karakter (harf + rakam)" required minlength="8" autocomplete="new-password">
+                                            <!-- Şifreyi göster/gizle: klavyeyle de kullanılabilir, durum aria-pressed ile duyurulur -->
+                                            <button type="button" id="sifreGoster" class="sifre-goz" aria-label="Şifreyi göster" aria-pressed="false" title="Şifreyi göster">
+                                                <svg class="goz-ac" xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+                                                <svg class="goz-kapat" style="display:none" xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M17.94 17.94A10.94 10.94 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></svg>
+                                            </button>
+                                        </div>
                                     </div>
                                     
                                     <div class="mb-8">
@@ -738,5 +751,22 @@ document.addEventListener("DOMContentLoaded", function() {
 });
 </script>
 
+<script>
+// Şifre göster/gizle (yalnızca görünüm; değer sunucuya aynen gider)
+(function () {
+    var btn = document.getElementById('sifreGoster'), inp = document.getElementById('admin_password');
+    if (!btn || !inp) { return; }
+    btn.addEventListener('click', function () {
+        var goster = inp.type === 'password';
+        inp.type = goster ? 'text' : 'password';
+        btn.setAttribute('aria-pressed', goster ? 'true' : 'false');
+        btn.setAttribute('aria-label', goster ? 'Şifreyi gizle' : 'Şifreyi göster');
+        btn.title = goster ? 'Şifreyi gizle' : 'Şifreyi göster';
+        btn.querySelector('.goz-ac').style.display = goster ? 'none' : '';
+        btn.querySelector('.goz-kapat').style.display = goster ? '' : 'none';
+        inp.focus();
+    });
+})();
+</script>
 </body>
 </html>

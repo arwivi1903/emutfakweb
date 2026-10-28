@@ -1,13 +1,13 @@
 <?php 
-require_once '../../config/header.php'; 
-require_once '../../config/sidebar.php'; 
+require_once __DIR__ . '/../../config/header.php'; 
+require_once __DIR__ . '/../../config/sidebar.php'; 
 ?>
 <div class="app-main flex-column flex-row-fluid" id="kt_app_main">
     <div class="d-flex flex-column flex-column-fluid">
         <div id="kt_app_content" class="app-content flex-column-fluid">
             <div id="kt_app_content_container" class="app-container container-xxl">
 
-                <?php require_once 'account_header.php'; ?>
+                <?php require_once __DIR__ . '/account_header.php'; ?>
 
                 <div class="card mb-5 mb-xl-10" id="kt_profile_details_view">
                     <div class="card-header cursor-pointer">
@@ -64,5 +64,5 @@ require_once '../../config/sidebar.php';
         </div>
     </div>
     <?php 
-require_once '../../config/footer.php'; 
+require_once __DIR__ . '/../../config/footer.php'; 
 ?>

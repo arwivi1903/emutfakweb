@@ -11,7 +11,7 @@ require_once '../config/sidebar.php';
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['action'] === 'delete_post') {
     $id = (int)$_POST['id'];
     $db->Delete("DELETE FROM blog_yazilari WHERE id = ?", [$id]);
-    echo "<script>window.location.href='blog.php?success=3';</script>";
+    echo "<script>window.location.href='website/blog.php?success=3';</script>";
     exit;
 }
 

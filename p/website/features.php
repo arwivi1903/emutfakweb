@@ -19,7 +19,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
         $db->Insert("INSERT INTO website_features (title, description, icon, order_no, status, created_at) VALUES (?, ?, ?, ?, ?, NOW())", 
             [$title, $description, $icon, $order_no, $status]);
             
-        echo "<script>window.location.href='features.php?success=1';</script>";
+        echo "<script>window.location.href='website/features.php?success=1';</script>";
         exit;
     }
     elseif ($_POST['action'] === 'edit_feature') {
@@ -33,14 +33,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
         $db->Update("UPDATE website_features SET title = ?, description = ?, icon = ?, order_no = ?, status = ? WHERE id = ?", 
             [$title, $description, $icon, $order_no, $status, $id]);
             
-        echo "<script>window.location.href='features.php?success=2';</script>";
+        echo "<script>window.location.href='website/features.php?success=2';</script>";
         exit;
     }
     elseif ($_POST['action'] === 'delete_feature') {
         $id = (int)$_POST['id'];
         $db->Delete("DELETE FROM website_features WHERE id = ?", [$id]);
         
-        echo "<script>window.location.href='features.php?success=3';</script>";
+        echo "<script>window.location.href='website/features.php?success=3';</script>";
         exit;
     }
 }

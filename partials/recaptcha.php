@@ -45,7 +45,6 @@ function recaptcha_http_post(string $url, string $govde, string $tip): string|fa
         curl_setopt_array($ch, [CURLOPT_POST => true, CURLOPT_POSTFIELDS => $govde, CURLOPT_RETURNTRANSFER => true,
             CURLOPT_TIMEOUT => 6, CURLOPT_CONNECTTIMEOUT => 4, CURLOPT_HTTPHEADER => ['Content-Type: ' . $tip]]);
         $y = curl_exec($ch);
-        curl_close($ch);
         return $y;
     }
     $ctx = stream_context_create(['http' => ['method' => 'POST', 'header' => "Content-Type: {$tip}\r\n", 'content' => $govde, 'timeout' => 6, 'ignore_errors' => true]]);

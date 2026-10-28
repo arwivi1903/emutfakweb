@@ -138,12 +138,13 @@ try {
     <link href="dist/assets/plugins/global/plugins.bundle.css" rel="stylesheet" type="text/css" />
     <link href="dist/assets/css/style.bundle.css" rel="stylesheet" type="text/css" />
     <link href="dist/assets/css/custom/dashboard_custom.css" rel="stylesheet" type="text/css" />
+    <link href="dist/assets/css/custom/panel-tema.css?v=1" rel="stylesheet" type="text/css" />
     <script>
     // Click-jacking önlemi: Sitenin başka bir frame içinde yüklenmesini engeller. if (window.top != window.self) { window.top.location.replace(window.self.location.href); }
     </script>
 </head>
 
-<body id="kt_app_body" data-kt-app-layout="dark-sidebar" data-kt-app-header-fixed="true"
+<body id="kt_app_body" data-kt-app-layout="light-sidebar" data-kt-app-header-fixed="true"
     data-kt-app-sidebar-enabled="true" data-kt-app-sidebar-fixed="true" data-kt-app-sidebar-hoverable="true"
     data-kt-app-sidebar-push-header="true" data-kt-app-sidebar-push-toolbar="true"
     data-kt-app-sidebar-push-footer="true" data-kt-app-toolbar-enabled="true" class="app-default">
@@ -908,7 +909,7 @@ class="menu-link">
 
 <div class="menu-item p-0 m-0">
 
-<a href="dist/account/settings.html"
+<a href="dist/account/settings.php"
 class="menu-link">
 <span class="menu-title">Settings</span>
 </a>
@@ -3657,6 +3658,14 @@ target="_blank">
                             });
                             </script>
 
+                            <!-- Tema düğmesi (açık/koyu). Seçim tarayıcıda saklanır; varsayılan açık. -->
+                            <div class="app-navbar-item ms-1 ms-md-4">
+                                <button type="button" data-pl-tema class="btn btn-icon btn-custom btn-icon-muted btn-active-light btn-active-color-primary w-35px h-35px pl-tema-btn" title="Temayı değiştir (açık / koyu)" aria-label="Temayı değiştir">
+                                    <i class="ki-duotone ki-night-day theme-light-show fs-2"><span class="path1"></span><span class="path2"></span><span class="path3"></span><span class="path4"></span><span class="path5"></span><span class="path6"></span><span class="path7"></span><span class="path8"></span><span class="path9"></span><span class="path10"></span></i>
+                                    <i class="ki-duotone ki-moon theme-dark-show fs-2"><span class="path1"></span><span class="path2"></span></i>
+                                </button>
+                            </div>
+
                             <!-- Destek Talepleri -->
                             <div class="app-navbar-item ms-1 ms-md-4">
                                 <a href="crm/tickets.php" class="btn btn-icon btn-custom btn-icon-muted btn-active-light btn-active-color-primary w-35px h-35px position-relative" title="Destek Talepleri">
@@ -4045,8 +4054,10 @@ target="_blank">
                     data-kt-drawer-toggle="#kt_app_sidebar_mobile_toggle">
                     <div class="app-sidebar-logo px-6" id="kt_app_sidebar_logo">
                         <a href="index.php">
+                            <img alt="Prolyn" src="dist/logo/prolyn-logo-horizontal-sm.png"
+                                class="h-30px app-sidebar-logo-default theme-light-show" />
                             <img alt="Prolyn" src="dist/logo/prolyn-logo-horizontal-white-sm.png"
-                                class="h-30px app-sidebar-logo-default" />
+                                class="h-30px app-sidebar-logo-default theme-dark-show" />
                             <img alt="Prolyn" src="dist/logo/prolyn-icon.png"
                                 class="h-25px app-sidebar-logo-minimize" />
                         </a>

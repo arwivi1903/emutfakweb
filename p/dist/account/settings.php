@@ -1,12 +1,12 @@
 
 <?php 
-require_once '../../config/header.php'; 
-require_once '../../config/sidebar.php'; 
+require_once __DIR__ . '/../../config/header.php'; 
+require_once __DIR__ . '/../../config/sidebar.php'; 
 
 // Update logic
 $updateMsg = '';
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['full_name'])) {
-    require_once '../../classes/allClass.php';
+    require_once __DIR__ . '/../../classes/allClass.php';
     $db = new Database();
     
     $full_name = trim($_POST['full_name'] ?? '');
@@ -33,7 +33,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['full_name'])) {
         <div id="kt_app_content" class="app-content flex-column-fluid">
             <div id="kt_app_content_container" class="app-container container-xxl">
 
-                <?php require_once 'account_header.php'; ?>
+                <?php require_once __DIR__ . '/account_header.php'; ?>
 
                 <div class="card mb-5 mb-xl-10">
                     <?php if(!empty($updateMsg)) echo $updateMsg; ?>
@@ -208,4 +208,4 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['full_name'])) {
             </div>
         </div>
     </div>
-<?php require_once '../../config/footer.php'; ?>
+<?php require_once __DIR__ . '/../../config/footer.php'; ?>

@@ -139,22 +139,15 @@ try {
         <div id="kt_app_content" class="app-content flex-column-fluid">
             <div id="kt_app_content_container" class="app-container container-fluid">
                 
-                <!-- Welcome Banner -->
-                <div class="card card-flush border-0 mb-6" style="background: linear-gradient(135deg, #1e2129 0%, #14151a 100%); border: 1px solid rgba(255, 255, 255, 0.03) !important; box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);">
-                    <div class="card-body p-8 d-flex align-items-center justify-content-between">
+                <!-- Karşılama kartı: açık/koyu temaya uyar; sağdaki SVG animasyonlu (partials/ill_pano.php) -->
+                <div class="card card-flush pl-hero mb-6">
+                    <div class="card-body p-8 d-flex align-items-center justify-content-between gap-8">
                         <div>
-                            <h1 class="fw-bolder text-white mb-2">Hoş geldiniz, <?= htmlspecialchars($username) ?>!</h1>
-                            <p class="fs-6 text-gray-400 m-0">Prolyn SaaS altyapısı sorunsuz çalışıyor. Toplam <strong class="text-primary"><?= $totalTenants ?></strong> müşteri ve izole veritabanı aktif durumda.</p>
+                            <h1 class="fw-bolder mb-2">Hoş geldiniz, <?= htmlspecialchars($username) ?>!</h1>
+                            <p class="fs-6 m-0">Prolyn SaaS altyapısı sorunsuz çalışıyor. Toplam <strong class="text-primary"><?= $totalTenants ?></strong> müşteri ve izole veritabanı aktif durumda.</p>
                         </div>
-                        <div class="d-none d-md-block">
-                            <div class="symbol symbol-50px symbol-circle bg-light-primary bg-opacity-10 d-flex align-items-center justify-content-center" style="width: 50px; height: 50px;">
-                                <i class="ki-duotone ki-chart-simple-3 fs-2x text-primary">
-                                    <span class="path1"></span>
-                                    <span class="path2"></span>
-                                    <span class="path3"></span>
-                                    <span class="path4"></span>
-                                </i>
-                            </div>
+                        <div class="pl-hero-ill" aria-hidden="true">
+                            <?php require __DIR__ . '/partials/ill_pano.php'; ?>
                         </div>
                     </div>
                 </div>
@@ -255,7 +248,7 @@ try {
                             </div>
                             <div class="card-body pt-2">
                                 <?php if (!$sonMesajlar): ?>
-                                    <div class="text-center text-muted py-10">Henüz mesaj yok.</div>
+                                    <?php $bosMetin = 'Henüz mesaj yok.'; require __DIR__ . '/partials/ill_bos.php'; ?>
                                 <?php else: foreach ($sonMesajlar as $m): $yeni = $m['status'] === 'new'; ?>
                                     <a href="crm/messages.php?id=<?= (int)$m['id'] ?>" class="d-flex align-items-center py-4 border-bottom border-gray-200 text-decoration-none">
                                         <span class="bullet bullet-dot <?= $yeni ? 'bg-primary' : 'bg-gray-300' ?> h-10px w-10px me-4 flex-shrink-0"></span>

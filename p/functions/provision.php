@@ -18,6 +18,20 @@
 
 require_once __DIR__ . '/../../env.php';
 
+if (!function_exists('provision_env_or')) {
+    /**
+     * Anahtar .env'de BOŞ bile olsa (ör. "DB_ADMIN_USER=") yedek anahtara düşer.
+     * prolynweb_env() anahtar varsa boş string döndürür; bu yüzden eski kod,
+     * boş DB_ADMIN_USER/DB_ADMIN_PASS yüzünden ''@'localhost' ile bağlanmaya çalışıyordu.
+     */
+    function provision_env_or(string $key, string $fallbackKey, string $default = ''): string
+    {
+        $v = (string)prolynweb_env($key, '');
+        if ($v === '') { $v = (string)prolynweb_env($fallbackKey, $default); }
+        return $v;
+    }
+}
+
 if (!function_exists('provision_admin_pdo')) {
 
     /**
@@ -27,8 +41,8 @@ if (!function_exists('provision_admin_pdo')) {
     {
         $host = prolynweb_env('DB_HOST', '127.0.0.1');
         $port = prolynweb_env('DB_PORT', '3306');
-        $user = prolynweb_env('DB_ADMIN_USER', prolynweb_env('DB_USER', ''));
-        $pass = prolynweb_env('DB_ADMIN_PASS', prolynweb_env('DB_PASS', ''));
+        $user = provision_env_or('DB_ADMIN_USER', 'DB_USER');
+        $pass = provision_env_or('DB_ADMIN_PASS', 'DB_PASS');
 
         $dsn = "mysql:host={$host};port={$port};charset=utf8mb4";
         $pdo = new PDO($dsn, $user, $pass, [
@@ -88,7 +102,6 @@ if (!function_exists('provision_admin_pdo')) {
             }
             $body = curl_exec($ch);
             $err  = curl_error($ch);
-            curl_close($ch);
             if ($body === false) { throw new Exception('cPanel bağlantı hatası: ' . $err); }
             return $body;
         };
@@ -190,8 +203,8 @@ if (!function_exists('provision_admin_pdo')) {
     {
         $host       = prolynweb_env('DB_HOST', '127.0.0.1');
         $port       = (string)prolynweb_env('DB_PORT', '3306');
-        $user       = prolynweb_env('DB_ADMIN_USER', prolynweb_env('DB_USER', ''));
-        $pass       = prolynweb_env('DB_ADMIN_PASS', prolynweb_env('DB_PASS', ''));
+        $user       = provision_env_or('DB_ADMIN_USER', 'DB_USER');
+        $pass       = provision_env_or('DB_ADMIN_PASS', 'DB_PASS');
         $templateDb = prolynweb_env('TENANT_TEMPLATE_DB', 'prolyn_default');
 
         $mysqlBin     = trim((string)prolynweb_env('MYSQL_BIN', ''));
@@ -319,7 +332,8 @@ if (!function_exists('provision_admin_pdo')) {
         $tenantUser = '';
 
         try {
-            $adminPdo = provision_admin_pdo();
+            // cPanel modunda DB'yi UAPI açar; ayrı yönetici bağlantısı gerekmez (paylaşımlı hostta yetkisi de yoktur)
+            $adminPdo = $cpanelMode ? null : provision_admin_pdo();
 
             if ($cpanelMode) {
                 // 1) cPanel UAPI ile DB aç + uygulama kullanıcısına yetki ver
@@ -330,7 +344,8 @@ if (!function_exists('provision_admin_pdo')) {
                     'database' => $newDbName,
                     'privileges' => 'ALL PRIVILEGES',
                 ]);
-                // 2) Şablonu PDO ile içe aktar
+                // 2) cPanel UAPI veritabanını sunucu varsayılanıyla (latin1_swedish_ci) açar;
+                //    şablon yüklenmeden ÖNCE varsayılan karşılaştırmayı utf8mb4_general_ci yap.
                 $tplFile = __DIR__ . '/tenant_template.sql';
                 if (!is_readable($tplFile)) { $tplFile = __DIR__ . '/../database/prolyn_default.sql'; }
                 if (!is_readable($tplFile)) { throw new Exception('Şablon SQL dosyası bulunamadı.'); }
@@ -339,6 +354,11 @@ if (!function_exists('provision_admin_pdo')) {
                         prolynweb_env('DB_HOST', 'localhost'), prolynweb_env('DB_PORT', '3306'), $newDbName),
                     prolynweb_env('DB_USER', ''), prolynweb_env('DB_PASS', ''),
                     [PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION]);
+                try {
+                    $impPdo->exec("ALTER DATABASE `{$newDbName}` CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci");
+                } catch (Throwable $e) {
+                    error_log('[provision] ALTER DATABASE collation ayarlanamadi (' . $newDbName . '): ' . $e->getMessage());
+                }
                 provision_run_sql_file($impPdo, $tplFile);
                 unset($impPdo);
                 // 3) cPanel modunda kiracı, uygulama kullanıcısını paylaşır
@@ -348,7 +368,7 @@ if (!function_exists('provision_admin_pdo')) {
                 $result['database_password'] = $tenantPass;
             } else {
             // 1) Veritabanını oluştur (customer_id benzersiz olduğu için yarış yok)
-            $adminPdo->exec("CREATE DATABASE `{$newDbName}` CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci");
+            $adminPdo->exec("CREATE DATABASE `{$newDbName}` CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci");
             $dbCreated = true;
 
             // 2) Şablonu aktar
@@ -364,8 +384,8 @@ if (!function_exists('provision_admin_pdo')) {
             // 4) Tenant DB'ye bağlan (yönetici bağlantısı) ve tohumla
             $host = prolynweb_env('DB_HOST', '127.0.0.1');
             $port = prolynweb_env('DB_PORT', '3306');
-            $adminUser = prolynweb_env('DB_ADMIN_USER', prolynweb_env('DB_USER', ''));
-            $adminPass = prolynweb_env('DB_ADMIN_PASS', prolynweb_env('DB_PASS', ''));
+            $adminUser = provision_env_or('DB_ADMIN_USER', 'DB_USER');
+            $adminPass = provision_env_or('DB_ADMIN_PASS', 'DB_PASS');
             $tenantPdo = new PDO("mysql:host={$host};port={$port};dbname={$newDbName};charset=utf8mb4",
                 $adminUser, $adminPass, [PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION]);
 
@@ -422,7 +442,7 @@ if (!function_exists('provision_admin_pdo')) {
                     $result['error'] = $e->getMessage();
                     return $result;
                 }
-                $adminPdo = isset($adminPdo) ? $adminPdo : provision_admin_pdo();
+                $adminPdo = isset($adminPdo) && $adminPdo ? $adminPdo : provision_admin_pdo();
                 if ($userCreated && $tenantUser !== '') {
                     $adminPdo->exec(sprintf("DROP USER IF EXISTS '%s'@'%s'",
                         str_replace("'", "", $tenantUser), str_replace("'", "", $allowedHost)));
