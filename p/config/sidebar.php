@@ -125,6 +125,7 @@ $sbMenu = [
     ]],
     ['baslik' => 'Sistem ve Bakım', 'ikon' => ['setting-2', 2], 'alt' => [
         ['href' => 'logs/system_errors.php', 'baslik' => 'Sistem Hataları'],
+        ['href' => 'logs/php_error_logs.php', 'baslik' => 'PHP Hata Dosyaları'],
         ['href' => 'logs/system_events.php', 'baslik' => 'Sistem Olayları'],
         ['href' => 'logs/maintenance.php', 'baslik' => 'Bakım Logları'],
         ['href' => 'logs/activity.php', 'baslik' => 'Aktivite Logları'],
