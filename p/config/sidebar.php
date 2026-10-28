@@ -1,60 +1,151 @@
 <?php
-// Sidebar Menu Structure - 13-Module Pro SaaS Layout
-$current_page = basename($_SERVER['PHP_SELF']);
-$current_dir = dirname($_SERVER['PHP_SELF']);
-$current_path = (string)$_SERVER['PHP_SELF'];
+/**
+ * Master panel yan menüsü (sidebar).
+ *
+ * Neden yeniden düzenlendi:
+ *  - Tek alt öğesi olan 6 akordeon (Destek, Duyuru, Kupon, Ödeme...) doğrudan bağlantıya çevrildi: 1 tık az.
+ *  - 15 öğelik "Log ve Sistem Yönetimi" üç amaca göre bölündü (denetim/güvenlik, sistem/bakım, entegrasyon).
+ *  - Aktif sayfa tespiti "içerir" yerine TAM yol eşleşmesi: eskiden 'settings' anahtarı yüzünden
+ *    Yönetim Ayarları ile E-posta grubu aynı anda açılıyordu.
+ *  - Bekleyen sayılar "(3)" metni yerine rozet; grup kapalıyken de rozet görünür (içinde bekleyen iş var).
+ *  - Menü veri olarak tanımlandı; yeni sayfa eklemek tek satır.
+ * NOT: Menüde göstermek/gizlemek yetkilendirme DEĞİLDİR; her sayfa kendi yetki kontrolünü yapmaya devam eder.
+ * Bağlantılar header.php'deki mevcut yapıya göre köke göre görecelidir (değiştirilmedi).
+ */
+$sbPath = (string)($_SERVER['PHP_SELF'] ?? '');
 
-function isActive($keyword) {
-    global $current_page, $current_dir, $current_path;
-    /* $current_page yalnızca dosya adı, $current_dir yalnızca klasördür; 'crm/feature_usage.php'
-       gibi "klasör/dosya" anahtarları ikisinde de geçmediği için hiç aktif olmuyordu.
-       Tam yola da bakılır. */
-    return (strpos($current_page, $keyword) !== false || strpos($current_dir, $keyword) !== false
-        || strpos($current_path, $keyword) !== false) ? 'active' : '';
+/** Bağlantı bu sayfa mı? Sorgu parametresi tanımlıysa o da eşleşmeli (örn. Bugün Takip). */
+function sbAktifMi(array $oge): bool {
+    global $sbPath;
+    $yol = strtok($oge['href'], '?');
+    $son = '/' . ltrim($yol, '/');
+    if (substr($sbPath, -strlen($son)) !== $son) { return false; }
+    if (!empty($oge['q'])) {
+        foreach ($oge['q'] as $k => $v) { if (($_GET[$k] ?? null) !== $v) { return false; } }
+        return true;
+    }
+    // Sorgu parametreli kardeş (Bugün Takip) açıkken ana liste aktif görünmesin
+    return empty($oge['digerQ']) || empty($_GET[$oge['digerQ']]);
 }
 
-function showAccordion($keywords) {
-    global $current_page, $current_dir, $current_path;
-    foreach ($keywords as $keyword) {
-        if (strpos($current_page, $keyword) !== false || strpos($current_dir, $keyword) !== false
-            || strpos($current_path, $keyword) !== false) return 'here show';
-    }
-    return '';
+// Bekleyen iş sayaçları (tablo yoksa veya hata olursa 0: menü hiçbir zaman sayfayı bozmaz)
+$sbSay = ['mesaj' => 0, 'sifreTalep' => 0, 'sifreToken' => 0, 'mailKuyruk' => 0];
+$sbSor = [
+    'mesaj'      => ['iletisim_mesajlari', "SELECT COUNT(*) FROM iletisim_mesajlari WHERE status = 'new'"],
+    'sifreTalep' => ['sifre_sifirlama_talepleri', "SELECT COUNT(*) FROM sifre_sifirlama_talepleri WHERE request_status IN ('pending','in_review','matched')"],
+    'sifreToken' => ['sifre_sifirlama', "SELECT COUNT(*) FROM sifre_sifirlama WHERE used = 0 AND expires_at >= NOW()"],
+    'mailKuyruk' => ['mail_kuyrugu', "SELECT COUNT(*) FROM mail_kuyrugu WHERE status IN ('pending','queued')"],
+];
+foreach ($sbSor as $anahtar => [$tablo, $sql]) {
+    try {
+        if (isset($db) && method_exists($db, 'tableExists') && $db->tableExists($tablo)) {
+            $sbSay[$anahtar] = (int)$db->getColumn($sql);
+        }
+    } catch (Throwable $e) { $sbSay[$anahtar] = 0; }
 }
 
-$sidebarResetRequestPending = 0;
-$sidebarResetQueuePending = 0;
-$sidebarResetTokenOpen = 0;
-$sidebarYeniMesaj = 0;
-try {
-    if (isset($db) && method_exists($db, 'tableExists') && $db->tableExists('iletisim_mesajlari')) {
-        $sidebarYeniMesaj = (int)$db->getColumn("SELECT COUNT(*) FROM iletisim_mesajlari WHERE status = 'new'");
-    }
-} catch (Throwable $e) {
-    $sidebarYeniMesaj = 0;
-}
+// ikon: ki-duotone adı + path sayısı (Metronic duotone ikonları için gerekli)
+$sbMenu = [
+    ['href' => 'index.php', 'baslik' => 'Dashboard', 'ikon' => ['element-11', 4]],
 
-try {
-    if (isset($db) && method_exists($db, 'tableExists') && $db->tableExists('sifre_sifirlama_talepleri')) {
-        $sidebarResetRequestPending = (int)$db->getColumn(
-            "SELECT COUNT(*) FROM sifre_sifirlama_talepleri WHERE request_status IN ('pending', 'in_review', 'matched')"
-        );
-    }
-    if (isset($db) && method_exists($db, 'tableExists') && $db->tableExists('mail_kuyrugu')) {
-        $sidebarResetQueuePending = (int)$db->getColumn(
-            "SELECT COUNT(*) FROM mail_kuyrugu WHERE status IN ('pending', 'queued')"
-        );
-    }
-    if (isset($db) && method_exists($db, 'tableExists') && $db->tableExists('sifre_sifirlama')) {
-        $sidebarResetTokenOpen = (int)$db->getColumn(
-            "SELECT COUNT(*) FROM sifre_sifirlama WHERE used = 0 AND expires_at >= NOW()"
-        );
-    }
-} catch (Throwable $e) {
-    $sidebarResetRequestPending = 0;
-    $sidebarResetQueuePending = 0;
-    $sidebarResetTokenOpen = 0;
+    ['bolum' => 'Müşteriler ve Satış'],
+    ['href' => 'crm/messages.php', 'baslik' => 'Gelen Mesajlar', 'ikon' => ['sms', 2], 'rozet' => 'mesaj', 'rozetRenk' => 'primary'],
+    ['baslik' => 'Potansiyel Müşteriler', 'ikon' => ['rocket', 2], 'alt' => [
+        ['href' => 'crm/leads.php', 'baslik' => 'Lead Listesi', 'digerQ' => 'takip'],
+        ['href' => 'crm/leads.php?takip=bugun', 'baslik' => 'Bugün Takip', 'q' => ['takip' => 'bugun']],
+        ['href' => 'crm/lead_import.php', 'baslik' => 'İçe Aktar'],
+        ['href' => 'crm/lead_templates.php', 'baslik' => 'Mesaj Şablonları'],
+        // Lead detayı listeden açılır; menüde yok ama grup açık kalsın
+        ['href' => 'crm/lead_detail.php', 'baslik' => '', 'gizli' => true],
+    ]],
+    ['baslik' => 'Müşteri Firmalar', 'ikon' => ['briefcase', 2], 'alt' => [
+        ['href' => 'crm/tenants.php', 'baslik' => 'Firma Listesi'],
+        ['href' => 'crm/feature_usage.php', 'baslik' => 'Özellik Kullanımı'],
+        ['href' => 'crm/tenant_detail.php', 'baslik' => '', 'gizli' => true],
+    ]],
+    ['baslik' => 'Abonelikler', 'ikon' => ['calendar-tick', 6], 'alt' => [
+        ['href' => 'crm/subscriptions.php', 'baslik' => 'Abonelik Listesi'],
+        ['href' => 'crm/subscription_history.php', 'baslik' => 'Abonelik Geçmişi'],
+    ]],
+    ['href' => 'crm/tickets.php', 'baslik' => 'Destek Talepleri', 'ikon' => ['messages', 5], 'ek' => ['crm/ticket_detail.php']],
+    ['href' => 'crm/announcements.php', 'baslik' => 'Duyurular', 'ikon' => ['notification-on', 5]],
+    ['href' => 'crm/coupons.php', 'baslik' => 'Kuponlar', 'ikon' => ['discount', 2]],
+    ['href' => 'content/sales.php', 'baslik' => 'Satış İçerikleri', 'ikon' => ['document', 2]],
+
+    ['bolum' => 'Finans'],
+    ['baslik' => 'Faturalar', 'ikon' => ['document', 2], 'alt' => [
+        ['href' => 'finance/invoices.php', 'baslik' => 'Fatura Listesi'],
+        ['href' => 'finance/invoice_addresses.php', 'baslik' => 'Fatura Adresleri'],
+    ]],
+    ['href' => 'finance/payments.php', 'baslik' => 'Ödemeler', 'ikon' => ['wallet', 4]],
+    ['href' => 'finance/taxes.php', 'baslik' => 'Vergi Oranları', 'ikon' => ['bank', 2]],
+
+    ['bolum' => 'Web Sitesi'],
+    ['baslik' => 'Site İçeriği', 'ikon' => ['screen', 4], 'alt' => [
+        ['href' => 'website/seo.php', 'baslik' => 'SEO ve Temel Ayarlar'],
+        ['href' => 'website/form_security.php', 'baslik' => 'Form Güvenliği (reCAPTCHA)'],
+        ['href' => 'website/features.php', 'baslik' => 'Ana Sayfa Özellikleri'],
+        ['href' => 'website/modules.php', 'baslik' => 'Web Modülleri'],
+        ['href' => 'website/module_form.php', 'baslik' => '', 'gizli' => true],
+        ['href' => 'website/blog.php', 'baslik' => 'Blog'],
+        ['href' => 'website/blog_form.php', 'baslik' => '', 'gizli' => true],
+        ['href' => 'website/videos.php', 'baslik' => 'Videolar'],
+    ]],
+
+    ['bolum' => 'Paketler ve Sistem'],
+    ['baslik' => 'Paketler ve Modüller', 'ikon' => ['category', 4], 'alt' => [
+        ['href' => 'plans.php', 'baslik' => 'Paket Matrisi'],
+        ['href' => 'settings/package_features.php', 'baslik' => 'Paket Özellikleri'],
+        ['href' => 'settings/app_modules.php', 'baslik' => 'Uygulama Modülleri'],
+    ]],
+    ['baslik' => 'Yönetim ve Güvenlik', 'ikon' => ['shield-tick', 2], 'alt' => [
+        ['href' => 'settings/admins.php', 'baslik' => 'Yöneticiler'],
+        ['href' => 'settings/roles.php', 'baslik' => 'Roller ve Yetkiler'],
+        ['href' => 'settings/password_reset.php', 'baslik' => 'Şifre Talepleri', 'rozet' => 'sifreTalep', 'rozetRenk' => 'warning'],
+        ['href' => 'settings/api_keys.php', 'baslik' => 'API Anahtarları'],
+    ]],
+    ['baslik' => 'E-posta', 'ikon' => ['sms', 2], 'alt' => [
+        ['href' => 'dist/apps/settings/general.php', 'baslik' => 'Mail Ayarları (SMTP)'],
+        ['href' => 'settings/email_templates.php', 'baslik' => 'E-posta Şablonları'],
+        ['href' => 'settings/email_queue.php', 'baslik' => 'E-posta Kuyruğu', 'rozet' => 'mailKuyruk', 'rozetRenk' => 'warning'],
+    ]],
+    ['href' => 'settings/files.php', 'baslik' => 'Sistem Dosyaları', 'ikon' => ['folder', 2]],
+
+    ['bolum' => 'İzleme ve Kayıtlar'],
+    ['baslik' => 'Denetim ve Güvenlik', 'ikon' => ['shield-search', 3], 'alt' => [
+        ['href' => 'settings/logs.php', 'baslik' => 'Yönetici Logları'],
+        ['href' => 'logs/audit.php', 'baslik' => 'Denetim Logları'],
+        ['href' => 'logs/login_attempts.php', 'baslik' => 'Giriş Denemeleri'],
+        ['href' => 'logs/sessions.php', 'baslik' => 'Aktif Oturumlar'],
+        ['href' => 'logs/password_resets.php', 'baslik' => 'Şifre Sıfırlama Logları', 'rozet' => 'sifreToken', 'rozetRenk' => 'secondary'],
+        ['href' => 'settings/logs_archive.php', 'baslik' => 'Log Arşivi'],
+    ]],
+    ['baslik' => 'Sistem ve Bakım', 'ikon' => ['setting-2', 2], 'alt' => [
+        ['href' => 'logs/system_errors.php', 'baslik' => 'Sistem Hataları'],
+        ['href' => 'logs/system_events.php', 'baslik' => 'Sistem Olayları'],
+        ['href' => 'logs/maintenance.php', 'baslik' => 'Bakım Logları'],
+        ['href' => 'logs/activity.php', 'baslik' => 'Aktivite Logları'],
+        ['href' => 'logs/user_activity.php', 'baslik' => 'Kullanıcı Aktiviteleri'],
+    ]],
+    ['baslik' => 'Bildirim ve Webhook', 'ikon' => ['notification-status', 4], 'alt' => [
+        ['href' => 'logs/notifications.php', 'baslik' => 'Uygulama Bildirimleri'],
+        ['href' => 'logs/notification_queue.php', 'baslik' => 'Bildirim Kuyruğu'],
+        ['href' => 'logs/webhooks.php', 'baslik' => 'Webhook Tanımları'],
+        ['href' => 'logs/webhook_logs.php', 'baslik' => 'Webhook İstek Geçmişi'],
+    ]],
+];
+
+function sbIkon(array $ikon): string {
+    $p = '';
+    for ($i = 1; $i <= (int)$ikon[1]; $i++) { $p .= '<span class="path' . $i . '"></span>'; }
+    return '<span class="menu-icon"><i class="ki-duotone ki-' . htmlspecialchars($ikon[0], ENT_QUOTES, 'UTF-8') . ' fs-2">' . $p . '</i></span>';
 }
+function sbRozet(?string $anahtar, string $renk, int $sayi): string {
+    if (!$anahtar || $sayi < 1) { return ''; }
+    return '<span class="menu-badge"><span class="badge badge-' . htmlspecialchars($renk, ENT_QUOTES, 'UTF-8')
+        . ' badge-circle fw-bold fs-8">' . ($sayi > 99 ? '99+' : $sayi) . '</span></span>';
+}
+function sbH(string $s): string { return htmlspecialchars($s, ENT_QUOTES, 'UTF-8'); }
 ?>
 <div class="app-sidebar-menu overflow-hidden flex-column-fluid">
     <div id="kt_app_sidebar_menu_wrapper" class="app-sidebar-wrapper">
@@ -64,230 +155,46 @@ try {
             data-kt-scroll-wrappers="#kt_app_sidebar_menu" data-kt-scroll-offset="5px" data-kt-scroll-save-state="true">
             <div class="menu menu-column menu-rounded menu-sub-indention fw-semibold fs-6" id="kt_app_sidebar_menu"
                 data-kt-menu="true" data-kt-menu-expand="false">
-                
-                <!-- 1. DASHBOARD -->
+<?php foreach ($sbMenu as $oge): ?>
+<?php if (isset($oge['bolum'])): ?>
+                <div class="menu-item pt-5">
+                    <div class="menu-content"><span class="menu-heading fw-bold text-uppercase fs-7"><?= sbH($oge['bolum']) ?></span></div>
+                </div>
+<?php elseif (isset($oge['alt'])): ?>
+<?php
+    $acik = false; $toplam = 0; $rozetRenk = 'primary';
+    foreach ($oge['alt'] as $a) {
+        if (sbAktifMi($a)) { $acik = true; }
+        if (!empty($a['rozet'])) { $toplam += $sbSay[$a['rozet']] ?? 0; $rozetRenk = $a['rozetRenk'] ?? 'primary'; }
+    }
+?>
+                <div data-kt-menu-trigger="click" class="menu-item menu-accordion<?= $acik ? ' here show' : '' ?>">
+                    <span class="menu-link">
+                        <?= sbIkon($oge['ikon']) ?>
+                        <span class="menu-title"><?= sbH($oge['baslik']) ?></span>
+                        <?php if ($toplam > 0 && !$acik): ?><?= sbRozet('x', $rozetRenk, $toplam) ?><?php endif; ?>
+                        <span class="menu-arrow"></span>
+                    </span>
+                    <div class="menu-sub menu-sub-accordion">
+<?php foreach ($oge['alt'] as $a): if (!empty($a['gizli'])) { continue; } ?>
+                        <div class="menu-item"><a class="menu-link<?= sbAktifMi($a) ? ' active' : '' ?>" href="<?= sbH($a['href']) ?>"><span class="menu-bullet"><span class="bullet bullet-dot"></span></span><span class="menu-title"><?= sbH($a['baslik']) ?></span><?= sbRozet($a['rozet'] ?? null, $a['rozetRenk'] ?? 'primary', $sbSay[$a['rozet'] ?? ''] ?? 0) ?></a></div>
+<?php endforeach; ?>
+                    </div>
+                </div>
+<?php else: ?>
+<?php
+    $aktif = sbAktifMi($oge);
+    foreach (($oge['ek'] ?? []) as $e) { if (sbAktifMi(['href' => $e])) { $aktif = true; } }
+?>
                 <div class="menu-item">
-                    <a class="menu-link <?= isActive('index.php') ?>" href="index.php">
-                        <span class="menu-icon"><i class="ki-duotone ki-element-11 fs-2"><span class="path1"></span><span class="path2"></span><span class="path3"></span><span class="path4"></span></i></span>
-                        <span class="menu-title">Dashboard</span>
+                    <a class="menu-link<?= $aktif ? ' active' : '' ?>" href="<?= sbH($oge['href']) ?>">
+                        <?= sbIkon($oge['ikon']) ?>
+                        <span class="menu-title"><?= sbH($oge['baslik']) ?></span>
+                        <?= sbRozet($oge['rozet'] ?? null, $oge['rozetRenk'] ?? 'primary', $sbSay[$oge['rozet'] ?? ''] ?? 0) ?>
                     </a>
                 </div>
-
-                <!-- 2. CRM / MÜŞTERİ YÖNETİMİ -->
-                <div class="menu-item pt-5">
-                    <div class="menu-content"><span class="menu-heading fw-bold text-uppercase fs-7">CRM Yönetimi</span></div>
-                </div>
-                <div class="menu-item">
-                    <a class="menu-link <?= isActive('crm/messages.php') ?>" href="crm/messages.php">
-                        <span class="menu-icon"><i class="ki-duotone ki-sms fs-2"><span class="path1"></span><span class="path2"></span></i></span>
-                        <span class="menu-title">Gelen Mesajlar</span>
-                        <?php if ($sidebarYeniMesaj > 0): ?><span class="menu-badge"><span class="badge badge-primary badge-circle fw-bold fs-8"><?= (int)$sidebarYeniMesaj ?></span></span><?php endif; ?>
-                    </a>
-                </div>
-                <div data-kt-menu-trigger="click" class="menu-item menu-accordion <?= showAccordion(['leads.php', 'lead_detail.php', 'lead_import.php', 'lead_templates.php']) ?>">
-                    <span class="menu-link">
-                        <span class="menu-icon"><i class="ki-duotone ki-rocket fs-2"><span class="path1"></span><span class="path2"></span></i></span>
-                        <span class="menu-title">Potansiyel Müşteriler</span>
-                        <span class="menu-arrow"></span>
-                    </span>
-                    <div class="menu-sub menu-sub-accordion">
-                        <div class="menu-item"><a class="menu-link <?= isActive('crm/leads.php') ?>" href="crm/leads.php"><span class="menu-bullet"><span class="bullet bullet-dot"></span></span><span class="menu-title">Lead Listesi</span></a></div>
-                        <div class="menu-item"><a class="menu-link" href="crm/leads.php?takip=bugun"><span class="menu-bullet"><span class="bullet bullet-dot"></span></span><span class="menu-title">Bugün Takip</span></a></div>
-                        <div class="menu-item"><a class="menu-link <?= isActive('crm/lead_import.php') ?>" href="crm/lead_import.php"><span class="menu-bullet"><span class="bullet bullet-dot"></span></span><span class="menu-title">İçe Aktar</span></a></div>
-                        <div class="menu-item"><a class="menu-link <?= isActive('crm/lead_templates.php') ?>" href="crm/lead_templates.php"><span class="menu-bullet"><span class="bullet bullet-dot"></span></span><span class="menu-title">Mesaj Şablonları</span></a></div>
-                    </div>
-                </div>
-
-                <div data-kt-menu-trigger="click" class="menu-item menu-accordion <?= showAccordion(['tenants.php', 'tenant_detail.php', 'crm/feature_usage.php']) ?>">
-                    <span class="menu-link">
-                        <span class="menu-icon"><i class="ki-duotone ki-briefcase fs-2"><span class="path1"></span><span class="path2"></span></i></span>
-                        <span class="menu-title">Kurum / Müşteriler</span>
-                        <span class="menu-arrow"></span>
-                    </span>
-                    <div class="menu-sub menu-sub-accordion">
-                        <div class="menu-item"><a class="menu-link <?= isActive('crm/tenants.php') ?>" href="crm/tenants.php"><span class="menu-bullet"><span class="bullet bullet-dot"></span></span><span class="menu-title">Müşteri Listesi</span></a></div>
-                        <div class="menu-item"><a class="menu-link <?= isActive('crm/feature_usage.php') ?>" href="crm/feature_usage.php"><span class="menu-bullet"><span class="bullet bullet-dot"></span></span><span class="menu-title">Müşteri Kullanımları</span></a></div>
-                    </div>
-                </div>
-                
-                <div data-kt-menu-trigger="click" class="menu-item menu-accordion <?= showAccordion(['subscriptions.php', 'subscription_history.php']) ?>">
-                    <span class="menu-link">
-                        <span class="menu-icon"><i class="ki-duotone ki-calendar-tick fs-2"><span class="path1"></span><span class="path2"></span><span class="path3"></span><span class="path4"></span><span class="path5"></span><span class="path6"></span></i></span>
-                        <span class="menu-title">Abonelik Yönetimi</span>
-                        <span class="menu-arrow"></span>
-                    </span>
-                    <div class="menu-sub menu-sub-accordion">
-                        <div class="menu-item"><a class="menu-link <?= isActive('crm/subscriptions.php') ?>" href="crm/subscriptions.php"><span class="menu-bullet"><span class="bullet bullet-dot"></span></span><span class="menu-title">Abonelik Listesi</span></a></div>
-                        <div class="menu-item"><a class="menu-link <?= isActive('crm/subscription_history.php') ?>" href="crm/subscription_history.php"><span class="menu-bullet"><span class="bullet bullet-dot"></span></span><span class="menu-title">Abonelik Geçmişi</span></a></div>
-                    </div>
-                </div>
-
-                <div data-kt-menu-trigger="click" class="menu-item menu-accordion <?= showAccordion(['tickets.php', 'ticket_detail.php']) ?>">
-                    <span class="menu-link">
-                        <span class="menu-icon"><i class="ki-duotone ki-messages fs-2"><span class="path1"></span><span class="path2"></span><span class="path3"></span><span class="path4"></span><span class="path5"></span></i></span>
-                        <span class="menu-title">Destek Yönetimi</span>
-                        <span class="menu-arrow"></span>
-                    </span>
-                    <div class="menu-sub menu-sub-accordion">
-                        <div class="menu-item"><a class="menu-link <?= isActive('crm/tickets.php') ?>" href="crm/tickets.php"><span class="menu-bullet"><span class="bullet bullet-dot"></span></span><span class="menu-title">Destek Talepleri</span></a></div>
-                    </div>
-                </div>
-
-                <div data-kt-menu-trigger="click" class="menu-item menu-accordion <?= showAccordion(['announcements.php']) ?>">
-                    <span class="menu-link">
-                        <span class="menu-icon"><i class="ki-duotone ki-notification-on fs-2"><span class="path1"></span><span class="path2"></span><span class="path3"></span><span class="path4"></span><span class="path5"></span></i></span>
-                        <span class="menu-title">Duyuru Yönetimi</span>
-                        <span class="menu-arrow"></span>
-                    </span>
-                    <div class="menu-sub menu-sub-accordion">
-                        <div class="menu-item"><a class="menu-link <?= isActive('crm/announcements.php') ?>" href="crm/announcements.php"><span class="menu-bullet"><span class="bullet bullet-dot"></span></span><span class="menu-title">Duyurular Listesi</span></a></div>
-                    </div>
-                </div>
-
-                <div data-kt-menu-trigger="click" class="menu-item menu-accordion <?= showAccordion(['coupons.php']) ?>">
-                    <span class="menu-link">
-                        <span class="menu-icon"><i class="ki-duotone ki-discount fs-2"><span class="path1"></span><span class="path2"></span></i></span>
-                        <span class="menu-title">Kupon Yönetimi</span>
-                        <span class="menu-arrow"></span>
-                    </span>
-                    <div class="menu-sub menu-sub-accordion">
-                        <div class="menu-item"><a class="menu-link <?= isActive('crm/coupons.php') ?>" href="crm/coupons.php"><span class="menu-bullet"><span class="bullet bullet-dot"></span></span><span class="menu-title">Kuponlar</span></a></div>
-                    </div>
-                </div>
-
-                <!-- İÇERİK YÖNETİMİ -->
-                <div class="menu-item pt-5">
-                    <div class="menu-content"><span class="menu-heading fw-bold text-uppercase fs-7">İçerik Yönetimi</span></div>
-                </div>
-                <div data-kt-menu-trigger="click" class="menu-item menu-accordion <?= showAccordion(['content/sales.php']) ?>">
-                    <span class="menu-link">
-                        <span class="menu-icon"><i class="ki-duotone ki-document fs-2"><span class="path1"></span><span class="path2"></span></i></span>
-                        <span class="menu-title">Satış ve Pazarlama</span>
-                        <span class="menu-arrow"></span>
-                    </span>
-                    <div class="menu-sub menu-sub-accordion">
-                        <div class="menu-item"><a class="menu-link <?= isActive('content/sales.php') ?>" href="content/sales.php"><span class="menu-bullet"><span class="bullet bullet-dot"></span></span><span class="menu-title">Satış İçerikleri</span></a></div>
-                    </div>
-                </div>
-
-                <!-- 3. FİNANS YÖNETİMİ -->
-                <div class="menu-item pt-5">
-                    <div class="menu-content"><span class="menu-heading fw-bold text-uppercase fs-7">Finans Yönetimi</span></div>
-                </div>
-
-                <div data-kt-menu-trigger="click" class="menu-item menu-accordion <?= showAccordion(['invoices.php', 'invoice_addresses.php']) ?>">
-                    <span class="menu-link">
-                        <span class="menu-icon"><i class="ki-duotone ki-document fs-2"><span class="path1"></span><span class="path2"></span></i></span>
-                        <span class="menu-title">Fatura Yönetimi</span>
-                        <span class="menu-arrow"></span>
-                    </span>
-                    <div class="menu-sub menu-sub-accordion">
-                        <div class="menu-item"><a class="menu-link <?= isActive('finance/invoices.php') ?>" href="finance/invoices.php"><span class="menu-bullet"><span class="bullet bullet-dot"></span></span><span class="menu-title">Faturalar</span></a></div>
-                        <div class="menu-item"><a class="menu-link <?= isActive('finance/invoice_addresses.php') ?>" href="finance/invoice_addresses.php"><span class="menu-bullet"><span class="bullet bullet-dot"></span></span><span class="menu-title">Fatura Adresleri</span></a></div>
-                    </div>
-                </div>
-
-                <div data-kt-menu-trigger="click" class="menu-item menu-accordion <?= showAccordion(['payments.php']) ?>">
-                    <span class="menu-link">
-                        <span class="menu-icon"><i class="ki-duotone ki-wallet fs-2"><span class="path1"></span><span class="path2"></span><span class="path3"></span><span class="path4"></span></i></span>
-                        <span class="menu-title">Ödeme Yönetimi</span>
-                        <span class="menu-arrow"></span>
-                    </span>
-                    <div class="menu-sub menu-sub-accordion">
-                        <div class="menu-item"><a class="menu-link <?= isActive('finance/payments.php') ?>" href="finance/payments.php"><span class="menu-bullet"><span class="bullet bullet-dot"></span></span><span class="menu-title">Ödemeler Listesi</span></a></div>
-                    </div>
-                </div>
-
-                <div data-kt-menu-trigger="click" class="menu-item menu-accordion <?= showAccordion(['finance', 'finance/taxes.php']) ?>">
-                    <span class="menu-link">
-                        <span class="menu-icon"><i class="ki-duotone ki-bank fs-2"><span class="path1"></span><span class="path2"></span></i></span>
-                        <span class="menu-title">Finans Ayarları</span>
-                        <span class="menu-arrow"></span>
-                    </span>
-                    <div class="menu-sub menu-sub-accordion">
-                        <div class="menu-item"><a class="menu-link <?= isActive('finance/taxes.php') ?>" href="finance/taxes.php"><span class="menu-bullet"><span class="bullet bullet-dot"></span></span><span class="menu-title">Vergi Oranları</span></a></div>
-                    </div>
-                </div>
-
-                <!-- 4. WEB SİTESİ YÖNETİMİ -->
-                <div class="menu-item pt-5">
-                    <div class="menu-content"><span class="menu-heading fw-bold text-uppercase fs-7">Web Sitesi Yönetimi</span></div>
-                </div>
-                <div data-kt-menu-trigger="click" class="menu-item menu-accordion <?= showAccordion(['website']) ?>">
-                    <span class="menu-link">
-                        <span class="menu-icon"><i class="ki-duotone ki-screen fs-2"><span class="path1"></span><span class="path2"></span><span class="path3"></span><span class="path4"></span></i></span>
-                        <span class="menu-title">Vitrin Yönetimi</span>
-                        <span class="menu-arrow"></span>
-                    </span>
-                    <div class="menu-sub menu-sub-accordion">
-                        <div class="menu-item"><a class="menu-link <?= isActive('website/seo.php') ?>" href="website/seo.php"><span class="menu-bullet"><span class="bullet bullet-dot"></span></span><span class="menu-title">SEO ve Temel Ayarlar</span></a></div>
-                        <div class="menu-item"><a class="menu-link <?= isActive('website/form_security.php') ?>" href="website/form_security.php"><span class="menu-bullet"><span class="bullet bullet-dot"></span></span><span class="menu-title">Form Güvenliği (reCAPTCHA)</span></a></div>
-                        <div class="menu-item"><a class="menu-link <?= isActive('website/features.php') ?>" href="website/features.php"><span class="menu-bullet"><span class="bullet bullet-dot"></span></span><span class="menu-title">Ana Sayfa Özellikleri</span></a></div>
-                        <div class="menu-item"><a class="menu-link <?= isActive('website/modules.php') ?>" href="website/modules.php"><span class="menu-bullet"><span class="bullet bullet-dot"></span></span><span class="menu-title">Web Modülleri</span></a></div>
-                        <div class="menu-item"><a class="menu-link <?= isActive('website/blog.php') ?>" href="website/blog.php"><span class="menu-bullet"><span class="bullet bullet-dot"></span></span><span class="menu-title">Blog</span></a></div>
-                        <div class="menu-item"><a class="menu-link <?= isActive('website/videos.php') ?>" href="website/videos.php"><span class="menu-bullet"><span class="bullet bullet-dot"></span></span><span class="menu-title">Videolar</span></a></div>
-                    </div>
-                </div>
-
-                <!-- 5. SİSTEM AYARLARI -->
-                <div class="menu-item pt-5">
-                    <div class="menu-content"><span class="menu-heading fw-bold text-uppercase fs-7">Sistem Ayarları</span></div>
-                </div>
-                <div data-kt-menu-trigger="click" class="menu-item menu-accordion <?= showAccordion(['settings', 'settings/api_keys.php', 'plans.php', 'settings/app_modules.php', 'settings/password_reset.php']) ?>">
-                    <span class="menu-link">
-                        <span class="menu-icon"><i class="ki-duotone ki-setting-2 fs-2"><span class="path1"></span><span class="path2"></span></i></span>
-                        <span class="menu-title">Yönetim Ayarları</span>
-                        <span class="menu-arrow"></span>
-                    </span>
-                    <div class="menu-sub menu-sub-accordion">
-                        <div class="menu-item"><a class="menu-link <?= isActive('plans.php') ?>" href="plans.php"><span class="menu-bullet"><span class="bullet bullet-dot"></span></span><span class="menu-title">SaaS Paketleri (Matris)</span></a></div>
-                        <div class="menu-item"><a class="menu-link <?= isActive('settings/admins.php') ?>" href="settings/admins.php"><span class="menu-bullet"><span class="bullet bullet-dot"></span></span><span class="menu-title">Yöneticiler</span></a></div>
-                        <div class="menu-item"><a class="menu-link <?= isActive('settings/password_reset.php') ?>" href="settings/password_reset.php"><span class="menu-bullet"><span class="bullet bullet-dot"></span></span><span class="menu-title">Şifre Talep Havuzu (<?= (int)$sidebarResetRequestPending ?>)</span></a></div>
-                        <div class="menu-item"><a class="menu-link <?= isActive('settings/roles.php') ?>" href="settings/roles.php"><span class="menu-bullet"><span class="bullet bullet-dot"></span></span><span class="menu-title">Roller ve Yetkiler</span></a></div>
-                        <div class="menu-item"><a class="menu-link <?= isActive('settings/api_keys.php') ?>" href="settings/api_keys.php"><span class="menu-bullet"><span class="bullet bullet-dot"></span></span><span class="menu-title">API Anahtarları</span></a></div>
-                        <div class="menu-item"><a class="menu-link <?= isActive('settings/files.php') ?>" href="settings/files.php"><span class="menu-bullet"><span class="bullet bullet-dot"></span></span><span class="menu-title">Sistem Dosyaları</span></a></div>
-                        <div class="menu-item"><a class="menu-link <?= isActive('settings/package_features.php') ?>" href="settings/package_features.php"><span class="menu-bullet"><span class="bullet bullet-dot"></span></span><span class="menu-title">Paket Özellikleri</span></a></div>
-                        <div class="menu-item"><a class="menu-link <?= isActive('settings/app_modules.php') ?>" href="settings/app_modules.php"><span class="menu-bullet"><span class="bullet bullet-dot"></span></span><span class="menu-title">Uygulama Modülleri</span></a></div>
-                    </div>
-                </div>
-
-                <div data-kt-menu-trigger="click" class="menu-item menu-accordion <?= showAccordion(['email_templates.php', 'email_queue.php', 'dist/apps/settings/general.php']) ?>">
-                    <span class="menu-link">
-                        <span class="menu-icon"><i class="ki-duotone ki-sms fs-2"><span class="path1"></span><span class="path2"></span></i></span>
-                        <span class="menu-title">E-posta Yönetimi</span>
-                        <span class="menu-arrow"></span>
-                    </span>
-                    <div class="menu-sub menu-sub-accordion">
-                        <div class="menu-item"><a class="menu-link <?= isActive('dist/apps/settings/general.php') ?>" href="dist/apps/settings/general.php"><span class="menu-bullet"><span class="bullet bullet-dot"></span></span><span class="menu-title">Mail Ayarları (SMTP)</span></a></div>
-                        <div class="menu-item"><a class="menu-link <?= isActive('settings/email_templates.php') ?>" href="settings/email_templates.php"><span class="menu-bullet"><span class="bullet bullet-dot"></span></span><span class="menu-title">E-posta Şablonları</span></a></div>
-                        <div class="menu-item"><a class="menu-link <?= isActive('settings/email_queue.php') ?>" href="settings/email_queue.php"><span class="menu-bullet"><span class="bullet bullet-dot"></span></span><span class="menu-title">E-posta Kuyruğu</span></a></div>
-                    </div>
-                </div>
-
-                <div data-kt-menu-trigger="click" class="menu-item menu-accordion <?= showAccordion(['logs', 'settings/logs.php', 'settings/logs_archive.php', 'logs/notifications.php', 'logs/notification_queue.php', 'logs/webhooks.php', 'logs/webhook_logs.php']) ?>">
-                    <span class="menu-link">
-                        <span class="menu-icon"><i class="ki-duotone ki-shield-search fs-2"><span class="path1"></span><span class="path2"></span><span class="path3"></span></i></span>
-                        <span class="menu-title">Log ve Sistem Yönetimi</span>
-                        <span class="menu-arrow"></span>
-                    </span>
-                    <div class="menu-sub menu-sub-accordion">
-                        <div class="menu-item"><a class="menu-link <?= isActive('settings/logs.php') ?>" href="settings/logs.php"><span class="menu-bullet"><span class="bullet bullet-dot"></span></span><span class="menu-title">Yönetici Logları</span></a></div>
-                        <div class="menu-item"><a class="menu-link <?= isActive('settings/logs_archive.php') ?>" href="settings/logs_archive.php"><span class="menu-bullet"><span class="bullet bullet-dot"></span></span><span class="menu-title">Log Arşivi</span></a></div>
-                        <div class="menu-item"><a class="menu-link <?= isActive('logs/audit.php') ?>" href="logs/audit.php"><span class="menu-bullet"><span class="bullet bullet-dot"></span></span><span class="menu-title">Sistem Denetim Logları</span></a></div>
-                        <div class="menu-item"><a class="menu-link <?= isActive('logs/activity.php') ?>" href="logs/activity.php"><span class="menu-bullet"><span class="bullet bullet-dot"></span></span><span class="menu-title">Aktivite Logları</span></a></div>
-                        <div class="menu-item"><a class="menu-link <?= isActive('logs/user_activity.php') ?>" href="logs/user_activity.php"><span class="menu-bullet"><span class="bullet bullet-dot"></span></span><span class="menu-title">Kullanıcı Aktiviteleri</span></a></div>
-                        <div class="menu-item"><a class="menu-link <?= isActive('logs/login_attempts.php') ?>" href="logs/login_attempts.php"><span class="menu-bullet"><span class="bullet bullet-dot"></span></span><span class="menu-title">Giriş Denemeleri</span></a></div>
-                        <div class="menu-item"><a class="menu-link <?= isActive('logs/sessions.php') ?>" href="logs/sessions.php"><span class="menu-bullet"><span class="bullet bullet-dot"></span></span><span class="menu-title">Aktif Oturumlar</span></a></div>
-                        <div class="menu-item"><a class="menu-link <?= isActive('logs/maintenance.php') ?>" href="logs/maintenance.php"><span class="menu-bullet"><span class="bullet bullet-dot"></span></span><span class="menu-title">Bakım Logları</span></a></div>
-                        <div class="menu-item"><a class="menu-link <?= isActive('logs/system_errors.php') ?>" href="logs/system_errors.php"><span class="menu-bullet"><span class="bullet bullet-dot"></span></span><span class="menu-title">Sistem Hataları</span></a></div>
-                        <div class="menu-item"><a class="menu-link <?= isActive('logs/system_events.php') ?>" href="logs/system_events.php"><span class="menu-bullet"><span class="bullet bullet-dot"></span></span><span class="menu-title">Sistem Olayları</span></a></div>
-                        <div class="menu-item"><a class="menu-link <?= isActive('logs/password_resets.php') ?>" href="logs/password_resets.php"><span class="menu-bullet"><span class="bullet bullet-dot"></span></span><span class="menu-title">Şifre Sıfırlama Logları (<?= (int)$sidebarResetTokenOpen ?>)</span></a></div>
-                        <div class="menu-item"><a class="menu-link <?= isActive('logs/webhooks.php') ?>" href="logs/webhooks.php"><span class="menu-bullet"><span class="bullet bullet-dot"></span></span><span class="menu-title">Webhook Tanımları</span></a></div>
-                        <div class="menu-item"><a class="menu-link <?= isActive('logs/webhook_logs.php') ?>" href="logs/webhook_logs.php"><span class="menu-bullet"><span class="bullet bullet-dot"></span></span><span class="menu-title">Webhook İstek Geçmişi</span></a></div>
-                        <div class="menu-item"><a class="menu-link <?= isActive('logs/notifications.php') ?>" href="logs/notifications.php"><span class="menu-bullet"><span class="bullet bullet-dot"></span></span><span class="menu-title">Uygulama Bildirimleri</span></a></div>
-                        <div class="menu-item"><a class="menu-link <?= isActive('logs/notification_queue.php') ?>" href="logs/notification_queue.php"><span class="menu-bullet"><span class="bullet bullet-dot"></span></span><span class="menu-title">Bildirim Kuyruğu (<?= (int)$sidebarResetQueuePending ?>)</span></a></div>
-                    </div>
-                </div>
+<?php endif; ?>
+<?php endforeach; ?>
 
             </div>
         </div>

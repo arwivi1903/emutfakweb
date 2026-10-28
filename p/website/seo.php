@@ -14,14 +14,19 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
         'seo_title', 'seo_description', 'seo_keywords', 
         'website_footer_text', 'website_hero_badge', 
         'website_hero_title', 'website_hero_subtitle',
-        'contact_email', 'contact_phone', 'contact_whatsapp', 'contact_address'
+        'contact_email', 'contact_phone', 'contact_whatsapp', 'contact_address',
+        'social_instagram', 'social_youtube', 'social_twitter', 'social_linkedin'
     ];
     $contactKeys = ['contact_email', 'contact_phone', 'contact_whatsapp', 'contact_address'];
+    $socialKeys  = ['social_instagram', 'social_youtube', 'social_twitter', 'social_linkedin'];
 
     foreach ($keys as $k) {
         if (isset($_POST[$k])) {
             $val = trim($_POST[$k]);
-            $cat = in_array($k, $contactKeys, true) ? 'contact' : 'seo';
+            $cat = in_array($k, $contactKeys, true) ? 'contact' : (in_array($k, $socialKeys, true) ? 'social' : 'seo');
+            // Sosyal medya bağlantısı: boş (gizle) ya da yalnızca http(s) adresi olabilir (javascript: vb. reddedilir).
+            if (in_array($k, $socialKeys, true) && $val !== '' && !preg_match('#^https?://#i', $val)) { continue; }
+            if (in_array($k, $socialKeys, true) && $val !== '' && !filter_var($val, FILTER_VALIDATE_URL)) { continue; }
             if ($k === 'contact_email' && $val !== '' && !filter_var($val, FILTER_VALIDATE_EMAIL)) { continue; }
             /* Satır hiç yoksa UPDATE sessizce 0 satır etkiler ve hiçbir şey
                kaydedilmez (sistem_ayarlari boş kurulduğunda tam olarak bu
@@ -41,7 +46,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
 }
 
 // Verileri çek
-$settings = $db->getRowsAssoc("SELECT setting_key, setting_value FROM sistem_ayarlari WHERE setting_key IN ('seo_title', 'seo_description', 'seo_keywords', 'website_footer_text', 'website_hero_badge', 'website_hero_title', 'website_hero_subtitle', 'contact_email', 'contact_phone', 'contact_whatsapp', 'contact_address')");
+$settings = $db->getRowsAssoc("SELECT setting_key, setting_value FROM sistem_ayarlari WHERE setting_key IN ('seo_title', 'seo_description', 'seo_keywords', 'website_footer_text', 'website_hero_badge', 'website_hero_title', 'website_hero_subtitle', 'contact_email', 'contact_phone', 'contact_whatsapp', 'contact_address', 'social_instagram', 'social_youtube', 'social_twitter', 'social_linkedin')");
 $seo = [];
 if($settings) {
     foreach($settings as $s) {
@@ -155,6 +160,34 @@ if($settings) {
                                         <label class="form-label">Adres</label>
                                         <textarea name="contact_address" class="form-control form-control-solid" rows="3"><?= htmlspecialchars($seo['contact_address'] ?? '') ?></textarea>
                                     </div>
+                                </div>
+                            </div>
+
+                            <div class="card mb-5 mb-xl-8">
+                                <div class="card-header border-0 pt-5">
+                                    <h3 class="card-title align-items-start flex-column">
+                                        <span class="card-label fw-bold fs-3 mb-1">Sosyal Medya</span>
+                                        <span class="text-muted mt-1 fw-semibold fs-7">Sitenin alt bilgisindeki "Bizi Takip Edin" simgeleri. Boş bırakılan simge gösterilmez.</span>
+                                    </h3>
+                                </div>
+                                <div class="card-body py-3">
+                                    <div class="mb-10">
+                                        <label class="form-label">Instagram</label>
+                                        <input type="url" name="social_instagram" class="form-control form-control-solid" placeholder="https://www.instagram.com/hesabiniz/" value="<?= htmlspecialchars($seo['social_instagram'] ?? '') ?>" />
+                                    </div>
+                                    <div class="mb-10">
+                                        <label class="form-label">YouTube</label>
+                                        <input type="url" name="social_youtube" class="form-control form-control-solid" placeholder="https://www.youtube.com/@kanaliniz" value="<?= htmlspecialchars($seo['social_youtube'] ?? '') ?>" />
+                                    </div>
+                                    <div class="mb-10">
+                                        <label class="form-label">X (Twitter)</label>
+                                        <input type="url" name="social_twitter" class="form-control form-control-solid" placeholder="https://x.com/hesabiniz" value="<?= htmlspecialchars($seo['social_twitter'] ?? '') ?>" />
+                                    </div>
+                                    <div class="mb-10">
+                                        <label class="form-label">LinkedIn</label>
+                                        <input type="url" name="social_linkedin" class="form-control form-control-solid" placeholder="https://www.linkedin.com/company/sirketiniz" value="<?= htmlspecialchars($seo['social_linkedin'] ?? '') ?>" />
+                                    </div>
+                                    <div class="form-text mb-5">Adresler https:// ile başlamalıdır; geçersiz adres kaydedilmez.</div>
                                 </div>
                             </div>
                         </div>

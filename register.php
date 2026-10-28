@@ -7,6 +7,7 @@ require_once __DIR__ . '/env.php';
 require_once 'db.php'; // $pdo (prolyn_master), $appSettings
 require_once __DIR__ . '/p/functions/provision.php';
 require_once __DIR__ . '/partials/recaptcha.php';
+require_once __DIR__ . '/partials/kimlik_dogrulama.php'; // TCKN / VKN algoritma kontrolü
 $recaptcha = recaptcha_ayarlar($pdo);
 $recaptchaAktif = recaptcha_aktif($recaptcha);
 
@@ -108,7 +109,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $admin_password = $_POST['admin_password'] ?? '';
 
     $tax_office = trim($_POST['tax_office'] ?? '');
-    $tax_number = trim($_POST['tax_number'] ?? '');
+    // Vergi/TC no: boşluk, tire vb. atılır; yalnızca rakam saklanır ve karşılaştırılır.
+    // (Eskiden ham metin saklanıyordu: "123 456 78 90" ile "1234567890" farklı sayılıp
+    //  aynı numarayla ikinci deneme açılabiliyordu.)
+    $kimlik = prolyn_kimlik_no_incele($_POST['tax_number'] ?? '');
+    $tax_number = $kimlik['no'];
+
+    // KVKK / koşul onayları: ilk ikisi zorunlu, ticari ileti isteğe bağlı (varsayılan: hayır).
+    $kvkkOnay    = !empty($_POST['kvkk_onay']);
+    $kosulOnay   = !empty($_POST['kosul_onay']);
+    $ticariIleti = !empty($_POST['ticari_ileti']) ? 1 : 0;
     $billing_address = trim($_POST['billing_address'] ?? '');
 
     $city_id       = (int)($_POST['city_id'] ?? 0);
@@ -125,37 +135,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $tax_office = $toUpperText($tax_office);
     $billing_address = $toUpperText($billing_address);
 
-    if (!function_exists('firma_vno_digits')) {
-        function firma_vno_digits($value) {
-            return preg_replace('/\D+/', '', (string) $value);
-        }
-    }
-
-    if (!function_exists('firma_vno_is_valid')) {
-        function firma_vno_is_valid($value) {
-            $value = firma_vno_digits($value);
-            if ($value === '' || strlen($value) < 10 || strlen($value) > 11) {
-                return false;
-            }
-            if (strlen($value) === 10) {
-                $digits = array_map('intval', str_split($value));
-                $sum = 0;
-                for ($i = 0; $i < 9; $i++) {
-                    $v = ($digits[$i] + (9 - $i)) % 10;
-                    $vv = ($v * pow(2, 9 - $i)) % 9;
-                    if ($v !== 0 && $vv === 0) { $vv = 9; }
-                    $sum += $vv;
-                }
-                $checkDigit = ($sum % 10 === 0) ? 0 : (10 - ($sum % 10));
-                return $checkDigit === $digits[9];
-            }
-            if ($value[0] === '0') { return false; }
-            $digits = array_map('intval', str_split($value));
-            $sumFirst10 = array_sum(array_slice($digits, 0, 10));
-            return ($sumFirst10 % 10) === $digits[10];
-        }
-    }
-
     if (empty($company_name) || empty($official_name) || empty($contact_name) || empty($company_email) || empty($company_phone) || empty($admin_password) || empty($tax_number) || empty($tax_office) || empty($billing_address) || $city_id <= 0 || $district_id <= 0) {
         $message = "Lütfen tüm zorunlu alanları doldurunuz.";
         $messageType = "danger";
@@ -165,13 +144,19 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     } elseif (!reg_password_strong($admin_password)) {
         $message = "Şifre en az 8 karakter olmalı ve harf ile rakam içermelidir.";
         $messageType = "danger";
-    } elseif (!firma_vno_is_valid($tax_number)) {
-        $message = "Geçersiz Vergi No veya TC Kimlik No girişi yaptınız.";
+    } elseif (!$kimlik['gecerli']) {
+        $message = $kimlik['hata'];
+        $messageType = "danger";
+    } elseif (!$kvkkOnay || !$kosulOnay) {
+        $message = "Devam etmek için KVKK Aydınlatma Metni'ni okuduğunuzu ve Kullanım Koşulları'nı kabul ettiğinizi onaylayın.";
         $messageType = "danger";
     } else {
         try {
             // Benzersizlik kontrolü (E-posta, Telefon, Vergi No)
-            $checkUser = $pdo->prepare("SELECT customer_id, company_email, company_phone, tax_number FROM kurumlar WHERE company_email = ? OR (company_phone = ? AND company_phone != '') OR tax_number = ?");
+            // Vergi/TC no karşılaştırması biçimden bağımsızdır (eski kayıtlarda boşluk/tire olabilir).
+            // Silinmiş (deleted_at) kurumlar da sayılır: aynı numarayla ikinci deneme açılamaz.
+            $taxSql = "REPLACE(REPLACE(REPLACE(REPLACE(tax_number,' ',''),'-',''),'.',''),'/','')";
+            $checkUser = $pdo->prepare("SELECT customer_id, company_email, company_phone, tax_number FROM kurumlar WHERE company_email = ? OR (company_phone = ? AND company_phone != '') OR $taxSql = ?");
             $checkUser->execute([$company_email, $company_phone, $tax_number]);
             $existing = $checkUser->fetch();
 
@@ -180,7 +165,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     $message = "Bu e-posta adresiyle daha önce kayıt olunmuş.";
                 } elseif ($existing['company_phone'] === $company_phone && !empty($company_phone)) {
                     $message = "Bu telefon numarasıyla daha önce kayıt olunmuş.";
-                } elseif ($existing['tax_number'] === $tax_number) {
+                } elseif (prolyn_kimlik_normalize($existing['tax_number']) === $tax_number) {
                     $message = "Bu Vergi No / TC Kimlik No ile daha önce kayıt olunmuş.";
                 } else {
                     $message = "Bu bilgilerle daha önce kayıt olunmuş.";
@@ -249,11 +234,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     'musteri_paketi'  => $planNameToInsert, // paket bağı — limitlerin çalışması için ŞART
                     'odeme_periyodu'  => $secilenPeriyot,   // kolon yoksa atlanır (dinamik INSERT)
                     'subscription_type' => 'trial',
+                    'ticari_ileti_izni' => $ticariIleti,                       // isteğe bağlı açık rıza
+                    'onay_ip'         => substr((string)($_SERVER['REMOTE_ADDR'] ?? ''), 0, 45),
+                    'onay_surumu'     => '2026-10-28',                         // yasal metinlerin sürümü
                     'created_by'      => 0,
                     'database_name'   => '', // provisioning sonrası güncellenecek
                     'database_password' => '', // provisioning sonrası güncellenecek (NOT NULL güvenliği)
                 ];
                 $exprMap = [
+                    'kvkk_onay_tarihi' => 'NOW()',
+                    'kosul_onay_tarihi' => 'NOW()',
                     'trial_start_date' => 'NOW()',
                     'trial_end_date'   => 'DATE_ADD(NOW(), INTERVAL 30 DAY)',
                 ];
@@ -342,6 +332,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     'email'         => $company_email,
                 ];
             }
+        } catch (PDOException $e) {
+            error_log('[register] ' . $e->getMessage());
+            // 23000 = tekil indeks ihlali (aynı anda iki istek / aynı vergi no)
+            if ($e->getCode() === '23000') {
+                $message = "Bu Vergi No / TC Kimlik No veya iletişim bilgisiyle daha önce kayıt olunmuş.";
+            } else {
+                $appDebug = filter_var(prolynweb_env('APP_DEBUG', 'false'), FILTER_VALIDATE_BOOLEAN);
+                $message = $appDebug ? ("Kayıt hatası: " . $e->getMessage()) : "Kayıt sırasında bir hata oluştu. Lütfen tekrar deneyin.";
+            }
+            $messageType = "danger";
         } catch (Exception $e) {
             error_log('[register] ' . $e->getMessage());
             $appDebug = filter_var(prolynweb_env('APP_DEBUG', 'false'), FILTER_VALIDATE_BOOLEAN);
@@ -357,10 +357,11 @@ $stmtCities = $pdo->query("SELECT * FROM `" . prolynweb_template_db() . "`.iller
 $iller = $stmtCities->fetchAll(PDO::FETCH_ASSOC);
 ?>
 <!DOCTYPE html>
-<html lang="tr" data-bs-theme="dark">
+<html lang="tr" data-bs-theme="light" data-tema="light">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<?php require __DIR__ . '/partials/tema_head.php'; ?>
     <title>30 Günlük Deneme Sürümü - <?php echo htmlspecialchars($appSettings['seo_title'] ?? 'Prolyn ERP'); ?></title>
     <meta name="description" content="<?php echo htmlspecialchars('Prolyn ERP\'yi 30 gün ücretsiz deneyin. Kurulum ücreti olmadan bulut ERP, CRM ve ön muhasebe modüllerini test edin.'); ?>">
     <link rel="canonical" href="<?php echo htmlspecialchars(prolynweb_current_url()); ?>">
@@ -374,65 +375,17 @@ $iller = $stmtCities->fetchAll(PDO::FETCH_ASSOC);
     <link rel="icon" href="p/dist/logo/favicon.ico" sizes="any" />
     <link rel="icon" type="image/png" sizes="32x32" href="p/dist/logo/favicon-32x32.png" />
     <link rel="apple-touch-icon" href="p/dist/logo/apple-touch-icon.png" />
-    <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Inter:300,400,500,600,700,800" />
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Inter:400,500,600,700,800&display=swap" />
     <link href="p/dist/assets/plugins/global/plugins.bundle.css" rel="stylesheet" type="text/css" />
     <link href="p/dist/assets/css/style.bundle.css" rel="stylesheet" type="text/css" />
     <!-- New Custom Redesign CSS -->
-    <link href="assets/css/style.css?v=8" rel="stylesheet" type="text/css" />
+    <link href="assets/css/style.css?v=12" rel="stylesheet" type="text/css" />
+    <link href="assets/css/tema.css?v=2" rel="stylesheet" type="text/css" />
 </head>
 <body id="kt_body" class="app-blank">
     <!--begin::Root-->
     <div class="d-flex flex-column flex-root" id="kt_app_root">
-        <!--begin::Header-->
-        <div class="landing-header glass-header" data-kt-sticky="true" data-kt-sticky-name="landing-header" data-kt-sticky-offset="{default: '200px', lg: '300px'}">
-            <div class="container-xxl">
-                <nav class="navbar navbar-dark w-100 py-4 py-lg-6">
-                    <!--begin::Logo-->
-                    <a class="navbar-brand d-flex align-items-center" href="index.php">
-                        <img src="p/dist/logo/prolyn-logo-horizontal-white-sm.png" alt="Prolyn" style="height:38px;width:auto;display:block;" />
-                    </a>
-                    <!--end::Logo-->
-                    
-                    <!-- Mobile Toggle -->
-                    <button class="btn btn-icon btn-active-color-primary d-lg-none" type="button" data-bs-toggle="offcanvas" data-bs-target="#mobileMenu" aria-controls="mobileMenu">
-                        <i class="bi bi-list fs-1 text-white"></i>
-                    </button>
-
-                    <!-- Desktop Menu -->
-                    <div class="d-none d-lg-flex align-items-center ms-auto">
-                        <ul class="nav text-white fw-semibold fs-6 me-10">
-                            <li class="nav-item">
-                                <a class="nav-link text-white px-4" href="index.php#ozellikler">Özellikler</a>
-                            </li>
-                            <li class="nav-item">
-                                <a class="nav-link text-white px-4" href="index.php#nasil-calisir">Nasıl Çalışır?</a>
-                            </li>
-                            <li class="nav-item">
-                                <a class="nav-link text-white px-4" href="moduller.php">Modüller</a>
-                            </li>
-                                                        <li class="nav-item">
-                                <a class="nav-link text-white px-4" href="blog.php">Blog</a>
-                            </li>
-                            <li class="nav-item">
-                                <a class="nav-link text-white px-4" href="video.php">Videolar</a>
-                            </li>
-                            <li class="nav-item">
-                                <a class="nav-link text-white px-4" href="pricing.php">Fiyatlandırma</a>
-                            </li>
-                            <li class="nav-item">
-                                <a class="nav-link text-white px-4" href="contact.php">İletişim</a>
-                            </li>
-                        </ul>
-                        
-                        <div class="d-flex align-items-center flex-shrink-0">
-                            <a href="<?php echo htmlspecialchars($appPanelUrl); ?>" class="btn btn-outline btn-outline-dashed btn-outline-default btn-active-light-primary text-white fw-bold px-6 py-3 me-4">Giriş Yap</a>
-                            <a href="register.php" class="btn btn-primary-glow px-6 py-3 fw-bold">30 Gün Ücretsiz Dene</a>
-                        </div>
-                    </div>
-                </nav>
-            </div>
-        </div>
-        <!--end::Header-->
+<?php $navActive = ''; require __DIR__ . '/partials/site_header.php'; ?>
 
         <!--begin::Hero-->
         <div class="hero-section text-center">
@@ -440,10 +393,10 @@ $iller = $stmtCities->fetchAll(PDO::FETCH_ASSOC);
             <div class="container-xxl position-relative z-index-2">
                 <div class="mb-5 animate-fade-in-up">
                     <h1 class="text-white fw-bolder fs-2hx fs-lg-3x mb-6">
-                        Bulut ERP <span class="text-gradient-primary">30 Günlük Deneme</span> Sürümü
+                        30 gün <span class="text-gradient-primary">ücretsiz</span> deneyin
                     </h1>
                     <div class="fw-medium fs-4 text-gray-400 mb-10 mx-auto" style="max-width: 800px;">
-                        Kredi kartı gerekmeden, hiçbir ücret ödemeden tüm özellikleri hemen kullanmaya başlayın.
+                        Kredi kartı gerekmez. Firma bilgilerinizi girin, size özel çalışma alanınız hazırlansın ve Prolyn'i kendi kayıtlarınızla deneyin.
                     </div>
                 </div>
             </div>
@@ -463,22 +416,22 @@ $iller = $stmtCities->fetchAll(PDO::FETCH_ASSOC);
                                 <li>
                                     <i class="ki-duotone ki-check-circle fs-2 text-success me-3"></i>
                                     <div>
-                                        <span class="d-block fw-bold text-white fs-5 mb-1">Anında Kurulum</span>
-                                        <span class="text-gray-400">Beklemek yok, saniyeler içinde size özel sisteminiz hazır.</span>
+                                        <span class="d-block fw-bold text-white fs-5 mb-1">Kurulum yok</span>
+                                        <span class="text-gray-400">Program yüklemezsiniz; kayıttan sonra tarayıcıdan giriş yapıp başlarsınız.</span>
                                     </div>
                                 </li>
                                 <li>
                                     <i class="ki-duotone ki-check-circle fs-2 text-success me-3"></i>
                                     <div>
-                                        <span class="d-block fw-bold text-white fs-5 mb-1">Tamamen İzole</span>
-                                        <span class="text-gray-400">Her müşteriye özel ayrı bir veritabanı tahsis edilir.</span>
+                                        <span class="d-block fw-bold text-white fs-5 mb-1">Verileriniz size özel</span>
+                                        <span class="text-gray-400">Her firmanın kayıtları kendi ayrı veritabanında tutulur.</span>
                                     </div>
                                 </li>
                                 <li>
                                     <i class="ki-duotone ki-check-circle fs-2 text-success me-3"></i>
                                     <div>
-                                        <span class="d-block fw-bold text-white fs-5 mb-1">Tüm Modüller Açık</span>
-                                        <span class="text-gray-400">30 gün boyunca hiçbir kısıtlama olmadan sistemi tam kapasite kullanın.</span>
+                                        <span class="d-block fw-bold text-white fs-5 mb-1">Paketinizin tüm modülleri</span>
+                                        <span class="text-gray-400">Deneme süresince seçtiğiniz paketteki tüm modülleri kullanırsınız.</span>
                                     </div>
                                 </li>
                                 <li>
@@ -490,12 +443,12 @@ $iller = $stmtCities->fetchAll(PDO::FETCH_ASSOC);
                                 </li>
                             </ul>
                             
-                            <div class="p-6 bg-dark bg-opacity-50 rounded border border-gray-800">
+                            <div class="info-box">
                                 <div class="d-flex align-items-center mb-3">
-                                    <i class="ki-duotone ki-shield-tick fs-1 text-primary me-3"><span class="path1"></span><span class="path2"></span></i>
-                                    <span class="fw-bold text-white fs-5">Güvenli Veri Altyapısı</span>
+                                    <i class="bi bi-shield-check info-box-icon me-3"></i>
+                                    <span class="info-box-title">Güvenli bağlantı</span>
                                 </div>
-                                <p class="text-gray-400 mb-0">Verileriniz yüksek güvenlikli sunucularda 256-bit şifreleme ile korunur ve günlük olarak yedeklenir.</p>
+                                <p class="info-box-text">Tüm bağlantılar HTTPS ile şifrelenir, şifreniz geri döndürülemez biçimde saklanır. Ayrıntılar için <a href="kvkk-aydinlatma-metni.php">KVKK Aydınlatma Metni</a>'ne bakabilirsiniz.</p>
                             </div>
                         </div>
                     </div>
@@ -507,8 +460,8 @@ $iller = $stmtCities->fetchAll(PDO::FETCH_ASSOC);
                                 <div class="alert alert-success d-flex align-items-center p-6 mb-8 border border-success border-opacity-25" style="background: rgba(80, 205, 137, 0.1);">
                                     <i class="ki-duotone ki-shield-tick fs-2hx text-success me-4"><span class="path1"></span><span class="path2"></span></i>
                                     <div class="d-flex flex-column">
-                                        <h4 class="mb-1 text-success">Veritabanı Başarıyla Kuruldu!</h4>
-                                        <span class="text-gray-300">Hesabınız ve izole veritabanınız 30 günlük ücretsiz deneme için hazırlandı.</span>
+                                        <h4 class="mb-1 text-success">Hesabınız hazır!</h4>
+                                        <span class="text-gray-300">Firmanıza özel çalışma alanınız 30 günlük ücretsiz deneme için hazırlandı.</span>
                                     </div>
                                 </div>
                                 
@@ -646,7 +599,8 @@ $iller = $stmtCities->fetchAll(PDO::FETCH_ASSOC);
                                         </div>
                                         <div class="col-md-6">
                                             <label class="form-label fs-6 fw-semibold text-gray-300">Vergi No / TC Kimlik No <span class="text-danger">*</span></label>
-                                            <input type="text" name="tax_number" class="form-control form-control-lg glass-input" placeholder="10 veya 11 Haneli" value="<?php echo htmlspecialchars($_POST['tax_number'] ?? ''); ?>" maxlength="11" required>
+                                            <input type="text" name="tax_number" id="tax_number" class="form-control form-control-lg glass-input" placeholder="10 haneli Vergi No veya 11 haneli T.C. No" value="<?php echo htmlspecialchars($_POST['tax_number'] ?? ''); ?>" inputmode="numeric" autocomplete="off" maxlength="11" pattern="[0-9]{10,11}" required aria-describedby="tax_number_hint">
+                                            <div class="field-hint" id="tax_number_hint">Tüzel kişiler 10 haneli Vergi Kimlik No, şahıs işletmeleri 11 haneli T.C. Kimlik No girer. Aynı numarayla yalnızca bir deneme hesabı açılabilir.</div>
                                         </div>
                                     </div>
                                     
@@ -660,6 +614,21 @@ $iller = $stmtCities->fetchAll(PDO::FETCH_ASSOC);
                                         <input type="password" name="admin_password" class="form-control form-control-lg glass-input" placeholder="En az 8 karakter (harf + rakam)" required minlength="8">
                                     </div>
                                     
+                                    <div class="mb-8">
+                                        <div class="consent-box">
+                                            <input type="checkbox" name="kvkk_onay" id="kvkk_onay" value="1" required <?= !empty($_POST['kvkk_onay']) ? 'checked' : '' ?>>
+                                            <label for="kvkk_onay"><a href="kvkk-aydinlatma-metni.php" target="_blank" rel="noopener">KVKK Aydınlatma Metni</a>'ni okudum, kişisel verilerimin belirtilen amaçlarla işlenmesini anladım. <span class="text-danger">*</span></label>
+                                        </div>
+                                        <div class="consent-box">
+                                            <input type="checkbox" name="kosul_onay" id="kosul_onay" value="1" required <?= !empty($_POST['kosul_onay']) ? 'checked' : '' ?>>
+                                            <label for="kosul_onay"><a href="kullanim-kosullari.php" target="_blank" rel="noopener">Kullanım Koşulları</a>'nı ve <a href="gizlilik-politikasi.php" target="_blank" rel="noopener">Gizlilik Politikası</a>'nı kabul ediyorum. <span class="text-danger">*</span></label>
+                                        </div>
+                                        <div class="consent-box">
+                                            <input type="checkbox" name="ticari_ileti" id="ticari_ileti" value="1" <?= !empty($_POST['ticari_ileti']) ? 'checked' : '' ?>>
+                                            <label for="ticari_ileti">İsteğe bağlı: Kampanya, duyuru ve yenilikler hakkında e-posta/telefonla ticari elektronik ileti gönderilmesine izin veriyorum. İzni dilediğim zaman geri alabilirim.</label>
+                                        </div>
+                                    </div>
+
                                     <div class="text-end">
                                         <button type="submit" class="btn btn-primary-glow btn-lg px-10 py-4 fs-5 fw-bold w-100">Kurulumu Başlat & Dene</button>
                                     </div>
@@ -678,39 +647,10 @@ $iller = $stmtCities->fetchAll(PDO::FETCH_ASSOC);
             </div>
         </div>
 
-        <!--begin::Footer-->
-        <div class="mb-0 py-10 border-top border-gray-800 mt-auto" style="background: rgba(19, 22, 31, 0.6); backdrop-filter: blur(10px);">
-            <div class="container-xxl">
-                <div class="d-flex flex-center">
-                    <span class="text-gray-500 fw-semibold">&copy; <?= date('Y') ?> Prolyn ERP. Tüm hakları saklıdır. - <a href="https://echoshift.net" target="_blank" class="text-gray-400 text-hover-primary">Created by EchoShift</a></span>
-                </div>
-            </div>
-        </div>
-        <!--end::Footer-->
+<?php require __DIR__ . '/partials/site_footer.php'; ?>
     <!--end::Root-->
 
-    <!-- Offcanvas Mobile Menu -->
-    <div class="offcanvas offcanvas-end offcanvas-glass border-0" tabindex="-1" id="mobileMenu" aria-labelledby="mobileMenuLabel">
-        <div class="offcanvas-header border-bottom border-gray-800 p-6">
-            <h5 class="offcanvas-title m-0" id="mobileMenuLabel"><img src="p/dist/logo/prolyn-logo-horizontal-white-sm.png" alt="Prolyn" style="height:32px;width:auto;" /></h5>
-            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="offcanvas" aria-label="Kapat"></button>
-        </div>
-        <div class="offcanvas-body p-6">
-            <ul class="nav flex-column fs-4 fw-semibold mb-8">
-                <li class="nav-item mb-2"><a class="nav-link text-white px-0" href="index.php#ozellikler"><i class="bi bi-star me-2 text-primary"></i>Özellikler</a></li>
-                <li class="nav-item mb-2"><a class="nav-link text-white px-0" href="index.php#nasil-calisir"><i class="bi bi-info-circle me-2 text-primary"></i>Nasıl Çalışır?</a></li>
-                <li class="nav-item mb-2"><a class="nav-link text-white px-0" href="moduller.php"><i class="bi bi-grid me-2 text-primary"></i>Modüller</a></li>
-                <li class="nav-item mb-2"><a class="nav-link text-white px-0" href="blog.php"><i class="bi bi-file-text me-2 text-primary"></i>Blog</a></li>
-                <li class="nav-item mb-2"><a class="nav-link text-white px-0" href="video.php"><i class="bi bi-play-circle me-2 text-primary"></i>Videolar</a></li>
-                <li class="nav-item mb-2"><a class="nav-link text-white px-0" href="pricing.php"><i class="bi bi-tag me-2 text-primary"></i>Fiyatlandırma</a></li>
-                <li class="nav-item mb-2"><a class="nav-link text-white px-0" href="contact.php"><i class="bi bi-envelope me-2 text-primary"></i>İletişim</a></li>
-            </ul>
-            <div class="d-grid gap-3 mt-8">
-                <a href="register.php" class="btn btn-primary-glow py-3 fw-bold fs-5 shadow-sm">30 Gün Ücretsiz Dene</a>
-                <a href="<?php echo htmlspecialchars($appPanelUrl); ?>" class="btn btn-outline btn-outline-dashed btn-outline-default btn-active-light-primary text-white fw-bold py-3 fs-5">Giriş Yap</a>
-            </div>
-        </div>
-    </div>
+<?php require __DIR__ . '/partials/site_mobile_menu.php'; ?>
 
     <!--begin::Global Javascript Bundle(mandatory for all pages)-->
 <?php if ($recaptchaAktif) { echo recaptcha_istemci_kodu($recaptcha, 'registerForm', 'register', 'Kurulum başlatılıyor…'); } ?>
@@ -718,8 +658,39 @@ $iller = $stmtCities->fetchAll(PDO::FETCH_ASSOC);
     <script src="p/dist/assets/js/scripts.bundle.js"></script>
     <!--end::Global Javascript Bundle-->
 
+<?php require __DIR__ . '/partials/cookie_banner.php'; ?>
 <?php require __DIR__ . '/partials/fab.php'; ?>
 <script>
+(function () {
+    var el = document.getElementById('tax_number');
+    if (!el) { return; }
+    function tckn(n) {
+        if (!/^[1-9][0-9]{10}$/.test(n) || /^(\d)\1{10}$/.test(n)) { return false; }
+        var d = n.split('').map(Number);
+        var d10 = (((d[0] + d[2] + d[4] + d[6] + d[8]) * 7 - (d[1] + d[3] + d[5] + d[7])) % 10 + 10) % 10;
+        if (d10 !== d[9]) { return false; }
+        return d.slice(0, 10).reduce(function (a, b) { return a + b; }, 0) % 10 === d[10];
+    }
+    function vkn(n) {
+        if (!/^[0-9]{10}$/.test(n) || /^(\d)\1{9}$/.test(n)) { return false; }
+        var d = n.split('').map(Number), t = 0;
+        for (var i = 0; i < 9; i++) {
+            var v = (d[i] + (9 - i)) % 10, vv = (v * Math.pow(2, 9 - i)) % 9;
+            if (v !== 0 && vv === 0) { vv = 9; }
+            t += vv;
+        }
+        return (10 - (t % 10)) % 10 === d[9];
+    }
+    function kontrol() {
+        el.value = el.value.replace(/\D+/g, '');
+        var n = el.value, ok = n.length === 10 ? vkn(n) : (n.length === 11 ? tckn(n) : false);
+        el.setCustomValidity(ok || n.length === 0 ? '' : (n.length < 10 ? 'Vergi No 10, T.C. Kimlik No 11 haneli olmalıdır.' : 'Girdiğiniz numara geçerli değil. Lütfen kontrol edin.'));
+    }
+    el.addEventListener('input', kontrol);
+    el.addEventListener('blur', kontrol);
+    kontrol();
+})();
+
 function loadIlceler(cityId) {
     const districtSelect = document.getElementById('district_id');
     

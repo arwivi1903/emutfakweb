@@ -1,6 +1,6 @@
 /* Sektör tanıtım sayfası (mutfak-dolap-yazilimi.php) */
 .hero-section.sk-hero{padding:150px 0 70px 0 !important;text-align:left}
-.sk-badge{display:inline-block;padding:7px 14px;border-radius:999px;font-size:13px;font-weight:700;letter-spacing:.02em;color:#9db8ff;background:rgba(59,108,246,.14);border:1px solid rgba(59,108,246,.35)}
+.sk-badge{display:inline-block;padding:7px 14px;border-radius:999px;font-size:13px;font-weight:700;letter-spacing:.02em;color:#9db8ff;background:rgba(102,126,234,.14);border:1px solid rgba(102,126,234,.35)}
 .sk-badge-green{color:#7ee2a4;background:rgba(34,197,94,.12);border-color:rgba(34,197,94,.35)}
 .sk-btn-wa{background:#1fa855;color:#fff;border:0}
 .sk-btn-wa:hover{background:#18904a;color:#fff}
@@ -14,17 +14,17 @@
 .sk-row small{display:block;color:#8a93a8;font-size:12px;margin-top:2px}
 .sk-time{color:#8a93a8;font-variant-numeric:tabular-nums;font-size:13px}
 .sk-tag{font-size:11px;font-weight:700;padding:4px 9px;border-radius:999px;white-space:nowrap}
-.sk-blue{background:rgba(59,108,246,.16);color:#9db8ff}.sk-red{background:rgba(239,68,68,.16);color:#ff9b9b}
+.sk-blue{background:rgba(102,126,234,.16);color:#9db8ff}.sk-red{background:rgba(239,68,68,.16);color:#ff9b9b}
 .sk-amber{background:rgba(245,158,11,.16);color:#fcd27b}.sk-green{background:rgba(34,197,94,.16);color:#7ee2a4}
 .sk-foot{display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap;padding-top:12px;color:#8a93a8;font-size:13px}
 .sk-foot b{color:#fff}
 .sk-flow{list-style:none;padding:0;margin:0;display:grid;grid-template-columns:repeat(5,1fr);gap:16px;counter-reset:none}
 .sk-flow li{position:relative;padding:22px 18px;border-radius:16px;background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.07)}
-.sk-flow li:not(:last-child)::after{content:"";position:absolute;top:38px;right:-14px;width:12px;height:2px;background:rgba(59,108,246,.6)}
+.sk-flow li:not(:last-child)::after{content:"";position:absolute;top:38px;right:-14px;width:12px;height:2px;background:rgba(102,126,234,.6)}
 .sk-flow h3{color:#fff;font-size:16px;font-weight:700;margin:12px 0 6px}
 .sk-flow p{color:#9aa3b8;font-size:14px;margin:0}
-.sk-num{display:inline-grid;place-items:center;width:32px;height:32px;border-radius:50%;background:#3b6cf6;color:#fff;font-weight:800;font-size:14px}
-.sk-offer{padding:44px !important;background:linear-gradient(135deg,rgba(59,108,246,.16),rgba(34,197,94,.08)) !important}
+.sk-num{display:inline-grid;place-items:center;width:32px;height:32px;border-radius:50%;background:#667eea;color:#fff;font-weight:800;font-size:14px}
+.sk-offer{padding:44px !important;background:linear-gradient(135deg,rgba(102,126,234,.16),rgba(34,197,94,.08)) !important}
 .sk-steps{list-style:none;padding:0;margin:0;display:grid;gap:12px;counter-reset:s}
 .sk-steps li{counter-increment:s;position:relative;padding:14px 14px 14px 52px;border-radius:12px;background:rgba(0,0,0,.18)}
 .sk-steps li::before{content:counter(s);position:absolute;left:14px;top:14px;width:26px;height:26px;border-radius:50%;display:grid;place-items:center;background:rgba(255,255,255,.1);color:#fff;font-weight:700;font-size:13px}

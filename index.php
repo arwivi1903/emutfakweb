@@ -1,38 +1,45 @@
 <?php require_once 'db.php'; ?>
 <?php
-$websiteFeatures = [];
-try {
-    $stmt = $pdo->query("SELECT * FROM website_features WHERE status = 1 ORDER BY order_no ASC");
-    $websiteFeatures = $stmt->fetchAll();
-} catch (Throwable $e) {
-    error_log('[prolynweb] website_features okunamadi: ' . $e->getMessage());
-}
-$featureColors = ['primary', 'success', 'info', 'warning', 'danger'];
-?>
-<?php
+require_once __DIR__ . '/partials/paket_veri.php';
+require_once __DIR__ . '/partials/modul_icerik.php';
+$packages = prolynweb_paketler($pdo);
 $faqItems = [
-    ['Prolyn nedir?', 'Prolyn, işletmeler için geliştirilmiş bulut tabanlı bir ERP ve ön muhasebe yazılımıdır. Müşteri (CRM), randevu, cari hesap, kasa ve banka, sözleşme, personel ve destek süreçlerini tek panelden yönetmenizi sağlar. Her kurum kendi izole veritabanında çalışır ve ilk 30 gün ücretsiz denenebilir.'],
-    ['Prolyn hangi modülleri içerir?', 'Müşteri ve cari yönetimi, randevu ve servis takibi, kasa ve banka hareketleri, çek ve sözleşme yönetimi, personel giderleri, raporlama ve denetim kayıtları ile destek talebi modülü Prolyn ile birlikte gelir. Kullanabileceğiniz modüller seçtiğiniz pakete göre belirlenir; güncel liste Modüller sayfasında yer alır.'],
-    ['30 günlük deneme sürümünde kısıtlama var mı?', 'Hayır. Deneme sürecinde de kendi izole veritabanınızla, seçtiğiniz pakete uygun modüllerle çalışırsınız. Kredi kartı istemiyoruz; süre sonunda dilerseniz sözleşmeli müşteriye geçersiniz, dilerseniz vazgeçersiniz.'],
-    ['Verilerimiz başka firmalarla aynı veritabanında mı tutuluyor?', 'Hayır. Prolyn\'de her kurum için ayrı, tamamen izole bir veritabanı (Multi-DB mimari) oluşturulur. Verileriniz hiçbir şekilde başka bir müşteriyle aynı tabloyu paylaşmaz.'],
+    ['Prolyn nedir?', 'Prolyn, işletmeler için geliştirilmiş bulut tabanlı bir ERP ve ön muhasebe yazılımıdır. Müşteri (CRM), randevu, cari hesap, kasa ve banka, sözleşme, personel ve destek süreçlerini tek panelden yönetmenizi sağlar. Her firmanın verisi kendi ayrı veritabanında tutulur ve ilk 30 gün ücretsiz denenebilir.'],
+    ['Prolyn kimler için uygun?', 'Müşteri, randevu, kasa, cari ve çek takibini bir arada yapmak isteyen küçük ve orta ölçekli işletmeler için. Şu an en çok mutfak, dolap ve banyo firmalarının ölçü, montaj, kapora, taksit ve çek süreçlerine uygun şekilde kullanılıyor; farklı bir sektördeyseniz 30 günlük denemeyle kendi işinize uyup uymadığını görebilirsiniz.'],
+    ['Excel veya defter tutmaktan ne farkı var?', 'Müşteri, randevu, sözleşme, ödeme ve cari kayıtları ayrı dosyalarda değil tek panelde ve birbirine bağlı tutulur. Bir müşterinin borcunu, taksitini ve randevusunu aynı yerden görürsünüz; aramak, toplamak ve el ile eşleştirmek zorunda kalmazsınız.'],
+    ['Prolyn hangi modülleri içerir?', 'Müşteri ve cari yönetimi, randevu ve servis takibi, kasa ve banka hareketleri, çek ve sözleşme yönetimi, personel giderleri, raporlama ve işlem kayıtları ile destek talebi modülü Prolyn ile birlikte gelir. Kullanabileceğiniz modüller seçtiğiniz pakete göre belirlenir; güncel liste Modüller sayfasında yer alır.'],
+    ['30 günlük deneme sürümünde kısıtlama var mı?', 'Hayır. Deneme sürecinde de kendi ayrı veri alanınızla, seçtiğiniz pakete uygun modüllerle çalışırsınız. Kredi kartı istemiyoruz; süre sonunda dilerseniz ücretli pakete geçersiniz, dilerseniz vazgeçersiniz. Aynı vergi numarası veya T.C. kimlik numarasıyla bir kez deneme hesabı açılabilir.'],
+    ['Verilerimiz başka firmalarla aynı yerde mi tutuluyor?', 'Hayır. Her firma için ayrı bir veritabanı oluşturulur; verileriniz başka bir firmayla aynı tabloyu paylaşmaz ve başka firmaların kullanıcıları tarafından görülemez.'],
+    ['Kişisel verilerim ve KVKK nasıl ele alınıyor?', 'Kayıt sırasında verdiğiniz bilgiler yalnızca hizmeti sunmak, faturalandırma ve güvenlik amacıyla işlenir. Hangi verinin neden işlendiğini, saklama sürelerini ve haklarınızı sayfa altındaki KVKK Aydınlatma Metni, Gizlilik Politikası ve Çerez Politikası sayfalarında bulabilirsiniz.'],
+    ['Paketler arasındaki fark nedir?', 'Paketler kullanıcı sayısı, şube sayısı ve açılan modüllerde ayrışır. Hangi pakette hangi modülün bulunduğunu bu sayfadaki karşılaştırma tablosunda ve her modül bölümünün altındaki "Hangi pakette?" satırında görebilirsiniz. Fiyatlandırma sayfasındaki tutarlara %20 KDV dahildir.'],
+    ['Telefondan ve tabletten kullanabilir miyiz?', 'Prolyn web tabanlıdır; bilgisayar, tablet ve telefon tarayıcısından kurulum gerektirmeden açılır. Her personel kendi kullanıcısıyla yalnızca yetkili olduğu ekranları görür.'],
+    ['Stok takibi var mı?', 'Ürün kartları ve montajda eksik çıkan malzemenin takibi bugün kullanılabilir. Depodaki miktarı izleyen ayrıntılı stok modülü geliştirme aşamasındadır.'],
     ['Paketler arasında sonradan geçiş yapabilir miyim?', 'Evet. Paket yükseltme talebinizi bize iletmeniz yeterli; ek bir kurulum sürecine gerek kalmadan paketiniz güncellenir.'],
     ['Mevcut sistemimizdeki verileri Prolyn\'e aktarabilir miyiz?', 'Kayıt sonrası kurulum ekibimiz sizinle iletişime geçerek mevcut müşteri ve cari verilerinizin aktarım sürecini birlikte planlar.'],
     ['Destek talebi açtığımda ne kadar sürede dönüş alırım?', 'Paketinize göre değişen öncelik seviyelerimiz var; panel üzerinden açtığınız destek talepleri ekibimiz tarafından takip edilip yanıtlanır.'],
 ];
 ?>
 <!DOCTYPE html>
-<html lang="tr" data-bs-theme="dark">
+<html lang="tr" data-bs-theme="light" data-tema="light">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title><?php echo htmlspecialchars($appSettings['seo_title'] ?? 'Prolyn ERP - Yeni Çağın İş Yönetimi'); ?></title>
-    <meta name="description" content="<?php echo htmlspecialchars($appSettings['seo_description'] ?? 'Prolyn ERP: Kurumsal Kaynak Planlama, CRM, İK ve Ön Muhasebe çözümlerini tek bir bulut platformunda birleştiren yeni nesil iş yönetim sistemi.'); ?>">
-    <meta name="keywords" content="<?php echo htmlspecialchars($appSettings['seo_keywords'] ?? 'erp, bulut erp, crm, ön muhasebe, ik'); ?>">
+<?php require __DIR__ . '/partials/tema_head.php'; ?>
+    <title>
+        <?php echo htmlspecialchars($appSettings['seo_title'] ?? 'Prolyn | Bulut ERP ve Ön Muhasebe Yazılımı - 30 Gün Ücretsiz'); ?>
+    </title>
+    <meta name="description"
+        content="<?php echo htmlspecialchars($appSettings['seo_description'] ?? 'Prolyn; müşteri, randevu, cari hesap, kasa, çek ve sözleşme takibini tek panelde toplayan bulut tabanlı ERP ve ön muhasebe yazılımıdır. İlk 30 gün ücretsiz.'); ?>">
+    <meta name="keywords"
+        content="<?php echo htmlspecialchars($appSettings['seo_keywords'] ?? 'erp, bulut erp, crm, ön muhasebe, ik'); ?>">
     <link rel="canonical" href="<?php echo htmlspecialchars(prolynweb_current_url()); ?>">
     <meta property="og:type" content="website">
     <meta property="og:site_name" content="<?php echo htmlspecialchars($appSettings['site_name'] ?? 'Prolyn ERP'); ?>">
-    <meta property="og:title" content="<?php echo htmlspecialchars($appSettings['seo_title'] ?? 'Prolyn ERP - Yeni Çağın İş Yönetimi'); ?>">
-    <meta property="og:description" content="<?php echo htmlspecialchars($appSettings['seo_description'] ?? 'Prolyn ERP: Kurumsal Kaynak Planlama, CRM, İK ve Ön Muhasebe çözümlerini tek bir bulut platformunda birleştiren yeni nesil iş yönetim sistemi.'); ?>">
+    <meta property="og:title"
+        content="<?php echo htmlspecialchars($appSettings['seo_title'] ?? 'Prolyn | Bulut ERP ve Ön Muhasebe Yazılımı - 30 Gün Ücretsiz'); ?>">
+    <meta property="og:description"
+        content="<?php echo htmlspecialchars($appSettings['seo_description'] ?? 'Prolyn; müşteri, randevu, cari hesap, kasa, çek ve sözleşme takibini tek panelde toplayan bulut tabanlı ERP ve ön muhasebe yazılımıdır. İlk 30 gün ücretsiz.'); ?>">
     <meta property="og:url" content="<?php echo htmlspecialchars(prolynweb_current_url()); ?>">
     <meta name="twitter:card" content="summary_large_image">
     <?php
@@ -44,7 +51,7 @@ $faqItems = [
         '@type' => 'Organization', '@id' => $ldBase . '/#org', 'name' => $ldName, 'url' => $ldBase,
         'logo' => $ldBase . '/p/dist/logo/icon-512x512.png',
         'email' => $ldMail,
-        'sameAs' => array_values(array_filter([$appSettings['social_twitter'] ?? null, $appSettings['social_linkedin'] ?? null])),
+        'sameAs' => array_values(array_filter([$appSettings['social_twitter'] ?? null, $appSettings['social_linkedin'] ?? null, $appSettings['social_instagram'] ?? 'https://www.instagram.com/echolab2/', $appSettings['social_youtube'] ?? 'https://www.youtube.com/@echoLabs2'])),
     ];
     if ($ldPhone !== '') {
         $ldOrg['contactPoint'] = [['@type' => 'ContactPoint', 'contactType' => 'customer support', 'telephone' => $ldPhone, 'email' => $ldMail, 'availableLanguage' => 'Turkish']];
@@ -60,177 +67,95 @@ $faqItems = [
             ['@type' => 'WebSite', '@id' => $ldBase . '/#website', 'url' => $ldBase, 'name' => $ldName, 'inLanguage' => 'tr-TR', 'publisher' => ['@id' => $ldBase . '/#org']],
             ['@type' => 'SoftwareApplication', 'name' => $ldName, 'applicationCategory' => 'BusinessApplication',
              'operatingSystem' => 'Web', 'inLanguage' => 'tr-TR', 'url' => $ldBase,
-             'description' => $appSettings['seo_description'] ?? 'Bulut tabanlı ERP, CRM ve ön muhasebe yazılımı.',
+             'description' => $appSettings['seo_description'] ?? 'Müşteri, randevu, cari, kasa ve çek takibini tek panelde toplayan bulut tabanlı ERP ve ön muhasebe yazılımı.',
              'offers' => ['@type' => 'Offer', 'price' => '0', 'priceCurrency' => 'TRY', 'description' => '30 gün ücretsiz deneme'],
              'publisher' => ['@id' => $ldBase . '/#org']],
             ['@type' => 'FAQPage', 'mainEntity' => $ldFaq],
         ],
     ];
     ?>
-    <script type="application/ld+json"><?php echo json_encode($ldGraph, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_HEX_TAG); ?></script>
+    <script type="application/ld+json">
+    <?php echo json_encode($ldGraph, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_HEX_TAG); ?>
+    </script>
     <link rel="icon" href="p/dist/logo/favicon.ico" sizes="any" />
     <link rel="icon" type="image/png" sizes="32x32" href="p/dist/logo/favicon-32x32.png" />
     <link rel="apple-touch-icon" href="p/dist/logo/apple-touch-icon.png" />
-    <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Inter:300,400,500,600,700,800" />
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Inter:400,500,600,700,800&display=swap" />
     <link href="p/dist/assets/plugins/global/plugins.bundle.css" rel="stylesheet" type="text/css" />
     <link href="p/dist/assets/css/style.bundle.css" rel="stylesheet" type="text/css" />
     <!-- New Custom Redesign CSS -->
-    <link href="assets/css/style.css?v=8" rel="stylesheet" type="text/css" />
+    <link href="assets/css/style.css?v=12" rel="stylesheet" type="text/css" />
+    <link href="assets/css/tema.css?v=2" rel="stylesheet" type="text/css" />
+    <link href="assets/css/modul.css?v=1" rel="stylesheet" type="text/css" />
 </head>
-<body id="kt_body" class="app-blank">
-    <!--begin::Security Check Overlay-->
-    <div id="prolyn-boot-check" class="boot-check">
-        <div class="boot-check-box">
-            <div class="boot-check-icon">🛡️</div>
-            <h1 class="text-white fs-3 fw-bolder mb-3">Güvenlik Kontrolü</h1>
-            <p id="boot-check-message" class="text-gray-400 fs-6 mb-0">Lütfen bekleyin, tarayıcınız doğrulanıyor...</p>
-            <div class="boot-check-bar"><div class="boot-check-bar-fill"></div></div>
-        </div>
-    </div>
-    <!--end::Security Check Overlay-->
 
+<body id="kt_body" class="app-blank">
     <!--begin::Root-->
     <div class="d-flex flex-column flex-root" id="kt_app_root">
-        <!--begin::Header-->
-        <div class="landing-header glass-header" data-kt-sticky="true" data-kt-sticky-name="landing-header" data-kt-sticky-offset="{default: '200px', lg: '300px'}">
-            <div class="container-xxl">
-                <nav class="navbar navbar-dark w-100 py-4 py-lg-6">
-                    <!--begin::Logo-->
-                    <a class="navbar-brand d-flex align-items-center" href="index.php">
-                        <img src="p/dist/logo/prolyn-logo-horizontal-white-sm.png" alt="Prolyn" style="height:38px;width:auto;display:block;" />
-                    </a>
-                    <!--end::Logo-->
-                    
-                    <!-- Mobile Toggle -->
-                    <button class="navbar-toggler d-lg-none" type="button" data-bs-toggle="offcanvas" data-bs-target="#mobileMenu" aria-controls="mobileMenu">
-                        <span class="navbar-toggler-icon"></span>
-                    </button>
+        <?php $navActive = ''; require __DIR__ . '/partials/site_header.php'; ?>
 
-                    <!-- Desktop Menu -->
-                    <div class="d-none d-lg-flex align-items-center ms-auto">
-                        <ul class="nav text-white fw-semibold fs-6 me-10">
-                            <li class="nav-item">
-                                <a class="nav-link text-white px-4" href="index.php#ozellikler">Özellikler</a>
-                            </li>
-                            <li class="nav-item">
-                                <a class="nav-link text-white px-4" href="index.php#nasil-calisir">Nasıl Çalışır?</a>
-                            </li>
-                            <li class="nav-item">
-                                <a class="nav-link text-white px-4" href="moduller.php">Modüller</a>
-                            </li>
-                                                        <li class="nav-item">
-                                <a class="nav-link text-white px-4" href="blog.php">Blog</a>
-                            </li>
-                            <li class="nav-item">
-                                <a class="nav-link text-white px-4" href="video.php">Videolar</a>
-                            </li>
-                            <li class="nav-item">
-                                <a class="nav-link text-white px-4" href="pricing.php">Fiyatlandırma</a>
-                            </li>
-                            <li class="nav-item">
-                                <a class="nav-link text-white px-4" href="contact.php">İletişim</a>
-                            </li>
-                        </ul>
-                        
-                        <div class="d-flex align-items-center flex-shrink-0">
-                            <a href="<?php echo htmlspecialchars($appPanelUrl); ?>" class="btn btn-outline btn-outline-dashed btn-outline-default btn-active-light-primary text-white fw-bold px-6 py-3 me-4">Giriş Yap</a>
-                            <a href="register.php" class="btn btn-primary-glow px-6 py-3 fw-bold">30 Gün Ücretsiz Dene</a>
-                        </div>
-                    </div>
-                </nav>
-            </div>
-        </div>
-        <!--end::Header-->
-        
         <!--begin::Hero-->
-        <div class="hero-section">
+        <div class="hero-section hero-home">
             <div class="hero-glow-1"></div>
             <div class="hero-glow-2"></div>
 
             <div class="container-xxl position-relative z-index-2">
-                <div class="row align-items-center">
+                <div class="row align-items-center g-10">
                     <div class="col-lg-6 text-center text-lg-start">
                         <div class="animate-fade-in-up">
-                            <span class="badge badge-light-primary fw-bolder px-5 py-2 fs-7 mb-7 rounded-pill border border-primary border-opacity-25">
-                                ✨ Yeni Nesil ERP ile Tanışın
-                            </span>
+                            <span class="hero-eyebrow">Bulut tabanlı ERP ve ön muhasebe yazılımı</span>
 
-                            <h1 class="text-white fw-bolder fs-3x fs-lg-4x mb-6 lh-sm">
-                                İşletmenizi <span class="text-gradient-primary">Geleceğe</span> Taşıyın
+                            <h1 class="fs-3x fs-lg-4x mb-6">
+                                Müşteri, randevu, kasa ve cari takibini tek panelden yönetin
                             </h1>
 
-                            <p class="fw-medium fs-4 text-gray-400 mb-10 mx-auto mx-lg-0" style="max-width: 600px; line-height: 1.6;">
-                                Karmaşık süreçlere son verin. Bulut tabanlı, ışık hızında ve tamamen izole mimari ile iş akışlarınızı anında dijitalleştirin.
+                            <p class="hero-lead mb-8 mx-auto mx-lg-0">
+                                Müşteriden ölçü randevusuna, sözleşmeden taksit ve çeke, ana kasadan personel giderine kadar
+                                işin her adımı birbirine bağlı kayıtlarla ilerler. Her firmanın verisi kendi ayrı
+                                veritabanında tutulur; ilk 30 gün ücretsiz denenebilir.
                             </p>
 
-                            <div class="d-flex justify-content-center justify-content-lg-start gap-4 flex-wrap mb-10">
-                                <a href="register.php" class="btn btn-primary-glow btn-lg px-8">Hemen Başla</a>
-                                <a href="#nasil-calisir" class="btn btn-outline btn-outline-dashed btn-outline-default btn-active-light-primary btn-lg text-white">Nasıl Çalışır?</a>
+                            <ul class="hero-audience justify-content-center justify-content-lg-start"
+                                aria-label="Kimler için">
+                                <li>Mutfak, dolap ve banyo firmaları</li>
+                                <li>Ölçü, montaj ve servis randevusu olan işletmeler</li>
+                                <li>Kapora, taksit ve çek takibi yapan firmalar</li>
+                            </ul>
+
+                            <div class="d-flex justify-content-center justify-content-lg-start gap-4 flex-wrap mb-8">
+                                <a href="register.php" class="btn btn-primary-glow btn-lg px-8">30 Gün Ücretsiz Dene</a>
+                                <a href="#ozellikler" class="btn btn-outline btn-outline-dashed btn-outline-default btn-lg">Modülleri İncele</a>
                             </div>
 
                             <div class="d-flex align-items-center justify-content-center justify-content-lg-start gap-5 text-gray-400 fs-6 fw-semibold flex-wrap">
-                                <div class="d-flex align-items-center">
-                                    <i class="ki-duotone ki-check-circle fs-3 text-success me-2"><span class="path1"></span><span class="path2"></span></i>
-                                    Kredi kartı gerekmez
-                                </div>
-                                <div class="d-flex align-items-center">
-                                    <i class="ki-duotone ki-check-circle fs-3 text-success me-2"><span class="path1"></span><span class="path2"></span></i>
-                                    Anında Kurulum
-                                </div>
-                                <div class="d-flex align-items-center d-none d-sm-flex">
-                                    <i class="ki-duotone ki-check-circle fs-3 text-success me-2"><span class="path1"></span><span class="path2"></span></i>
-                                    İzole Veritabanı
-                                </div>
+                                <div class="d-flex align-items-center"><i class="bi bi-check-circle-fill text-success me-2"></i>Kredi kartı gerekmez</div>
+                                <div class="d-flex align-items-center"><i class="bi bi-check-circle-fill text-success me-2"></i>Program kurulumu yok</div>
+                                <div class="d-flex align-items-center"><i class="bi bi-check-circle-fill text-success me-2"></i>Her firmaya ayrı veritabanı</div>
                             </div>
                         </div>
                     </div>
 
-                    <div class="col-lg-6 d-none d-lg-block">
-                        <div class="hero-visual">
-                            <div class="dashboard-mockup">
-                                <div class="dashboard-header">
-                                    <div class="mac-buttons">
-                                        <span class="mac-btn mac-close"></span>
-                                        <span class="mac-btn mac-min"></span>
-                                        <span class="mac-btn mac-max"></span>
-                                    </div>
+                    <div class="col-lg-6">
+                        <div class="yol" role="group" aria-label="Örnek: bir işin Prolyn'deki yolu">
+                            <div class="yol-ust">
+                                <div>
+                                    <h2 class="yol-baslik">Mutfak ve dolap işi · Kartepe</h2>
+                                    <p class="yol-alt-baslik">Bir işin Prolyn'deki yolu</p>
                                 </div>
-                                <div class="dashboard-body">
-                                    <div class="sidebar-mock">
-                                        <div class="mock-nav active"><i class="bi bi-speedometer2"></i> Pano</div>
-                                        <div class="mock-nav"><i class="bi bi-people"></i> Müşteriler</div>
-                                        <div class="mock-nav"><i class="bi bi-calendar-check"></i> Randevular</div>
-                                        <div class="mock-nav"><i class="bi bi-journal-text"></i> Cari</div>
-                                        <div class="mock-nav"><i class="bi bi-wallet2"></i> Kasa</div>
-                                        <div class="mock-nav"><i class="bi bi-file-earmark-text"></i> Sözleşme</div>
-                                    </div>
-                                    <div class="content-mock">
-                                        <div class="metrics-mock">
-                                            <div class="metric-card-mock">
-                                                <span class="mock-metric-label">Aylık Tahsilat</span>
-                                                <span class="mock-metric-value">₺184.500</span>
-                                            </div>
-                                            <div class="metric-card-mock">
-                                                <span class="mock-metric-label">Açık Randevu</span>
-                                                <span class="mock-metric-value">27</span>
-                                            </div>
-                                            <div class="metric-card-mock">
-                                                <span class="mock-metric-label">Cari Bakiye</span>
-                                                <span class="mock-metric-value">₺96.250</span>
-                                            </div>
-                                        </div>
-                                        <div class="chart-mock">
-                                            <div class="chart-col"><div class="chart-bar" style="height: 40%;"></div><span>Mar</span></div>
-                                            <div class="chart-col"><div class="chart-bar" style="height: 70%;"></div><span>Nis</span></div>
-                                            <div class="chart-col"><div class="chart-bar" style="height: 55%;"></div><span>May</span></div>
-                                            <div class="chart-col"><div class="chart-bar" style="height: 90%;"></div><span>Haz</span></div>
-                                            <div class="chart-col"><div class="chart-bar" style="height: 65%;"></div><span>Tem</span></div>
-                                            <div class="chart-col"><div class="chart-bar" style="height: 80%;"></div><span>Ağu</span></div>
-                                        </div>
-                                    </div>
-                                </div>
-                                <div class="mock-caption">Örnek ekran · veriler temsilidir</div>
+                                <span class="yol-durum">Devam ediyor</span>
                             </div>
+                            <ol class="yol-liste">
+                                <li style="--i:0;--m:var(--m-musteri)"><span class="yol-ikon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="8" r="4"/><path d="M4 21c1-5 15-5 16 0"/></svg></span><span class="yol-metin"><b>Müşteri kartı açıldı</b><small>A. Yılmaz · Kartepe</small></span><span class="yol-tik"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></span></li>
+                                <li style="--i:1;--m:var(--m-randevu)"><span class="yol-ikon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="5" width="18" height="16" rx="3"/><path d="M3 10h18M8 3v4M16 3v4"/></svg></span><span class="yol-metin"><b>Randevu planlandı</b><small>Salı 09:00 · Ekip 1</small></span><span class="yol-tik"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></span></li>
+                                <li style="--i:2;--m:var(--m-sozlesme)"><span class="yol-ikon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 3h8l4 4v14H6z"/><path d="M9 12h6M9 16h6"/></svg></span><span class="yol-metin"><b>Sözleşme ve taksit planı</b><small>₺120.000 · kapora + 6 taksit</small></span><span class="yol-tik"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></span></li>
+                                <li style="--i:3;--m:var(--m-cek)"><span class="yol-ikon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="2" y="6" width="20" height="12" rx="2"/><path d="M6 10h6M6 14h4M15 14c1-2 2-2 3 0"/></svg></span><span class="yol-metin"><b>Kapora çekle alındı</b><small>₺30.000 · çek kaydı</small></span><span class="yol-tik"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></span></li>
+                                <li style="--i:4;--m:var(--m-kasa)"><span class="yol-ikon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="16" rx="3"/><path d="M3 10h18M8 15h3"/></svg></span><span class="yol-metin"><b>Ana kasaya işlendi</b><small>Çek bakiyesi güncellendi</small></span><span class="yol-tik"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></span></li>
+                            </ol>
+                            <div class="yol-dip">
+                                <div class="yol-dip-satir"><span>Tahsil edilen</span><b>₺30.000 / ₺120.000</b></div>
+                                <div class="yol-iz" aria-hidden="true"><i></i></div>
+                            </div>
+                            <p class="yol-not">Örnek ekran · müşteri ve tutarlar temsilidir</p>
                         </div>
                     </div>
                 </div>
@@ -238,118 +163,151 @@ $faqItems = [
         </div>
         <!--end::Hero-->
 
-        <!--begin::Stats Section-->
-        <div class="py-10 bg-black">
+        <!--begin::Quick facts-->
+        <div class="gercek-bant mt-10">
             <div class="container-xxl">
-                <div class="row g-8 text-center">
-                    <div class="col-6 col-md-3 scroll-reveal">
-                        <div class="stat-number text-white">12</div>
-                        <div class="stat-label text-gray-500 fw-semibold">Entegre Modül</div>
-                    </div>
-                    <div class="col-6 col-md-3 scroll-reveal delay-1">
-                        <div class="stat-number text-white">30 Gün</div>
-                        <div class="text-gray-500 fw-bold fs-5">Ücretsiz Deneme</div>
-                    </div>
-                    <div class="col-6 col-md-3 scroll-reveal delay-2">
-                        <div class="stat-number text-white">%100</div>
-                        <div class="text-gray-500 fw-bold fs-5">İzole Veritabanı</div>
-                    </div>
-                    <div class="col-6 col-md-3 scroll-reveal delay-3">
-                        <div class="stat-number text-white">1 Panel</div>
-                        <div class="text-gray-500 fw-bold fs-5">Tüm İşletme Süreçleri</div>
-                    </div>
+                <div class="row">
+                    <div class="col-6 col-lg-3 gercek"><b>30 gün</b><span>ücretsiz deneme, kredi kartı istenmez</span></div>
+                    <div class="col-6 col-lg-3 gercek"><b>8 rol</b><span>her çalışan yalnızca kendi ekranlarını görür</span></div>
+                    <div class="col-6 col-lg-3 gercek"><b>Ayrı veritabanı</b><span>her firmanın verisi kendi alanında</span></div>
+                    <div class="col-6 col-lg-3 gercek"><b>Kurulum yok</b><span>tarayıcıdan bilgisayar, tablet ve telefonda</span></div>
                 </div>
             </div>
         </div>
-        <!--end::Stats Section-->
+        <!--end::Quick facts-->
 
-        <!--begin::Features-->
-        <div id="ozellikler" class="py-15 py-lg-20">
+        <!--begin::Problem-->
+        <div id="sorun" class="py-15 py-lg-20">
             <div class="container-xxl">
-                <div class="text-center mb-17">
-                    <h3 class="fs-2hx fw-bolder text-white mb-5">Neden Prolyn?</h3>
-                    <div class="fs-5 text-gray-400 fw-medium">Kurumsal seviyede güvenlik ve performansı bir araya getirdik.</div>
+                <div class="bolum-bas orta">
+                    <h2 class="bolum-baslik">Prolyn hangi sorunu çözer?</h2>
+                    <p class="bolum-giris">Müşteri Excel'de, randevu WhatsApp'ta, borçlar defterde... Kayıtlar dağınık olunca kimin ne kadar borcu olduğunu, hangi çekin ne zaman vadesinin geldiğini bulmak zaman alır. Prolyn bunları tek yerde, birbirine bağlı tutar.</p>
                 </div>
-
-                <div class="row g-10">
-                    <?php if (!empty($websiteFeatures)): ?>
-                        <?php foreach ($websiteFeatures as $i => $feature): ?>
-                        <?php $color = $featureColors[$i % count($featureColors)]; ?>
-                        <div class="col-md-4 scroll-reveal delay-<?php echo ($i % 3) + 1; ?>">
-                            <div class="glass-card h-100 p-8">
-                                <div class="feature-icon-box text-<?php echo $color; ?>">
-                                    <i class="bi <?php echo htmlspecialchars($feature['icon']); ?> fs-3x text-<?php echo $color; ?>"></i>
-                                </div>
-                                <h4 class="text-white fs-3 fw-bold mb-4"><?php echo htmlspecialchars($feature['title']); ?></h4>
-                                <p class="text-gray-400 fs-6 lh-lg mb-0">
-                                    <?php echo htmlspecialchars($feature['description']); ?>
-                                </p>
-                            </div>
-                        </div>
-                        <?php endforeach; ?>
-                    <?php endif; ?>
+                <div class="sorun-sar">
+                    <div class="sorun"><s>Müşteri bir dosyada, ödeme başka dosyada</s><h3>Müşteri, sözleşme ve ödeme bir arada</h3><p>Bir müşterinin kartında sözleşmesini, randevularını, ödemelerini ve kalan borcunu birlikte görürsünüz.</p></div>
+                    <div class="sorun"><s>Kim ne kadar borçlu, elle hesaplanıyor</s><h3>Cari hesap ve tahsilat takibi</h3><p>Müşteri bakiyelerini, kapora ve taksit ödemelerini anlık takip edersiniz.</p></div>
+                    <div class="sorun"><s>Çek ve taksit vadeleri not kâğıdında</s><h3>Çek, kasa ve banka takibi</h3><p>Vadesi gelen taksitleri izler, kasa ve banka hareketlerini tek ekranda görürsünüz.</p></div>
+                    <div class="sorun"><s>Ölçü ve montaj günleri karışıyor</s><h3>Randevu ve montaj planı</h3><p>Ölçü, montaj ve servis randevularını takvimde planlar, eksik malzemeleri takip edersiniz.</p></div>
                 </div>
             </div>
         </div>
-        <!--end::Features-->
+        <!--end::Problem-->
+
+        <!--begin::Modüller-->
+        <div id="ozellikler" class="pb-5" style="scroll-margin-top:90px">
+            <div class="container-xxl pt-5">
+                <div class="bolum-bas orta mb-10">
+                    <h2 class="bolum-baslik">Prolyn'in içinde neler var?</h2>
+                    <p class="bolum-giris">İşinizin her adımı için ayrı bir modül var. Aşağıda her birinin ne yaptığını, kimin kullandığını ve hangi pakette bulunduğunu görebilirsiniz.</p>
+                </div>
+            </div>
+            <?php require __DIR__ . '/partials/modul_bolumleri.php'; ?>
+        </div>
+        <!--end::Modüller-->
+
+        <!--begin::Paketler-->
+        <div id="paketler" class="py-15 py-lg-20" style="background:var(--pw-bg-alt);scroll-margin-top:90px">
+            <div class="container-xxl">
+                <div class="bolum-bas orta">
+                    <h2 class="bolum-baslik">Ne satın alıyorsunuz?</h2>
+                    <p class="bolum-giris">Üç paket var. Hepsinde aynı uygulama, ayrı veritabanı ve kullanıcı rolleri bulunur; paketler kullanıcı sayısı, şube sayısı ve açılan modüllerde ayrışır. 30 gün boyunca seçtiğiniz paketi ücretsiz kullanırsınız.</p>
+                </div>
+                <div class="pk-sar">
+                    <?php foreach ($packages as $pk):
+                        $one = ($pk['code'] === 'pro');
+                        $modSayi = count(array_diff($pk['modules'], ['core']));
+                        $destekAd = ['email' => 'E-posta desteği', 'priority' => 'Öncelikli destek', 'dedicated' => 'Özel destek'];
+                    ?>
+                    <div class="pk-kart<?= $one ? ' one' : '' ?>">
+                        <?php if ($one): ?><span class="pk-onerilen">En çok tercih edilen</span><?php endif; ?>
+                        <h3 class="pk-ad"><?= htmlspecialchars($pk['name']) ?></h3>
+                        <p class="pk-acik"><?= htmlspecialchars($pk['description']) ?></p>
+                        <div class="pk-fiyat"><span>₺</span><b><?= prolynweb_tl($pk['yearly_total']) ?></b><span>/ yıl</span></div>
+                        <p class="pk-not">Aylık ≈ ₺<?= prolynweb_tl($pk['monthly_approx']) ?><?php if ($pk['yearly_discount'] > 0): ?> · <s>₺<?= prolynweb_tl($pk['list_yearly']) ?></s> yerine %<?= (int)$pk['yearly_discount'] ?> yıllık indirimle<?php endif; ?></p>
+                        <ul class="pk-ozet">
+                            <li><b><?= $pk['max_users'] > 0 ? (int)$pk['max_users'] : 'Sınırsız' ?></b>&nbsp;kullanıcı</li>
+                            <li><b><?= $pk['max_branches'] > 0 ? (int)$pk['max_branches'] : 'Sınırsız' ?></b>&nbsp;şube</li>
+                            <li><b><?= $modSayi ?></b>&nbsp;modül</li>
+                            <li><?= htmlspecialchars($destekAd[$pk['support'] ?? 'email'] ?? 'Teknik destek') ?></li>
+                        </ul>
+                        <a href="register.php?plan=<?= urlencode($pk['code']) ?>&amp;periyot=yillik" class="btn <?= $one ? 'btn-primary-glow' : 'btn-light-primary' ?> w-100 py-3 fw-bold">30 gün ücretsiz dene</a>
+                    </div>
+                    <?php endforeach; ?>
+                </div>
+
+                <h3 class="bolum-baslik mt-15 mb-6" style="font-size:1.6rem">Hangi pakette neler var?</h3>
+                <?php require __DIR__ . '/partials/paket_matris.php'; ?>
+                <p class="pk-alt-not">Fiyatlara %20 KDV dahildir. Tablodaki "Kısmen", o bölümün bir kısmının pakette bulunduğunu gösterir; ayrıntısı <a href="moduller.php" style="color:var(--pw-link);text-decoration:underline">Modül Detayları</a> sayfasında. Fiyat ve ödeme seçenekleri için <a href="pricing.php" style="color:var(--pw-link);text-decoration:underline">Fiyatlandırma</a> sayfasına bakabilirsiniz.</p>
+            </div>
+        </div>
+        <!--end::Paketler-->
 
         <!--begin::How It Works-->
-        <div id="nasil-calisir" class="py-15 py-lg-20 bg-black bg-opacity-50">
+        <div id="nasil-calisir" class="py-15 py-lg-20">
             <div class="container-xxl">
-                <div class="row align-items-center">
-                    <div class="col-lg-6 mb-10 mb-lg-0 scroll-reveal">
-                        <h3 class="fs-2hx fw-bolder text-white mb-6">Sadece <span class="text-gradient-primary">3 Adımda</span> Başlayın</h3>
-                        <p class="text-gray-400 fs-5 mb-10 lh-lg">
-                            Prolyn'in tam otomatik tenant altyapısı sayesinde kayıt olduğunuz anda size özel veritabanınız ve ortamınız milisaniyeler içinde hazır olur. Herhangi bir kurulum beklemezsiniz.
-                        </p>
-
-                        <div class="d-flex flex-column gap-6">
-                            <div class="d-flex">
-                                <div class="step-number">1</div>
-                                <div class="ms-4">
-                                    <h4 class="text-white fs-4 fw-bold">Hesabınızı Oluşturun</h4>
-                                    <p class="text-gray-500 mb-0">Temel bilgilerinizi girerek saniyeler içinde kayıt olun.</p>
-                                </div>
-                            </div>
-                            <div class="d-flex">
-                                <div class="step-number">2</div>
-                                <div class="ms-4">
-                                    <h4 class="text-white fs-4 fw-bold">Altyapınız Hazırlanır</h4>
-                                    <p class="text-gray-500 mb-0">Sistem size özel tamamen izole bir veritabanı kurar ve şablon verileri aktarır.</p>
-                                </div>
-                            </div>
-                            <div class="d-flex">
-                                <div class="step-number">3</div>
-                                <div class="ms-4">
-                                    <h4 class="text-white fs-4 fw-bold">Hemen Yönetmeye Başlayın</h4>
-                                    <p class="text-gray-500 mb-0">Özel kurum kodunuz ve şifrenizle giriş yapıp şirketinizi dijitalden yönetin.</p>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="col-lg-6 text-center scroll-reveal delay-2">
-                        <img src="p/dist/assets/media/illustrations/sketchy-1/17-dark.png" class="mw-100" style="max-height: 400px; opacity: 0.8;" alt="" />
-                    </div>
+                <div class="bolum-bas orta">
+                    <h2 class="bolum-baslik">3 adımda başlayın</h2>
+                    <p class="bolum-giris">Program kurmanız gerekmez. Kayıt olduktan sonra firmanıza özel çalışma alanınız kısa sürede hazırlanır ve tarayıcıdan giriş yaparak kullanmaya başlarsınız.</p>
                 </div>
+                <ol class="adimlar">
+                    <li><b>Hesabınızı oluşturun</b><span>Firma ve yetkili bilgilerinizi girerek 30 günlük ücretsiz denemeyi başlatın.</span></li>
+                    <li><b>Çalışma alanınız hazırlanır</b><span>Firmanıza ait ayrı bir veritabanı oluşturulur. İlk girişte kurulum sihirbazı firma bilgilerinizi, ilk şubenizi ve ekibinizi adım adım ister; dilerseniz atlarsınız.</span></li>
+                    <li><b>Yönetmeye başlayın</b><span>Kurum kodunuz ve şifrenizle giriş yapın; müşterilerinizi, randevularınızı ve kasanızı takip edin.</span></li>
+                </ol>
             </div>
         </div>
         <!--end::How It Works-->
 
+        <!--begin::Audience-->
+        <div id="kimler-icin" class="py-15 py-lg-20" style="background:var(--pw-bg-alt)">
+            <div class="container-xxl">
+                <div class="bolum-bas orta">
+                    <h2 class="bolum-baslik">Kimler için?</h2>
+                    <p class="bolum-giris">Küçük, orta ve büyük ölçekli, müşteri ile birebir çalışan işletmeler için tasarlandı.</p>
+                </div>
+                <div class="row g-6">
+                    <div class="col-md-4">
+                        <div class="glass-card audience-card">
+                            <div class="audience-icon"><i class="bi bi-house-gear"></i></div>
+                            <h4>Mutfak, dolap ve banyo firmaları</h4>
+                            <p>Ölçü, üretim ve montaj sürecinde kapora, taksit, çek ve randevu takibini tek yerde yapın. <a href="mutfak-dolap-yazilimi.php" class="text-primary">Sektöre özel sayfayı inceleyin</a></p>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="glass-card audience-card">
+                            <div class="audience-icon"><i class="bi bi-calendar-check"></i></div>
+                            <h4>Randevu ve servisle çalışan işletmeler</h4>
+                            <p>Müşteri kartı, randevu geçmişi ve servis kayıtlarını bir arada tutun; yaklaşan işleri takvimden görün.</p>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="glass-card audience-card">
+                            <div class="audience-icon"><i class="bi bi-journal-text"></i></div>
+                            <h4>Sözleşmeli ve vadeli satış yapan firmalar</h4>
+                            <p>Sözleşme, taksit ve çek vadelerini takip edin; ön muhasebe kayıtlarınızı düzenli tutun.</p>
+                        </div>
+                    </div>
+                </div>
+                <p class="text-center text-gray-400 mt-10 mb-0">Farklı bir sektördeyseniz 30 günlük deneme ile kendi işinize uyup uymadığını görebilir ya da <a href="contact.php" class="text-primary">bize yazabilirsiniz</a>.</p>
+            </div>
+        </div>
+        <!--end::Audience-->
+
         <!--begin::FAQ-->
         <div id="sss" class="py-15 py-lg-20">
             <div class="container-xxl">
-                <div class="text-center mb-17 scroll-reveal">
-                    <h3 class="fs-2hx fw-bolder text-white mb-5">Sıkça Sorulan Sorular</h3>
-                    <div class="fs-5 text-gray-400 fw-medium">Aklınıza takılan bir şey mi var? İşte en çok sorulanlar.</div>
+                <div class="bolum-bas orta">
+                    <h2 class="bolum-baslik">Sıkça sorulan sorular</h2>
+                    <p class="bolum-giris">Aklınıza takılan bir şey mi var? İşte en çok sorulanlar.</p>
                 </div>
-
                 <div class="row justify-content-center">
                     <div class="col-lg-9">
-                        <div class="accordion scroll-reveal" id="prolynFaqAccordion">
+                        <div class="accordion" id="prolynFaqAccordion">
                             <?php foreach ($faqItems as $fi => $faq): $n = $fi + 1; ?>
                             <div class="glass-card <?= $fi < count($faqItems) - 1 ? 'mb-4 ' : '' ?>p-2">
                                 <h3 class="accordion-header fs-5" id="faqHead<?= $n ?>">
-                                    <button class="accordion-button collapsed bg-transparent text-white fw-bold fs-5" type="button" data-bs-toggle="collapse" data-bs-target="#faqBody<?= $n ?>">
+                                    <button class="accordion-button collapsed bg-transparent text-white fw-bold fs-5"
+                                        type="button" data-bs-toggle="collapse" data-bs-target="#faqBody<?= $n ?>" aria-expanded="false" aria-controls="faqBody<?= $n ?>">
                                         <?= htmlspecialchars($faq[0]) ?>
                                     </button>
                                 </h3>
@@ -370,99 +328,28 @@ $faqItems = [
         <!--begin::CTA-->
         <div class="cta-section py-20">
             <div class="cta-pattern"></div>
-            <div class="container-xxl position-relative z-index-2 text-center scroll-reveal">
-                <h2 class="text-white fw-bolder fs-2hx mb-5">Şirketinizi Dönüştürmeye Hazır Mısınız?</h2>
-                <p class="text-gray-400 fs-4 mb-10 max-w-700 mx-auto">
-                    Türkiye'nin en yenilikçi bulut ERP sistemine geçiş yapın, operasyonel yüklerinizi %70 oranında azaltın.
-                </p>
+            <div class="container-xxl position-relative z-index-2 text-center">
+                <h2 class="bolum-baslik">İşletmenizde 30 gün ücretsiz deneyin</h2>
+                <p class="bolum-giris mx-auto mb-10">Kredi kartı gerekmez. Deneme sonunda devam edip etmemek size kalmış.</p>
                 <a href="register.php" class="btn btn-primary-glow btn-lg px-10 py-4 fs-4">Ücretsiz Denemeye Başla</a>
             </div>
         </div>
         <!--end::CTA-->
 
-        <!--begin::Footer-->
-        <div class="mb-0 py-10 border-top border-gray-800 mt-auto" style="background: rgba(19, 22, 31, 0.6); backdrop-filter: blur(10px);">
-            <div class="container-xxl">
-                <div class="row pt-9 pb-5">
-                    <div class="col-lg-4 mb-10 mb-lg-0">
-                        <img src="p/dist/logo/prolyn-logo-horizontal-white-sm.png" alt="Prolyn" class="mb-5" style="height:46px;width:auto;display:block;" />
-                        <p class="text-gray-500 fs-6 fw-semibold lh-lg mb-5">
-                            Kurumsal kaynak planlamasında yeni nesil çözüm ortağınız. Hız, güvenlik ve esnekliği bir arada sunuyoruz.
-                        </p>
-                    </div>
-                    <div class="col-lg-2 col-6 mb-10 mb-lg-0">
-                        <h4 class="text-white fw-bold mb-5">Ürün</h4>
-                        <div class="d-flex flex-column gap-3">
-                            <a href="index.php#ozellikler" class="footer-link fw-semibold">Özellikler</a>
-                            <a href="index.php#nasil-calisir" class="footer-link fw-semibold">Nasıl Çalışır?</a>
-                            <a href="moduller.php" class="footer-link fw-semibold">Modüller</a>
-                            <a href="blog.php" class="footer-link fw-semibold">Blog</a>
-                            <a href="video.php" class="footer-link fw-semibold">Videolar</a>
-                            <a href="pricing.php" class="footer-link fw-semibold">Fiyatlandırma</a>
-                        </div>
-                    </div>
-                    <div class="col-lg-2 col-6 mb-10 mb-lg-0">
-                        <h4 class="text-white fw-bold mb-5">Destek</h4>
-                        <div class="d-flex flex-column gap-3">
-                            <a href="contact.php" class="footer-link fw-semibold">İletişim</a>
-                            <a href="index.php#sss" class="footer-link fw-semibold">SSS</a>
-                        </div>
-                    </div>
-                    <div class="col-lg-4">
-                        <h4 class="text-white fw-bold mb-5">Bizi Takip Edin</h4>
-                        <div class="d-flex gap-4">
-                            <?php if(!empty($appSettings['social_twitter'])): ?>
-                                <a href="<?php echo htmlspecialchars($appSettings['social_twitter']); ?>" target="_blank" class="btn btn-icon btn-light-primary btn-sm rounded-circle">
-                                    <i class="bi bi-twitter-x fs-4"></i>
-                                </a>
-                            <?php endif; ?>
-                            <?php if(!empty($appSettings['social_linkedin'])): ?>
-                                <a href="<?php echo htmlspecialchars($appSettings['social_linkedin']); ?>" target="_blank" class="btn btn-icon btn-light-primary btn-sm rounded-circle">
-                                    <i class="bi bi-linkedin fs-4"></i>
-                                </a>
-                            <?php endif; ?>
-                        </div>
-                    </div>
-                </div>
-                <div class="d-flex flex-center border-top border-gray-800 pt-10">
-                    <span class="text-gray-500 fw-semibold">&copy; <?php echo date('Y'); ?> <?php echo htmlspecialchars($appSettings['site_name'] ?? 'Prolyn ERP'); ?>. Tüm hakları saklıdır. - <a href="https://echoshift.net" target="_blank" class="text-gray-400 text-hover-primary">Created by EchoShift</a></span>
-                </div>
-            </div>
-        </div>
-        <!--end::Footer-->
+        <?php require __DIR__ . '/partials/site_footer.php'; ?>
     </div>
     <!--end::Root-->
 
-    <!-- Offcanvas Mobile Menu -->
-    <div class="offcanvas offcanvas-end offcanvas-glass border-0" tabindex="-1" id="mobileMenu" aria-labelledby="mobileMenuLabel">
-        <div class="offcanvas-header border-bottom border-gray-800 p-6">
-            <h5 class="offcanvas-title m-0" id="mobileMenuLabel"><img src="p/dist/logo/prolyn-logo-horizontal-white-sm.png" alt="Prolyn" style="height:32px;width:auto;" /></h5>
-            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="offcanvas" aria-label="Kapat"></button>
-        </div>
-        <div class="offcanvas-body p-6">
-            <ul class="nav flex-column fs-4 fw-semibold mb-8">
-                <li class="nav-item mb-4"><a class="nav-link text-white px-0" href="index.php#ozellikler">Özellikler</a></li>
-                <li class="nav-item mb-4"><a class="nav-link text-white px-0" href="index.php#nasil-calisir">Nasıl Çalışır?</a></li>
-                <li class="nav-item mb-4"><a class="nav-link text-white px-0" href="moduller.php">Modüller</a></li>
-                <li class="nav-item mb-4"><a class="nav-link text-white px-0" href="blog.php">Blog</a></li>
-                <li class="nav-item mb-4"><a class="nav-link text-white px-0" href="video.php">Videolar</a></li>
-                <li class="nav-item mb-4"><a class="nav-link text-white px-0" href="pricing.php">Fiyatlandırma</a></li>
-                <li class="nav-item"><a class="nav-link text-white px-0" href="contact.php">İletişim</a></li>
-            </ul>
-            <div class="d-grid gap-3 mt-8">
-                <a href="register.php" class="btn btn-primary-glow py-3 fw-bold fs-5">30 Gün Ücretsiz Dene</a>
-                <a href="<?php echo htmlspecialchars($appPanelUrl); ?>" class="btn btn-outline btn-outline-dashed btn-outline-default btn-active-light-primary text-white fw-bold py-3 fs-5">Giriş Yap</a>
-            </div>
-        </div>
-    </div>
+    <?php require __DIR__ . '/partials/site_mobile_menu.php'; ?>
 
     <!--begin::Global Javascript Bundle(mandatory for all pages)-->
     <script src="p/dist/assets/plugins/global/plugins.bundle.js"></script>
     <script src="p/dist/assets/js/scripts.bundle.js"></script>
     <!--end::Global Javascript Bundle-->
-    <script src="assets/js/site.js?v=6"></script>
-    <script src="assets/js/boot-check.js"></script>
+    <script src="assets/js/site.js?v=7"></script>
 
-<?php require __DIR__ . '/partials/fab.php'; ?>
+    <?php require __DIR__ . '/partials/cookie_banner.php'; ?>
+    <?php require __DIR__ . '/partials/fab.php'; ?>
 </body>
+
 </html>

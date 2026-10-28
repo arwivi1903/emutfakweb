@@ -1,57 +1,13 @@
 <?php require_once 'db.php'; ?>
 <?php
 /**
- * Fiyatlandırma paket_ozellikleri tablosundan okunur (TEK KAYNAK).
- * Önceden burada sabit bir dizi vardı ve panelde girilen gerçek
- * fiyat/limitle çelişiyordu.
+ * Fiyatlandırma: paket verisi TEK KAYNAKTAN (paket_ozellikleri) partials/paket_veri.php ile okunur.
+ * Önceden bu sayfada ayrı bir okuma + yedek liste vardı; ana sayfadaki paket bölümüyle
+ * ayrışmasın diye ortak fonksiyona taşındı.
  */
-const VARSAYILAN_YILLIK_INDIRIM = 10; // paket_ozellikleri.yillik_indirim kolonu yoksa
-
-$packages = [];
-try {
-    $satirlar = $pdo->query("SELECT * FROM paket_ozellikleri ORDER BY price ASC")->fetchAll();
-    foreach ($satirlar as $r) {
-        $packages[] = [
-            'code'           => $r['plan_name'],
-            'name'           => trim((string)($r['plan_display_name'] ?? '')) !== ''
-                                ? $r['plan_display_name'] : $r['plan_name'],
-            'description'    => (string)($r['plan_description'] ?? ''),
-            'modules'        => json_decode((string)($r['allowed_modules'] ?? '[]'), true) ?: [],
-            'storage_gb'     => (int)($r['max_storage_gb'] ?? 0),
-            'support'        => (string)($r['support_level'] ?? 'email'),
-            'support_hours'  => (int)($r['support_response_hours'] ?? 0),
-            'price_monthly'  => (float)($r['price'] ?? 0),
-            'max_users'      => (int)($r['max_total_users'] ?? 0),
-            'max_branches'   => (int)($r['max_branches'] ?? 0),
-            // Kolon henüz yoksa (Panel > Paketler bir kez açılınca eklenir)
-            // varsayılan %20 yıllık indirim gösterilir.
-            'yearly_discount'=> array_key_exists('yillik_indirim', $r)
-                                ? (int)$r['yillik_indirim'] : VARSAYILAN_YILLIK_INDIRIM,
-        ];
-    }
-} catch (Throwable $e) {
-    error_log('[prolynweb] paket_ozellikleri okunamadi: ' . $e->getMessage());
-}
-
-// Veritabanı okunamazsa sayfa boş kalmasın — son çare yedek liste
-if (empty($packages)) {
-    $packages = [
-        ['code'=>'basic','name'=>'Başlangıç','description'=>'','price_monthly'=>1190.00,'max_users'=>5,'max_branches'=>1,'yearly_discount'=>VARSAYILAN_YILLIK_INDIRIM],
-        ['code'=>'pro','name'=>'Pro','description'=>'','price_monthly'=>2290.00,'max_users'=>15,'max_branches'=>3,'yearly_discount'=>VARSAYILAN_YILLIK_INDIRIM],
-        ['code'=>'enterprise','name'=>'Kurumsal','description'=>'','price_monthly'=>4490.00,'max_users'=>0,'max_branches'=>0,'yearly_discount'=>VARSAYILAN_YILLIK_INDIRIM],
-    ];
-}
-
-$varsayilanAciklama = [
-    'basic'      => 'Küçük işletmeler için müşteri, randevu, cari takip ve sözleşme yönetimi.',
-    'pro'        => 'Büyüyen işletmeler için gelişmiş özellikler ve çoklu şube desteği.',
-    'enterprise' => 'Büyük ölçekli firmalar için tam donanımlı, sınırsız çözüm.',
-];
-foreach ($packages as $i => $pk) {
-    if ($pk['description'] === '') {
-        $packages[$i]['description'] = $varsayilanAciklama[$pk['code']] ?? '';
-    }
-}
+require_once __DIR__ . '/partials/paket_veri.php';
+require_once __DIR__ . '/partials/modul_icerik.php';
+$packages = prolynweb_paketler($pdo);
 
 // Sayfadaki geçiş düğmesi için en yüksek indirim oranı
 $enYuksekIndirim = 0;
@@ -61,10 +17,11 @@ foreach ($packages as $pk) {
 ?>
 
 <!DOCTYPE html>
-<html lang="tr" data-bs-theme="dark">
+<html lang="tr" data-bs-theme="light" data-tema="light">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<?php require __DIR__ . '/partials/tema_head.php'; ?>
     <title><?php echo htmlspecialchars($appSettings['seo_title'] ?? 'Prolyn - Yeni Nesil Bulut ERP Sistemi'); ?> - Fiyatlandırma</title>
     <meta name="description" content="<?php echo htmlspecialchars('Prolyn ERP fiyatlandırma planları: Basic, Pro ve Enterprise paketlerini karşılaştırın, işletmenize uygun bulut ERP paketini seçin.'); ?>">
     <meta name="keywords" content="<?php echo htmlspecialchars($appSettings['seo_keywords'] ?? 'erp, bulut erp, crm, ön muhasebe, ik'); ?>">
@@ -78,11 +35,13 @@ foreach ($packages as $pk) {
     <link rel="icon" href="p/dist/logo/favicon.ico" sizes="any" />
     <link rel="icon" type="image/png" sizes="32x32" href="p/dist/logo/favicon-32x32.png" />
     <link rel="apple-touch-icon" href="p/dist/logo/apple-touch-icon.png" />
-    <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Inter:300,400,500,600,700,800" />
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Inter:400,500,600,700,800&display=swap" />
     <link href="p/dist/assets/plugins/global/plugins.bundle.css" rel="stylesheet" type="text/css" />
     <link href="p/dist/assets/css/style.bundle.css" rel="stylesheet" type="text/css" />
     <!-- New Custom Redesign CSS -->
-    <link href="assets/css/style.css?v=9" rel="stylesheet" type="text/css" />
+    <link href="assets/css/style.css?v=12" rel="stylesheet" type="text/css" />
+    <link href="assets/css/tema.css?v=2" rel="stylesheet" type="text/css" />
+    <link href="assets/css/modul.css?v=1" rel="stylesheet" type="text/css" />
 <style>
 /* ── Aylık / Yıllık periyot seçimi ─────────────────────────────── */
 .py-periyot-sar{display:flex;flex-direction:column;align-items:center;gap:12px;margin-bottom:44px;}
@@ -120,56 +79,7 @@ foreach ($packages as $pk) {
 <body id="kt_body" class="app-blank">
     <!--begin::Root-->
     <div class="d-flex flex-column flex-root" id="kt_app_root">
-        <!--begin::Header-->
-        <div class="landing-header glass-header" data-kt-sticky="true" data-kt-sticky-name="landing-header" data-kt-sticky-offset="{default: '200px', lg: '300px'}">
-            <div class="container-xxl">
-                <nav class="navbar navbar-dark w-100 py-4 py-lg-6">
-                    <!--begin::Logo-->
-                    <a class="navbar-brand d-flex align-items-center" href="index.php">
-                        <img src="p/dist/logo/prolyn-logo-horizontal-white-sm.png" alt="Prolyn" style="height:38px;width:auto;display:block;" />
-                    </a>
-                    <!--end::Logo-->
-                    
-                    <!-- Mobile Toggle -->
-                    <button class="btn btn-icon btn-active-color-primary d-lg-none" type="button" data-bs-toggle="offcanvas" data-bs-target="#mobileMenu" aria-controls="mobileMenu">
-                        <i class="bi bi-list fs-1 text-white"></i>
-                    </button>
-
-                    <!-- Desktop Menu -->
-                    <div class="d-none d-lg-flex align-items-center ms-auto">
-                        <ul class="nav text-white fw-semibold fs-6 me-10">
-                            <li class="nav-item">
-                                <a class="nav-link text-white px-4" href="index.php#ozellikler">Özellikler</a>
-                            </li>
-                            <li class="nav-item">
-                                <a class="nav-link text-white px-4" href="index.php#nasil-calisir">Nasıl Çalışır?</a>
-                            </li>
-                            <li class="nav-item">
-                                <a class="nav-link text-white px-4" href="moduller.php">Modüller</a>
-                            </li>
-                                                        <li class="nav-item">
-                                <a class="nav-link text-white px-4" href="blog.php">Blog</a>
-                            </li>
-                            <li class="nav-item">
-                                <a class="nav-link text-white px-4" href="video.php">Videolar</a>
-                            </li>
-                            <li class="nav-item">
-                                <a class="nav-link text-white px-4" href="pricing.php">Fiyatlandırma</a>
-                            </li>
-                            <li class="nav-item">
-                                <a class="nav-link text-white px-4" href="contact.php">İletişim</a>
-                            </li>
-                        </ul>
-                        
-                        <div class="d-flex align-items-center flex-shrink-0">
-                            <a href="<?php echo htmlspecialchars($appPanelUrl); ?>" class="btn btn-outline btn-outline-dashed btn-outline-default btn-active-light-primary text-white fw-bold px-6 py-3 me-4">Giriş Yap</a>
-                            <a href="register.php" class="btn btn-primary-glow px-6 py-3 fw-bold">30 Gün Ücretsiz Dene</a>
-                        </div>
-                    </div>
-                </nav>
-            </div>
-        </div>
-        <!--end::Header-->
+<?php $navActive = 'pricing'; require __DIR__ . '/partials/site_header.php'; ?>
 
 
         
@@ -289,6 +199,13 @@ foreach ($packages as $pk) {
                     <?php endif; ?>
                 </div>
 
+                <div class="mt-15">
+                    <h2 class="bolum-baslik" style="font-size:1.8rem">Hangi pakette neler var?</h2>
+                    <p class="bolum-giris mb-8">Satın almadan önce neyi alacağınızı görün: kullanıcı ve şube limitleri, destek ve her modülün hangi pakette açıldığı.</p>
+                    <?php require __DIR__ . '/partials/paket_matris.php'; ?>
+                    <p class="pk-alt-not">"Kısmen", o bölümün bir kısmının pakette bulunduğunu gösterir. Her modülün ne yaptığını <a href="moduller.php" style="color:var(--pw-link);text-decoration:underline">Modül Detayları</a> sayfasında okuyabilirsiniz. 30 gün boyunca seçtiğiniz paketi ücretsiz deneyebilirsiniz.</p>
+                </div>
+
                 <p class="text-center text-gray-400 fs-6 mt-12 mb-0">
                     Belirtilen fiyatlara %20 KDV dahildir. Farklı bir ihtiyacınız varsa
                     <a href="contact.php" class="text-primary fw-semibold">bize ulaşın</a>.
@@ -297,87 +214,18 @@ foreach ($packages as $pk) {
         </div>
         <!--end::Pricing-->
 
-        <!--begin::Footer-->
-        <div class="mb-0 py-10 border-top border-gray-800 mt-auto" style="background: rgba(19, 22, 31, 0.6); backdrop-filter: blur(10px);">
-            <div class="container-xxl">
-                <div class="row pt-9 pb-5">
-                    <div class="col-lg-4 mb-10 mb-lg-0">
-                        <img src="p/dist/logo/prolyn-logo-horizontal-white-sm.png" alt="Prolyn" class="mb-5" style="height:46px;width:auto;display:block;" />
-                        <p class="text-gray-500 fs-6 fw-semibold lh-lg mb-5">
-                            <?php echo htmlspecialchars($appSettings['website_footer_text'] ?? 'Kurumsal kaynak planlamasında yeni nesil çözüm ortağınız. Hız, güvenlik ve esnekliği bir arada sunuyoruz.'); ?>
-                        </p>
-                    </div>
-                    <div class="col-lg-2 col-6 mb-10 mb-lg-0">
-                        <h4 class="text-white fw-bold mb-5">Ürün</h4>
-                        <div class="d-flex flex-column gap-3">
-                            <a href="index.php#ozellikler" class="footer-link fw-semibold">Özellikler</a>
-                            <a href="index.php#nasil-calisir" class="footer-link fw-semibold">Nasıl Çalışır?</a>
-                            <a href="moduller.php" class="footer-link fw-semibold">Modüller</a>
-                            <a href="blog.php" class="footer-link fw-semibold">Blog</a>
-                            <a href="video.php" class="footer-link fw-semibold">Videolar</a>
-                            <a href="pricing.php" class="footer-link fw-semibold">Fiyatlandırma</a>
-                        </div>
-                    </div>
-                    <div class="col-lg-2 col-6 mb-10 mb-lg-0">
-                        <h4 class="text-white fw-bold mb-5">Destek</h4>
-                        <div class="d-flex flex-column gap-3">
-                            <a href="contact.php" class="footer-link fw-semibold">İletişim</a>
-                            <a href="#" class="footer-link fw-semibold">SSS</a>
-                        </div>
-                    </div>
-                    <div class="col-lg-4">
-                        <h4 class="text-white fw-bold mb-5">Bizi Takip Edin</h4>
-                        <div class="d-flex gap-4">
-                            <?php if(!empty($appSettings['social_twitter'])): ?>
-                                <a href="<?php echo htmlspecialchars($appSettings['social_twitter']); ?>" target="_blank" class="btn btn-icon btn-light-primary btn-sm rounded-circle">
-                                    <i class="bi bi-twitter-x fs-4"></i>
-                                </a>
-                            <?php endif; ?>
-                            <?php if(!empty($appSettings['social_linkedin'])): ?>
-                                <a href="<?php echo htmlspecialchars($appSettings['social_linkedin']); ?>" target="_blank" class="btn btn-icon btn-light-primary btn-sm rounded-circle">
-                                    <i class="bi bi-linkedin fs-4"></i>
-                                </a>
-                            <?php endif; ?>
-                        </div>
-                    </div>
-                </div>
-                <div class="d-flex flex-center border-top border-gray-800 pt-10">
-                    <span class="text-gray-500 fw-semibold">&copy; <?php echo date('Y'); ?> <?php echo htmlspecialchars($appSettings['site_name'] ?? 'Prolyn ERP'); ?>. Tüm hakları saklıdır. - <a href="https://echoshift.net" target="_blank" class="text-gray-400 text-hover-primary">Created by EchoShift</a></span>
-                </div>
-            </div>
-        </div>
-        <!--end::Footer-->
+<?php require __DIR__ . '/partials/site_footer.php'; ?>
     </div>
     <!--end::Root-->
 
-    <!-- Offcanvas Mobile Menu -->
-    <div class="offcanvas offcanvas-end offcanvas-glass border-0" tabindex="-1" id="mobileMenu" aria-labelledby="mobileMenuLabel">
-        <div class="offcanvas-header border-bottom border-gray-800 p-6">
-            <h5 class="offcanvas-title m-0" id="mobileMenuLabel"><img src="p/dist/logo/prolyn-logo-horizontal-white-sm.png" alt="Prolyn" style="height:32px;width:auto;" /></h5>
-            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="offcanvas" aria-label="Kapat"></button>
-        </div>
-        <div class="offcanvas-body p-6">
-            <ul class="nav flex-column fs-4 fw-semibold mb-8">
-                <li class="nav-item mb-2"><a class="nav-link text-white px-0" href="index.php#ozellikler"><i class="bi bi-star me-2 text-primary"></i>Özellikler</a></li>
-                <li class="nav-item mb-2"><a class="nav-link text-white px-0" href="index.php#nasil-calisir"><i class="bi bi-info-circle me-2 text-primary"></i>Nasıl Çalışır?</a></li>
-                <li class="nav-item mb-2"><a class="nav-link text-white px-0" href="moduller.php"><i class="bi bi-grid me-2 text-primary"></i>Modüller</a></li>
-                <li class="nav-item mb-2"><a class="nav-link text-white px-0" href="blog.php"><i class="bi bi-file-text me-2 text-primary"></i>Blog</a></li>
-                <li class="nav-item mb-2"><a class="nav-link text-white px-0" href="video.php"><i class="bi bi-play-circle me-2 text-primary"></i>Videolar</a></li>
-                <li class="nav-item mb-2"><a class="nav-link text-white px-0" href="pricing.php"><i class="bi bi-tag me-2 text-primary"></i>Fiyatlandırma</a></li>
-                <li class="nav-item mb-2"><a class="nav-link text-white px-0" href="contact.php"><i class="bi bi-envelope me-2 text-primary"></i>İletişim</a></li>
-            </ul>
-            <div class="d-grid gap-3 mt-8">
-                <a href="register.php" class="btn btn-primary-glow py-3 fw-bold fs-5 shadow-sm">30 Gün Ücretsiz Dene</a>
-                <a href="<?php echo htmlspecialchars($appPanelUrl); ?>" class="btn btn-outline btn-outline-dashed btn-outline-default btn-active-light-primary text-white fw-bold py-3 fs-5">Giriş Yap</a>
-            </div>
-        </div>
-    </div>
+<?php require __DIR__ . '/partials/site_mobile_menu.php'; ?>
 
     <!--begin::Global Javascript Bundle(mandatory for all pages)-->
     <script src="p/dist/assets/plugins/global/plugins.bundle.js"></script>
     <script src="p/dist/assets/js/scripts.bundle.js"></script>
     <!--end::Global Javascript Bundle-->
 
+<?php require __DIR__ . '/partials/cookie_banner.php'; ?>
 <?php require __DIR__ . '/partials/fab.php'; ?>
 </body>
 </html>

@@ -14,6 +14,10 @@ $staticPages = [
     ['loc' => '/contact', 'priority' => '0.5'],
     ['loc' => '/register', 'priority' => '0.6'],
     ['loc' => '/mutfak-dolap-yazilimi', 'priority' => '0.9'],
+    ['loc' => '/kvkk-aydinlatma-metni', 'priority' => '0.3'],
+    ['loc' => '/gizlilik-politikasi', 'priority' => '0.3'],
+    ['loc' => '/cerez-politikasi', 'priority' => '0.3'],
+    ['loc' => '/kullanim-kosullari', 'priority' => '0.3'],
 ];
 $lastmod = date('Y-m-d');
 

@@ -1,214 +1,162 @@
-<?php 
-require_once 'db.php'; 
-
-try {
-    $stmtModules = $pdo->query("SELECT * FROM website_modules WHERE status = 1 ORDER BY order_no ASC");
-    $websiteModules = $stmtModules->fetchAll();
-} catch (Exception $e) {
-    $websiteModules = [];
-}
+<?php
+require_once 'db.php';
+require_once __DIR__ . '/partials/paket_veri.php';
+require_once __DIR__ . '/partials/modul_icerik.php';
+$packages = prolynweb_paketler($pdo);
+$moduller = prolynweb_modul_icerik();
 ?>
 <!DOCTYPE html>
-<html lang="tr" data-bs-theme="dark">
+<html lang="tr" data-bs-theme="light" data-tema="light">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title><?php echo htmlspecialchars($appSettings['seo_title'] ?? 'Prolyn - Yeni Nesil Bulut ERP Sistemi'); ?> - Modüller</title>
-    <meta name="description" content="<?php echo htmlspecialchars('Prolyn ERP modülleri: CRM, muhasebe, stok, insan kaynakları ve daha fazlası. İşletmeniz için gereken tüm modülleri tek platformda keşfedin.'); ?>">
-    <meta name="keywords" content="<?php echo htmlspecialchars($appSettings['seo_keywords'] ?? 'erp, bulut erp, crm, ön muhasebe, ik'); ?>">
+    <?php require __DIR__ . '/partials/tema_head.php'; ?>
+    <title>Prolyn Modül Detayları: Her Modül Ne Yapar, Hangi Pakette?</title>
+    <meta name="description"
+        content="<?php echo htmlspecialchars('Prolyn modülleri tek tek: müşteri, randevu, sözleşme, cari, kasa, çek, banka, personel giderleri, raporlar ve daha fazlası. Neyin hangi pakette olduğunu görün.'); ?>">
+    <meta name="keywords"
+        content="<?php echo htmlspecialchars($appSettings['seo_keywords'] ?? 'erp, bulut erp, crm, ön muhasebe, ik'); ?>">
     <link rel="canonical" href="<?php echo htmlspecialchars(prolynweb_current_url()); ?>">
     <meta property="og:type" content="website">
     <meta property="og:site_name" content="<?php echo htmlspecialchars($appSettings['site_name'] ?? 'Prolyn ERP'); ?>">
-    <meta property="og:title" content="<?php echo htmlspecialchars($appSettings['seo_title'] ?? 'Prolyn - Yeni Nesil Bulut ERP Sistemi'); ?> - Modüller">
-    <meta property="og:description" content="<?php echo htmlspecialchars('Prolyn ERP modülleri: CRM, muhasebe, stok, insan kaynakları ve daha fazlası. İşletmeniz için gereken tüm modülleri tek platformda keşfedin.'); ?>">
+    <meta property="og:title"
+        content="<?php echo htmlspecialchars($appSettings['seo_title'] ?? 'Prolyn - Yeni Nesil Bulut ERP Sistemi'); ?> - Modüller">
+    <meta property="og:description"
+        content="<?php echo htmlspecialchars('Prolyn modülleri tek tek: müşteri, randevu, sözleşme, cari, kasa, çek, banka, personel giderleri, raporlar ve daha fazlası. Neyin hangi pakette olduğunu görün.'); ?>">
     <meta property="og:url" content="<?php echo htmlspecialchars(prolynweb_current_url()); ?>">
     <meta name="twitter:card" content="summary_large_image">
     <link rel="icon" href="p/dist/logo/favicon.ico" sizes="any" />
     <link rel="icon" type="image/png" sizes="32x32" href="p/dist/logo/favicon-32x32.png" />
     <link rel="apple-touch-icon" href="p/dist/logo/apple-touch-icon.png" />
-    <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Inter:300,400,500,600,700,800" />
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Inter:400,500,600,700,800&display=swap" />
     <link href="p/dist/assets/plugins/global/plugins.bundle.css" rel="stylesheet" type="text/css" />
     <link href="p/dist/assets/css/style.bundle.css" rel="stylesheet" type="text/css" />
     <!-- New Custom Redesign CSS -->
-    <link href="assets/css/style.css?v=8" rel="stylesheet" type="text/css" />
+    <link href="assets/css/style.css?v=12" rel="stylesheet" type="text/css" />
+    <link href="assets/css/tema.css?v=2" rel="stylesheet" type="text/css" />
+    <link href="assets/css/modul.css?v=1" rel="stylesheet" type="text/css" />
 </head>
+
 <body id="kt_body" class="app-blank">
     <!--begin::Root-->
     <div class="d-flex flex-column flex-root" id="kt_app_root">
-        <!--begin::Header-->
-        <div class="landing-header glass-header" data-kt-sticky="true" data-kt-sticky-name="landing-header" data-kt-sticky-offset="{default: '200px', lg: '300px'}">
-            <div class="container-xxl">
-                <nav class="navbar navbar-dark w-100 py-4 py-lg-6">
-                    <!--begin::Logo-->
-                    <a class="navbar-brand d-flex align-items-center" href="index.php">
-                        <img src="p/dist/logo/prolyn-logo-horizontal-white-sm.png" alt="Prolyn" style="height:38px;width:auto;display:block;" />
-                    </a>
-                    <!--end::Logo-->
-                    
-                    <!-- Mobile Toggle -->
-                    <button class="btn btn-icon btn-active-color-primary d-lg-none" type="button" data-bs-toggle="offcanvas" data-bs-target="#mobileMenu" aria-controls="mobileMenu">
-                        <i class="bi bi-list fs-1 text-white"></i>
-                    </button>
-
-                    <!-- Desktop Menu -->
-                    <div class="d-none d-lg-flex align-items-center ms-auto">
-                        <ul class="nav text-white fw-semibold fs-6 me-10">
-                            <li class="nav-item">
-                                <a class="nav-link text-white px-4" href="index.php#ozellikler">Özellikler</a>
-                            </li>
-                            <li class="nav-item">
-                                <a class="nav-link text-white px-4" href="index.php#nasil-calisir">Nasıl Çalışır?</a>
-                            </li>
-                            <li class="nav-item">
-                                <a class="nav-link text-white px-4" href="moduller.php">Modüller</a>
-                            </li>
-                                                        <li class="nav-item">
-                                <a class="nav-link text-white px-4" href="blog.php">Blog</a>
-                            </li>
-                            <li class="nav-item">
-                                <a class="nav-link text-white px-4" href="video.php">Videolar</a>
-                            </li>
-                            <li class="nav-item">
-                                <a class="nav-link text-white px-4" href="pricing.php">Fiyatlandırma</a>
-                            </li>
-                            <li class="nav-item">
-                                <a class="nav-link text-white px-4" href="contact.php">İletişim</a>
-                            </li>
-                        </ul>
-                        
-                        <div class="d-flex align-items-center flex-shrink-0">
-                            <a href="<?php echo htmlspecialchars($appPanelUrl); ?>" class="btn btn-outline btn-outline-dashed btn-outline-default btn-active-light-primary text-white fw-bold px-6 py-3 me-4">Giriş Yap</a>
-                            <a href="register.php" class="btn btn-primary-glow px-6 py-3 fw-bold">30 Gün Ücretsiz Dene</a>
-                        </div>
-                    </div>
-                </nav>
-            </div>
-        </div>
-        <!--end::Header-->
+        <?php $navActive = 'moduller'; require __DIR__ . '/partials/site_header.php'; ?>
 
         <!--begin::Hero-->
-        <div class="hero-section hero-compact text-center">
+        <div class="hero-section hero-compact">
             <div class="hero-glow-1"></div>
             <div class="container-xxl position-relative z-index-2">
-                <div class="mb-5 animate-fade-in-up">
-                    <h1 class="text-white fw-bolder fs-2hx fs-lg-3x mb-6">
-                        Prolyn <span class="text-gradient-primary">Modülleri</span>
+                <div class="mb-5 animate-fade-in-up" style="max-width:760px">
+                    <h1 class="pw-h fw-bolder fs-2hx fs-lg-3x mb-5" style="color:var(--pw-ink)">Prolyn modülleri tek tek
                     </h1>
-                    <div class="fw-medium fs-4 text-gray-400 mb-10 mx-auto" style="max-width: 800px;">
-                        İşletmenizin tüm ihtiyaçlarını tek bir platformda birleştiren, esnek ve güçlü çözümler.
-                    </div>
+                    <p class="bolum-giris" style="max-width:100%">Her modülün ne yaptığını, hangi rolün kullandığını ve
+                        hangi pakette
+                        açıldığını burada bulabilirsiniz. <br>Çalışma mantığını görmek için <a
+                            href="index.php#ozellikler" style="color:var(--pw-link);text-decoration:underline">ana
+                            sayfadaki modül anlatımlarına</a>
+                        da göz atabilirsiniz.
+                    </p>
                 </div>
             </div>
         </div>
         <!--end::Hero-->
 
-        <!--begin::Modules-->
-        <div class="py-10 mb-20">
+        <div class="mod-nav-sar" aria-label="Modüller">
             <div class="container-xxl">
-                <div class="row g-10">
-                    <?php if (!empty($websiteModules)): ?>
-                        <?php foreach ($websiteModules as $module): ?>
-                            <div class="col-lg-4 col-md-6 animate-fade-in-up">
-                                <div class="glass-card p-10 h-100 feature-card">
-                                    <div class="feature-icon-box text-primary mb-6">
-                                        <i class="bi <?php echo htmlspecialchars($module['icon']); ?> fs-3x text-primary"></i>
-                                    </div>
-                                    <h3 class="text-white fs-2 fw-bold mb-4"><?php echo htmlspecialchars($module['title']); ?></h3>
-                                    <p class="text-gray-400 fs-5 mb-0"><?php echo htmlspecialchars($module['description']); ?></p>
-                                </div>
-                            </div>
-                        <?php endforeach; ?>
-                    <?php else: ?>
-                        <div class="col-12 text-center text-gray-500 fs-4">
-                            Sistemde henüz aktif modül bulunmamaktadır.
-                        </div>
-                    <?php endif; ?>
-                </div>
+                <nav class="mod-nav" aria-label="Modüllere git">
+                    <a href="#paket-tablosu" style="--m:var(--pw-primary)"><i></i>Paket tablosu</a>
+                    <?php foreach ($moduller as $m): ?>
+                    <a href="#<?= $m['slug'] ?>" data-mod="<?= $m['slug'] ?>"
+                        style="--m:var(--m-<?= $m['renk'] ?>)"><i></i><?= htmlspecialchars($m['ad']) ?></a>
+                    <?php endforeach; ?>
+                </nav>
             </div>
         </div>
-        <!--end::Modules-->
 
-        <!--begin::Footer-->
-        <div class="mb-0 py-10 border-top border-gray-800 mt-auto" style="background: rgba(19, 22, 31, 0.6); backdrop-filter: blur(10px);">
+        <!--begin::Paket tablosu-->
+        <div class="py-12" id="paket-tablosu" style="scroll-margin-top:130px">
             <div class="container-xxl">
-                <div class="row pt-9 pb-5">
-                    <div class="col-lg-4 mb-10 mb-lg-0">
-                        <img src="p/dist/logo/prolyn-logo-horizontal-white-sm.png" alt="Prolyn" class="mb-5" style="height:46px;width:auto;display:block;" />
-                        <p class="text-gray-500 fs-6 fw-semibold lh-lg mb-5">
-                            <?php echo htmlspecialchars($appSettings['website_footer_text'] ?? 'Kurumsal kaynak planlamasında yeni nesil çözüm ortağınız. Hız, güvenlik ve esnekliği bir arada sunuyoruz.'); ?>
-                        </p>
-                    </div>
-                    <div class="col-lg-2 col-6 mb-10 mb-lg-0">
-                        <h4 class="text-white fw-bold mb-5">Ürün</h4>
-                        <div class="d-flex flex-column gap-3">
-                            <a href="index.php#ozellikler" class="footer-link fw-semibold">Özellikler</a>
-                            <a href="index.php#nasil-calisir" class="footer-link fw-semibold">Nasıl Çalışır?</a>
-                            <a href="moduller.php" class="footer-link fw-semibold">Modüller</a>
-                            <a href="blog.php" class="footer-link fw-semibold">Blog</a>
-                            <a href="video.php" class="footer-link fw-semibold">Videolar</a>
-                            <a href="pricing.php" class="footer-link fw-semibold">Fiyatlandırma</a>
+                <h2 class="bolum-baslik" style="font-size:1.8rem">Hangi pakette neler var?</h2>
+                <p class="bolum-giris mb-8">Aşağıdaki tablo, paketlerde açılan modülleri ve limitleri gösterir.
+                    "Kısmen", o bölümün bir kısmının pakette bulunduğu anlamına gelir.</p>
+                <?php require __DIR__ . '/partials/paket_matris.php'; ?>
+            </div>
+        </div>
+        <!--end::Paket tablosu-->
+
+        <!--begin::Modül rehberi-->
+        <div class="pb-15">
+            <div class="container-xxl">
+                <div class="rehber">
+                    <?php foreach ($moduller as $m): ?>
+                    <article class="rehber-kart" id="<?= $m['slug'] ?>" style="--m:var(--m-<?= $m['renk'] ?>)">
+                        <div class="rehber-ust">
+                            <figure class="ill m-0"><?php require __DIR__ . '/partials/ill/' . $m['slug'] . '.php'; ?>
+                            </figure>
+                            <div>
+                                <h2><?= htmlspecialchars($m['ad']) ?><?php if ($m['durum'] === 'kismen'): ?> <span
+                                        class="mod-rozet">Bir kısmı yakında</span><?php endif; ?></h2>
+                                <p><?= htmlspecialchars($m['ozet']) ?></p>
+                                <?php if ($m['durum'] === 'kismen'): ?><p>
+                                    <b><?= htmlspecialchars($m['durum_not']) ?></b>
+                                </p><?php endif; ?>
+                            </div>
                         </div>
-                    </div>
-                    <div class="col-lg-2 col-6 mb-10 mb-lg-0">
-                        <h4 class="text-white fw-bold mb-5">Destek</h4>
-                        <div class="d-flex flex-column gap-3">
-                            <a href="contact.php" class="footer-link fw-semibold">İletişim</a>
-                            <a href="#" class="footer-link fw-semibold">SSS</a>
+                        <div class="rehber-listeler">
+                            <div>
+                                <h3>Ne yapar?</h3>
+                                <ul>
+                                    <?php foreach ($m['maddeler'] as $md): ?><li><b><?= htmlspecialchars($md[0]) ?>.</b>
+                                        <?= htmlspecialchars($md[1]) ?></li><?php endforeach; ?>
+                                </ul>
+                            </div>
+                            <div>
+                                <h3>Ayrıca</h3>
+                                <ul>
+                                    <?php foreach ($m['ayrinti'] as $ay): ?><li><?= htmlspecialchars($ay) ?></li>
+                                    <?php endforeach; ?>
+                                </ul>
+                            </div>
                         </div>
-                    </div>
-                    <div class="col-lg-4">
-                        <h4 class="text-white fw-bold mb-5">Bizi Takip Edin</h4>
-                        <div class="d-flex gap-4">
-                            <?php if(!empty($appSettings['social_twitter'])): ?>
-                                <a href="<?php echo htmlspecialchars($appSettings['social_twitter']); ?>" target="_blank" class="btn btn-icon btn-light-primary btn-sm rounded-circle">
-                                    <i class="bi bi-twitter-x fs-4"></i>
-                                </a>
-                            <?php endif; ?>
-                            <?php if(!empty($appSettings['social_linkedin'])): ?>
-                                <a href="<?php echo htmlspecialchars($appSettings['social_linkedin']); ?>" target="_blank" class="btn btn-icon btn-light-primary btn-sm rounded-circle">
-                                    <i class="bi bi-linkedin fs-4"></i>
-                                </a>
-                            <?php endif; ?>
+                        <div class="rehber-alt">
+                            <span><b>Kimler kullanır:</b> <?= htmlspecialchars($m['kimler']) ?></span>
+                            <span class="mod-paket" style="gap:.4rem 1rem"><b class="mod-paket-etiket">Hangi
+                                    pakette?</b>
+                                <?php foreach ($packages as $pk): $d = prolynweb_pakette_var($pk, $m['anahtarlar']); ?>
+                                <span
+                                    class="pk-d <?= $d ?>"><?= $d === 'yok' ? '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 12h12"/></svg>' : '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>' ?><?= htmlspecialchars($pk['name']) ?><?= $d === 'kismen' ? ' (kısmen)' : ($d === 'yok' ? ' (yok)' : '') ?></span>
+                                <?php endforeach; ?>
+                            </span>
                         </div>
-                    </div>
+                    </article>
+                    <?php endforeach; ?>
                 </div>
-                <div class="d-flex flex-center border-top border-gray-800 pt-10">
-                    <span class="text-gray-500 fw-semibold">&copy; <?php echo date('Y'); ?> <?php echo htmlspecialchars($appSettings['site_name'] ?? 'Prolyn ERP'); ?>. Tüm hakları saklıdır. - <a href="https://echoshift.net" target="_blank" class="text-gray-400 text-hover-primary">Created by EchoShift</a></span>
+
+                <div class="text-center mt-15">
+                    <h2 class="bolum-baslik" style="font-size:1.8rem">Kendi işinizde deneyin</h2>
+                    <p class="bolum-giris mx-auto mb-8">30 gün boyunca seçtiğiniz paketi ücretsiz kullanın; kredi kartı
+                        gerekmez.</p>
+                    <a href="register.php" class="btn btn-primary-glow btn-lg px-10">30 Gün Ücretsiz Dene</a>
                 </div>
             </div>
         </div>
-        <!--end::Footer-->
+        <!--end::Modül rehberi-->
+
+        <?php require __DIR__ . '/partials/site_footer.php'; ?>
     </div>
     <!--end::Root-->
 
-    <!-- Offcanvas Mobile Menu -->
-    <div class="offcanvas offcanvas-end offcanvas-glass border-0" tabindex="-1" id="mobileMenu" aria-labelledby="mobileMenuLabel">
-        <div class="offcanvas-header border-bottom border-gray-800 p-6">
-            <h5 class="offcanvas-title m-0" id="mobileMenuLabel"><img src="p/dist/logo/prolyn-logo-horizontal-white-sm.png" alt="Prolyn" style="height:32px;width:auto;" /></h5>
-            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="offcanvas" aria-label="Kapat"></button>
-        </div>
-        <div class="offcanvas-body p-6">
-            <ul class="nav flex-column fs-4 fw-semibold mb-8">
-                <li class="nav-item mb-2"><a class="nav-link text-white px-0" href="index.php#ozellikler"><i class="bi bi-star me-2 text-primary"></i>Özellikler</a></li>
-                <li class="nav-item mb-2"><a class="nav-link text-white px-0" href="index.php#nasil-calisir"><i class="bi bi-info-circle me-2 text-primary"></i>Nasıl Çalışır?</a></li>
-                <li class="nav-item mb-2"><a class="nav-link text-white px-0" href="moduller.php"><i class="bi bi-grid me-2 text-primary"></i>Modüller</a></li>
-                <li class="nav-item mb-2"><a class="nav-link text-white px-0" href="blog.php"><i class="bi bi-file-text me-2 text-primary"></i>Blog</a></li>
-                <li class="nav-item mb-2"><a class="nav-link text-white px-0" href="video.php"><i class="bi bi-play-circle me-2 text-primary"></i>Videolar</a></li>
-                <li class="nav-item mb-2"><a class="nav-link text-white px-0" href="pricing.php"><i class="bi bi-tag me-2 text-primary"></i>Fiyatlandırma</a></li>
-                <li class="nav-item mb-2"><a class="nav-link text-white px-0" href="contact.php"><i class="bi bi-envelope me-2 text-primary"></i>İletişim</a></li>
-            </ul>
-            <div class="d-grid gap-3 mt-8">
-                <a href="register.php" class="btn btn-primary-glow py-3 fw-bold fs-5 shadow-sm">30 Gün Ücretsiz Dene</a>
-                <a href="<?php echo htmlspecialchars($appPanelUrl); ?>" class="btn btn-outline btn-outline-dashed btn-outline-default btn-active-light-primary text-white fw-bold py-3 fs-5">Giriş Yap</a>
-            </div>
-        </div>
-    </div>
+    <?php require __DIR__ . '/partials/site_mobile_menu.php'; ?>
 
     <!--begin::Global Javascript Bundle(mandatory for all pages)-->
     <script src="p/dist/assets/plugins/global/plugins.bundle.js"></script>
     <script src="p/dist/assets/js/scripts.bundle.js"></script>
     <!--end::Global Javascript Bundle-->
 
-<?php require __DIR__ . '/partials/fab.php'; ?>
+    <script src="assets/js/site.js?v=7"></script>
+    <?php require __DIR__ . '/partials/cookie_banner.php'; ?>
+    <?php require __DIR__ . '/partials/fab.php'; ?>
 </body>
+
 </html>
