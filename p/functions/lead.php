@@ -243,3 +243,16 @@ function lead_yeni_token(): string
 {
     return bin2hex(random_bytes(16));
 }
+
+/** Takip tarihini "3 gün gecikti / Bugün / 2 gün sonra" biçiminde, renk sınıfıyla verir: [yazı, css sınıfı, tam tarih]. */
+function lead_takip_etiket(?string $tarih, bool $kapali): array
+{
+    if (!$tarih) { return ['Planlanmadı', 'text-muted', '']; }
+    $tamTarih = date('d.m.Y', strtotime($tarih));
+    if ($kapali) { return [$tamTarih, 'text-muted', '']; }
+    $fark = (int)(new DateTime(date('Y-m-d')))->diff(new DateTime($tarih))->format('%r%a');
+    if ($fark < 0)   { return [abs($fark) . ' gün gecikti', 'text-danger fw-bold', $tamTarih]; }
+    if ($fark === 0) { return ['Bugün', 'text-warning fw-bold', $tamTarih]; }
+    if ($fark === 1) { return ['Yarın', 'text-gray-800 fw-semibold', $tamTarih]; }
+    return [$fark . ' gün sonra', 'text-gray-700', $tamTarih];
+}

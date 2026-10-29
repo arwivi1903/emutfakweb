@@ -15,181 +15,280 @@ $currentAdmin = current_admin(false) ?: [];
 
 $accountTypes = [
     'admin' => [
-        'label' => 'Yönetici',
-        'table' => 'yoneticiler',
-        'id_col' => 'admin_id',
-        'name_col' => 'full_name',
+        'label'     => 'Yönetici',
+        'table'     => 'yoneticiler',
+        'id_col'    => 'admin_id',
+        'name_col'  => 'full_name',
         'email_col' => 'email',
         'search_sql' => 'SELECT admin_id, username, email, full_name, role, status, updated_at FROM yoneticiler WHERE email = ? OR username = ? LIMIT 1',
     ],
     'customer' => [
-        'label' => 'Kurum Kullanıcısı',
-        'table' => 'users',
-        'id_col' => 'UserID',
-        'name_col' => 'UserName',
+        'label'     => 'Kurum Kullanıcısı',
+        'table'     => 'users',
+        'id_col'    => 'UserID',
+        'name_col'  => 'UserName',
         'email_col' => 'UserMail',
-        'search_sql' => 'SELECT UserID, FirmaID, UserName, UserMail, UserAuthority, UserStatus, BranchID, UserPicture, SessionMail, IpAdress FROM users WHERE UserMail = ? LIMIT 1',
+        // Gereksiz kolonlar (resim, IP vb.) çekilmez; yalnızca özet ekranı için gerekenler.
+        'search_sql' => 'SELECT UserID, FirmaID, UserName, UserMail, UserAuthority, UserStatus FROM users WHERE UserMail = ? LIMIT 1',
     ],
 ];
 
-$message = null;
-$messageType = 'info';
+// Talep durumları: değer => [Türkçe etiket, rozet sınıfı]. Tek kaynak; hem doğrulama hem görünüm bunu kullanır.
+$requestStatuses = [
+    'pending'         => ['Bekliyor',          'badge-light-warning'],
+    'in_review'       => ['İncelemede',        'badge-light-warning'],
+    'matched'         => ['Eşleşti',           'badge-light-success'],
+    'completed'       => ['Tamamlandı',        'badge-light-primary'],
+    'rejected'        => ['Reddedildi',        'badge-light-danger'],
+    'email_not_found' => ['E-posta bulunamadı', 'badge-light-danger'],
+    'kurum_not_found' => ['Kurum bulunamadı',  'badge-light-danger'],
+];
+
+/* ---------------------------------------------------------------
+ * Yardımcı fonksiyonlar
+ * ------------------------------------------------------------- */
+
+// Sonuç mesajlarını bir sonraki sayfa yüklemesine taşır (POST-Redirect-GET).
+// Böylece sayfa yenilendiğinde şifre sıfırlama işlemi tekrar gönderilmez.
+if (!function_exists('pwr_flash_set')) {
+    function pwr_flash_set(array $data): void { $_SESSION['pwr_flash'] = $data; }
+    function pwr_flash_pull(): array {
+        $data = $_SESSION['pwr_flash'] ?? [];
+        unset($_SESSION['pwr_flash']);
+        return is_array($data) ? $data : [];
+    }
+    function pwr_redirect(): void {
+        $url = strtok((string)($_SERVER['REQUEST_URI'] ?? 'password_reset.php'), '?');
+        if (!headers_sent()) {
+            header('Location: ' . $url, true, 303);
+        } else {
+            // header.php çıktıyı başlatmış olabilir; projedeki mevcut desenle yönlendir.
+            echo '<script>window.location.replace(' . json_encode($url) . ');</script>';
+        }
+        exit;
+    }
+
+    /** Parola politikası. Hata varsa mesaj, yoksa null döner. */
+    function pwr_validate_password(string $password, string $confirm, string $identifier): ?string {
+        if ($password === '' || $confirm === '') {
+            return 'Yeni şifre ve tekrar alanları zorunludur.';
+        }
+        // bcrypt 72 baytın ötesini sessizce keser; bunu açıkça reddediyoruz.
+        if (strlen($password) < 8 || strlen($password) > 72) {
+            return 'Yeni şifre 8 ile 72 karakter arasında olmalıdır.';
+        }
+        if (!preg_match('/[A-Za-z]/', $password) || !preg_match('/\d/', $password)) {
+            return 'Yeni şifre en az bir harf ve bir rakam içermelidir.';
+        }
+        if (!hash_equals($password, $confirm)) {
+            return 'Şifreler birbiriyle uyuşmuyor.';
+        }
+        if ($identifier !== '' && strcasecmp($password, $identifier) === 0) {
+            return 'Şifre, kullanıcı adı veya e-posta ile aynı olamaz.';
+        }
+        return null;
+    }
+
+    /**
+     * Hedef hesabı bulur.
+     * Dönüş: [$kullanici|null, $kurum|null, $hataMesaji|null]
+     */
+    function pwr_find_account(Database $db, array $config, string $type, string $identifier, string $kurumKodu): array {
+        if ($type === 'admin') {
+            $user = $db->getRow($config['search_sql'], [$identifier, $identifier]);
+            return $user ? [$user, null, null] : [null, null, 'Yönetici bulunamadı. E-posta veya yönetici adını kontrol edin.'];
+        }
+
+        $tenant = $db->getRow(
+            "SELECT customer_id, company_name, company_email, database_name, status
+             FROM kurumlar
+             WHERE customer_code = ? OR tenant_alias = ? OR CONCAT('k', customer_id) = ?
+             ORDER BY (customer_code = ?) DESC, (tenant_alias = ?) DESC
+             LIMIT 1",
+            [$kurumKodu, $kurumKodu, $kurumKodu, $kurumKodu, $kurumKodu]
+        );
+        if (!$tenant) {
+            return [null, null, 'Bu kurum kodu / alias ile kayıtlı bir kurum bulunamadı.'];
+        }
+        // Sıfır güven: veritabanı adı kimlik değeri olarak kullanılmadan önce biçimi doğrulanır.
+        if (empty($tenant->database_name) || !preg_match('/^[A-Za-z0-9_]+$/', (string)$tenant->database_name)) {
+            return [null, $tenant, 'Kurumun veritabanı henüz kurulmamış veya geçersiz.'];
+        }
+
+        $tenantDb = new Database($tenant->database_name);
+        $user = $tenantDb->getRow($config['search_sql'], [$identifier]);
+        return $user ? [$user, $tenant, null] : [null, $tenant, 'Bu kurumda bu e-posta ile kullanıcı bulunamadı.'];
+    }
+}
+
+/* ---------------------------------------------------------------
+ * Durum değişkenleri
+ * ------------------------------------------------------------- */
+$currentAdminId = $currentAdmin['admin_id'] ?? null;
+
+$flash = pwr_flash_pull();
+$message            = $flash['message'] ?? null;
+$messageType        = $flash['message_type'] ?? 'info';
+$requestMessage     = $flash['request_message'] ?? null;
+$requestMessageType = $flash['request_message_type'] ?? 'info';
+$targetSummary      = $flash['summary'] ?? null;
+
 $selectedType = 'admin';
 $selectedIdentifier = '';
 $selectedKurumKodu = '';
-$targetUser = null;
-$selectedTenant = null;
-$requestMessage = null;
-$requestMessageType = 'info';
 $resetRequests = [];
-$resetStats = [
-    'total' => 0,
-    'matched' => 0,
-    'pending' => 0,
-    'completed' => 0,
-];
+$resetStats = ['total' => 0, 'matched' => 0, 'pending' => 0, 'completed' => 0];
 
+/* ---------------------------------------------------------------
+ * 1) Talep durumu güncelleme
+ * ------------------------------------------------------------- */
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['request_action'])) {
     $requestId = (int)($_POST['request_id'] ?? 0);
     $newStatus = trim((string)($_POST['new_status'] ?? ''));
-    $allowedStatuses = ['pending', 'matched', 'in_review', 'completed', 'rejected', 'email_not_found', 'kurum_not_found'];
 
-    if ($requestId <= 0 || !in_array($newStatus, $allowedStatuses, true)) {
+    if ($requestId <= 0 || !isset($requestStatuses[$newStatus])) {
         $requestMessage = 'Talep güncelleme bilgileri geçersiz.';
         $requestMessageType = 'danger';
     } else {
         try {
             $mailQueueStatus = ($newStatus === 'completed') ? 'processed' : 'pending';
-            $updated = $db->Update(
+            $db->Update(
                 'UPDATE sifre_sifirlama_talepleri SET request_status = ?, mail_queue_status = ? WHERE request_id = ? LIMIT 1',
                 [$newStatus, $mailQueueStatus, $requestId]
             );
-
-            if ($updated > 0) {
-                $requestMessage = 'Talep durumu güncellendi.';
-                $requestMessageType = 'success';
-            } else {
-                $requestMessage = 'Talep güncellenemedi veya kayıt bulunamadı.';
-                $requestMessageType = 'warning';
+            // Database::Update hatayı yutar; SQL hatasını ayrıca kontrol et.
+            // (Değer aynıysa rowCount 0 döner, bu hata sayılmaz.)
+            if ($db->getLastError()) {
+                throw new RuntimeException($db->getLastError());
             }
-        } catch (Exception $e) {
-            $requestMessage = 'Talep güncelleme sırasında hata oluştu: ' . $e->getMessage();
+            xlog('PASSWORD_RESET_REQUEST_STATUS', ['request_id' => $requestId, 'new_status' => $newStatus],
+                 $requestId, $currentAdminId, $db, null, $newStatus, 'password_reset_request');
+            pwr_flash_set(['request_message' => 'Talep durumu güncellendi.', 'request_message_type' => 'success']);
+            pwr_redirect();
+        } catch (Throwable $e) {
+            error_log('[PASSWORD_RESET] talep güncelleme: ' . $e->getMessage());
+            $requestMessage = 'Talep güncellenirken bir hata oluştu. Ayrıntı sunucu kaydındadır.';
             $requestMessageType = 'danger';
         }
     }
 }
 
+/* ---------------------------------------------------------------
+ * 2) Manuel şifre sıfırlama
+ * ------------------------------------------------------------- */
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && !isset($_POST['request_action'])) {
-    $selectedType = $_POST['account_type'] ?? 'admin';
+    $selectedType = (string)($_POST['account_type'] ?? 'admin');
     if (!isset($accountTypes[$selectedType])) {
         $selectedType = 'admin';
     }
-
-    $selectedIdentifier = trim($_POST['identifier'] ?? '');
-    $selectedKurumKodu = strtolower(trim($_POST['kurum_kodu'] ?? ''));
-    $newPassword = (string)($_POST['new_password'] ?? '');
+    $config             = $accountTypes[$selectedType];
+    $selectedIdentifier = trim((string)($_POST['identifier'] ?? ''));
+    $selectedKurumKodu  = strtolower(trim((string)($_POST['kurum_kodu'] ?? '')));
+    $newPassword        = (string)($_POST['new_password'] ?? '');
     $newPasswordConfirm = (string)($_POST['new_password_confirm'] ?? '');
 
+    // Doğrulama hataları: sayfa aynı istekte, girilen değerler korunarak gösterilir (şifre alanları hariç).
     if ($selectedType === 'customer' && $selectedKurumKodu === '') {
         $message = 'Kurum kullanıcısı için kurum kodu veya alias zorunludur.';
         $messageType = 'danger';
     } elseif ($selectedIdentifier === '') {
         $message = 'Lütfen kullanıcı e-posta adresi veya yönetici adı girin.';
         $messageType = 'danger';
-    } elseif ($newPassword === '' || $newPasswordConfirm === '') {
-        $message = 'Yeni şifre ve tekrar alanları zorunludur.';
-        $messageType = 'danger';
-    } elseif (strlen($newPassword) < 8) {
-        $message = 'Yeni şifre en az 8 karakter olmalıdır.';
-        $messageType = 'danger';
-    } elseif ($newPassword !== $newPasswordConfirm) {
-        $message = 'Şifreler birbiriyle uyuşmuyor.';
+    } elseif (($passwordError = pwr_validate_password($newPassword, $newPasswordConfirm, $selectedIdentifier)) !== null) {
+        $message = $passwordError;
         $messageType = 'danger';
     } else {
-        $config = $accountTypes[$selectedType];
         try {
-            if ($selectedType === 'admin') {
-                $targetUser = $db->getRow($config['search_sql'], [$selectedIdentifier, $selectedIdentifier]);
-            } else {
-                $selectedTenant = $db->getRow(
-                    "SELECT customer_id, company_name, company_email, database_name, status
-                     FROM kurumlar
-                     WHERE customer_code = ? OR tenant_alias = ? OR CONCAT('k', customer_id) = ?
-                     ORDER BY (customer_code = ?) DESC, (tenant_alias = ?) DESC
-                     LIMIT 1",
-                    [$selectedKurumKodu, $selectedKurumKodu, $selectedKurumKodu, $selectedKurumKodu, $selectedKurumKodu]
-                );
-
-                if ($selectedTenant && !empty($selectedTenant->database_name)) {
-                    $tenantDb = new Database($selectedTenant->database_name);
-                    $targetUser = $tenantDb->getRow($config['search_sql'], [$selectedIdentifier]);
-                }
-            }
+            [$targetUser, $selectedTenant, $findError] = pwr_find_account($db, $config, $selectedType, $selectedIdentifier, $selectedKurumKodu);
 
             if (!$targetUser) {
-                $message = 'Kullanıcı bulunamadı. E-posta adresini veya yönetici adını kontrol edin.';
+                $message = $findError ?: 'Kullanıcı bulunamadı.';
+                $messageType = 'danger';
+            } elseif ($selectedType === 'admin'
+                && ($targetUser->role ?? '') === 'superadmin'
+                && ($currentAdmin['role'] ?? '') !== 'superadmin') {
+                // Yetki yükseltme koruması: "manage_admins" yetkisi olan biri süper yöneticinin şifresini değiştiremez.
+                xlog('PASSWORD_RESET_DENIED', ['target_id' => $targetUser->{$config['id_col']}, 'reason' => 'superadmin_protected'],
+                     $targetUser->{$config['id_col']}, $currentAdminId, $db, null, null, 'password_reset');
+                $message = 'Süper yönetici hesabının şifresini yalnızca bir süper yönetici sıfırlayabilir.';
                 $messageType = 'danger';
             } else {
                 $passwordHash = password_hash($newPassword, PASSWORD_DEFAULT);
+                $targetId     = $targetUser->{$config['id_col']};
+                $targetEmail  = $targetUser->{$config['email_col']};
+
                 if ($selectedType === 'admin') {
-                    $updated = $db->Update(
-                        "UPDATE {$config['table']} SET password_hash = ?, updated_at = NOW() WHERE {$config['id_col']} = ?",
-                        [$passwordHash, $targetUser->{$config['id_col']}]
-                    );
+                    $targetDb = $db;
+                    $updateSql = "UPDATE {$config['table']} SET password_hash = ?, updated_at = NOW() WHERE {$config['id_col']} = ?";
                 } else {
-                    $tenantDb = new Database($selectedTenant->database_name);
-                    $updated = $tenantDb->Update(
-                        "UPDATE {$config['table']} SET UserPass = ?, SessionMail = NULL, IpAdress = NULL WHERE {$config['id_col']} = ?",
-                        [$passwordHash, $targetUser->{$config['id_col']}]
-                    );
+                    $targetDb = new Database($selectedTenant->database_name);
+                    // Oturum bağlama bilgileri temizlenir: eski oturumlar bu şifreyle devam edemez.
+                    $updateSql = "UPDATE {$config['table']} SET UserPass = ?, SessionMail = NULL, IpAdress = NULL WHERE {$config['id_col']} = ?";
+                }
+
+                $updated = $targetDb->Update($updateSql, [$passwordHash, $targetId]);
+
+                if ($targetDb->getLastError()) {
+                    throw new RuntimeException($targetDb->getLastError());
                 }
 
                 if ($updated > 0) {
-                    $resetToken = bin2hex(random_bytes(16));
-                    $tokenValue = $selectedType === 'customer' && $selectedTenant
-                        ? $selectedTenant->database_name . '::' . $resetToken
-                        : 'master::' . $resetToken;
+                    $tokenValue = ($selectedType === 'customer' ? $selectedTenant->database_name : 'master') . '::' . bin2hex(random_bytes(16));
 
+                    // Denetim izi: kullanılmış (used=1) kayıt olarak yazılır; geçerli bir sıfırlama bağlantısı üretmez.
                     $db->Insert(
                         'INSERT INTO sifre_sifirlama (email, token, user_type, expires_at, used, used_at, created_at) VALUES (?, ?, ?, DATE_ADD(NOW(), INTERVAL 1 DAY), 1, NOW(), NOW())',
-                        [$targetUser->{$config['email_col']}, $tokenValue, $selectedType]
+                        [$targetEmail, $tokenValue, $selectedType]
                     );
+                    if ($db->getLastError()) {
+                        error_log('[PASSWORD_RESET] sifre_sifirlama kaydı yazılamadı: ' . $db->getLastError());
+                    }
 
-                    xlog(
-                        'PASSWORD_RESET',
-                        [
-                            'account_type' => $selectedType,
-                            'identifier' => $selectedIdentifier,
-                            'kurum_kodu' => $selectedKurumKodu,
-                            'target_email' => $targetUser->{$config['email_col']},
-                            'target_id' => $targetUser->{$config['id_col']},
-                            'tenant_db' => $selectedTenant->database_name ?? null,
-                            'reset_by' => $currentAdmin['admin_id'] ?? null,
-                            'reset_by_email' => $currentAdmin['email'] ?? null,
+                    // Şifrenin kendisi hiçbir yere (log dahil) yazılmaz.
+                    xlog('PASSWORD_RESET', [
+                        'account_type'   => $selectedType,
+                        'identifier'     => $selectedIdentifier,
+                        'kurum_kodu'     => $selectedKurumKodu,
+                        'target_email'   => $targetEmail,
+                        'target_id'      => $targetId,
+                        'tenant_db'      => $selectedTenant->database_name ?? null,
+                        'reset_by'       => $currentAdminId,
+                        'reset_by_email' => $currentAdmin['email'] ?? null,
+                    ], $targetId, $currentAdminId, $db, null, null, 'password_reset');
+
+                    pwr_flash_set([
+                        'message'      => $config['label'] . ' için şifre başarıyla güncellendi.',
+                        'message_type' => 'success',
+                        'summary'      => [
+                            'label'      => $config['label'],
+                            'id'         => $targetId,
+                            'email'      => $targetEmail,
+                            'name'       => $targetUser->{$config['name_col']} ?? '',
+                            'status'     => $selectedType === 'admin' ? ($targetUser->status ?? 'unknown') : (!empty($targetUser->UserStatus) ? 'active' : 'passive'),
+                            'role'       => $selectedType === 'admin' ? ($targetUser->role ?? '-') : ($targetUser->UserAuthority ?? '-'),
+                            'updated_at' => date('Y-m-d H:i:s'),
+                            'tenant'     => $selectedTenant->company_name ?? null,
+                            'tenant_db'  => $selectedTenant->database_name ?? null,
                         ],
-                        $targetUser->{$config['id_col']},
-                        $currentAdmin['admin_id'] ?? null,
-                        $db,
-                        null,
-                        null,
-                        'password_reset'
-                    );
-
-                    $message = $config['label'] . ' için şifre başarıyla güncellendi.';
-                    $messageType = 'success';
-                } else {
-                    $message = 'Şifre güncellenemedi. Kayıt üzerinde değişiklik yapılmamış olabilir.';
-                    $messageType = 'warning';
+                    ]);
+                    pwr_redirect();
                 }
+
+                $message = 'Şifre güncellenemedi. Kayıt üzerinde değişiklik yapılmamış olabilir.';
+                $messageType = 'warning';
             }
-        } catch (Exception $e) {
-            $message = 'İşlem sırasında hata oluştu: ' . $e->getMessage();
-            $messageType = 'danger';
+        } catch (Throwable $e) {
+            // Kullanıcıya sade mesaj, ayrıntı loga.
             error_log('[PASSWORD_RESET] ' . $e->getMessage());
+            $message = 'İşlem sırasında bir hata oluştu. Ayrıntı sunucu kaydındadır.';
+            $messageType = 'danger';
         }
     }
 }
 
+/* ---------------------------------------------------------------
+ * 3) Talep listesi ve istatistikler
+ * ------------------------------------------------------------- */
 if (method_exists($db, 'tableExists') && $db->tableExists('sifre_sifirlama_talepleri')) {
     $resetRequests = $db->getRowsAssoc(
         "SELECT t.request_id, t.kurum_kodu, t.request_email, t.customer_id, t.tenant_db, t.user_id,
@@ -204,32 +303,10 @@ if (method_exists($db, 'tableExists') && $db->tableExists('sifre_sifirlama_talep
     foreach ($resetRequests as $req) {
         $status = (string)($req['request_status'] ?? 'pending');
         $resetStats['total']++;
-        if ($status === 'matched') {
-            $resetStats['matched']++;
-        }
-        if ($status === 'pending' || $status === 'in_review') {
-            $resetStats['pending']++;
-        }
-        if ($status === 'completed') {
-            $resetStats['completed']++;
-        }
+        if ($status === 'matched')   { $resetStats['matched']++; }
+        if ($status === 'pending' || $status === 'in_review') { $resetStats['pending']++; }
+        if ($status === 'completed') { $resetStats['completed']++; }
     }
-}
-
-$targetSummary = null;
-if ($targetUser) {
-    $targetSummary = [
-        'type' => $selectedType,
-        'label' => $accountTypes[$selectedType]['label'],
-        'id' => $targetUser->{$accountTypes[$selectedType]['id_col']},
-        'email' => $targetUser->{$accountTypes[$selectedType]['email_col']},
-        'name' => $targetUser->{$accountTypes[$selectedType]['name_col']} ?? '',
-        'status' => $selectedType === 'admin' ? ($targetUser->status ?? 'unknown') : (($targetUser->UserStatus ?? 0) ? 'active' : 'passive'),
-        'role' => $selectedType === 'admin' ? ($targetUser->role ?? '-') : ($targetUser->UserAuthority ?? '-'),
-        'updated_at' => $targetUser->updated_at ?? null,
-        'tenant' => $selectedTenant->company_name ?? null,
-        'tenant_db' => $selectedTenant->database_name ?? null,
-    ];
 }
 ?>
 
@@ -327,11 +404,7 @@ if ($targetUser) {
                                         <?php foreach ($resetRequests as $req): ?>
                                             <?php
                                                 $status = (string)($req['request_status'] ?? 'pending');
-                                                $statusClass = 'badge-light-secondary';
-                                                if ($status === 'matched') $statusClass = 'badge-light-success';
-                                                if ($status === 'pending' || $status === 'in_review') $statusClass = 'badge-light-warning';
-                                                if ($status === 'completed') $statusClass = 'badge-light-primary';
-                                                if ($status === 'email_not_found' || $status === 'kurum_not_found' || $status === 'rejected') $statusClass = 'badge-light-danger';
+                                                [$statusLabel, $statusClass] = $requestStatuses[$status] ?? [$status, 'badge-light-secondary'];
                                             ?>
                                             <tr>
                                                 <td>#<?= (int)($req['request_id'] ?? 0) ?></td>
@@ -343,7 +416,7 @@ if ($targetUser) {
                                                     <div><?= htmlspecialchars((string)($req['request_email'] ?? '-'), ENT_QUOTES, 'UTF-8') ?></div>
                                                     <div class="text-muted fs-8">IP: <?= htmlspecialchars((string)($req['request_ip'] ?? '-'), ENT_QUOTES, 'UTF-8') ?></div>
                                                 </td>
-                                                <td><span class="badge <?= $statusClass ?>"><?= htmlspecialchars($status, ENT_QUOTES, 'UTF-8') ?></span></td>
+                                                <td><span class="badge <?= $statusClass ?>"><?= htmlspecialchars($statusLabel, ENT_QUOTES, 'UTF-8') ?></span></td>
                                                 <td><span class="badge badge-light-info"><?= htmlspecialchars((string)($req['mail_queue_status'] ?? 'pending'), ENT_QUOTES, 'UTF-8') ?></span></td>
                                                 <td><?= htmlspecialchars((string)($req['created_at'] ?? '-'), ENT_QUOTES, 'UTF-8') ?></td>
                                                 <td class="text-end">
@@ -352,11 +425,8 @@ if ($targetUser) {
                                                         <input type="hidden" name="request_action" value="1">
                                                         <input type="hidden" name="request_id" value="<?= (int)($req['request_id'] ?? 0) ?>">
                                                         <select name="new_status" class="form-select form-select-sm form-select-solid" style="min-width: 145px;">
-                                                            <?php
-                                                                $statusOptions = ['pending', 'in_review', 'matched', 'completed', 'rejected', 'email_not_found', 'kurum_not_found'];
-                                                                foreach ($statusOptions as $opt):
-                                                            ?>
-                                                                <option value="<?= $opt ?>" <?= $status === $opt ? 'selected' : '' ?>><?= strtoupper($opt) ?></option>
+                                                            <?php foreach ($requestStatuses as $opt => [$optLabel]): ?>
+                                                                <option value="<?= htmlspecialchars($opt, ENT_QUOTES, 'UTF-8') ?>" <?= $status === $opt ? 'selected' : '' ?>><?= htmlspecialchars($optLabel, ENT_QUOTES, 'UTF-8') ?></option>
                                                             <?php endforeach; ?>
                                                         </select>
                                                         <button type="submit" class="btn btn-sm btn-light-primary">Kaydet</button>
@@ -403,13 +473,14 @@ if ($targetUser) {
                                         <div class="col-md-6">
                                             <label class="form-label fw-bold text-dark">Yeni Şifre</label>
                                             <div class="input-group input-group-solid">
-                                                <input type="password" name="new_password" id="new_password" class="form-control" placeholder="En az 8 karakter">
+                                                <input type="password" name="new_password" id="new_password" class="form-control" placeholder="En az 8 karakter, harf ve rakam" autocomplete="new-password" maxlength="72" required>
                                                 <button class="btn btn-light" type="button" id="generate_password">Üret</button>
+                                                <button class="btn btn-light" type="button" id="toggle_password" aria-pressed="false" aria-label="Şifreleri göster veya gizle">Göster</button>
                                             </div>
                                         </div>
                                         <div class="col-md-6">
                                             <label class="form-label fw-bold text-dark">Yeni Şifre Tekrar</label>
-                                            <input type="password" name="new_password_confirm" id="new_password_confirm" class="form-control form-control-solid" placeholder="Şifreyi tekrar girin">
+                                            <input type="password" name="new_password_confirm" id="new_password_confirm" class="form-control form-control-solid" placeholder="Şifreyi tekrar girin" autocomplete="new-password" maxlength="72" required>
                                         </div>
                                     </div>
                                     <div class="d-flex flex-wrap gap-3 mt-8">
@@ -496,21 +567,47 @@ document.addEventListener('DOMContentLoaded', function () {
     const passwordInput = document.getElementById('new_password');
     const passwordConfirmInput = document.getElementById('new_password_confirm');
 
-    function buildPassword(length = 12) {
-        const characters = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz23456789!@#$%&*';
+    // Kriptografik olarak güvenli rastgele parola (Math.random tahmin edilebilir, kullanılmaz).
+    function buildPassword(length = 8) {
+        // Yalnızca harf ve rakam (özel işaret yok); karışan karakterler (0/O, 1/l/I) hariç.
+        const characters = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz23456789';
+        const limit = 256 - (256 % characters.length); // modulo yanlılığını önlemek için
         let password = '';
-        for (let index = 0; index < length; index++) {
-            const randomIndex = Math.floor(Math.random() * characters.length);
-            password += characters.charAt(randomIndex);
+        while (password.length < length) {
+            const bytes = new Uint8Array(length);
+            window.crypto.getRandomValues(bytes);
+            for (const b of bytes) {
+                if (b < limit && password.length < length) {
+                    password += characters.charAt(b % characters.length);
+                }
+            }
         }
         return password;
     }
 
+    // Şifreleri göster / gizle (iki alan birlikte değişir)
+    const toggleButton = document.getElementById('toggle_password');
+    if (toggleButton) {
+        toggleButton.addEventListener('click', function () {
+            const show = passwordInput.type === 'password';
+            passwordInput.type = show ? 'text' : 'password';
+            passwordConfirmInput.type = show ? 'text' : 'password';
+            toggleButton.textContent = show ? 'Gizle' : 'Göster';
+            toggleButton.setAttribute('aria-pressed', show ? 'true' : 'false');
+        });
+    }
+
     if (generateButton) {
         generateButton.addEventListener('click', function () {
-            const password = buildPassword();
+            let password = buildPassword();
+            // 8 karakter; en az bir büyük harf, bir küçük harf ve bir rakam içerir.
+            while (!/[A-Z]/.test(password) || !/[a-z]/.test(password) || !/\d/.test(password)) { password = buildPassword(); }
             passwordInput.value = password;
             passwordConfirmInput.value = password;
+            // Üretilen şifre kopyalanabilsin diye iki alan da görünür yapılır.
+            passwordInput.type = 'text';
+            passwordConfirmInput.type = 'text';
+            if (toggleButton) { toggleButton.textContent = 'Gizle'; toggleButton.setAttribute('aria-pressed', 'true'); }
             passwordInput.focus();
         });
     }

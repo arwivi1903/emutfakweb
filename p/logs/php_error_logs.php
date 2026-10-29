@@ -79,7 +79,11 @@ function pel_scan(): array
             }
         }
     }
-    uasort($found, fn($a, $b) => $b['mtime'] <=> $a['mtime']);
+    // Proje / Dosya sütununa göre A-Z: önce proje adı, sonra dosya yolu (büyük/küçük harf duyarsız, doğal sıralama).
+    uasort($found, static function ($a, $b) {
+        $byRoot = strnatcasecmp($a['root'], $b['root']);
+        return $byRoot !== 0 ? $byRoot : strnatcasecmp($a['rel'], $b['rel']);
+    });
     return $found;
 }
 

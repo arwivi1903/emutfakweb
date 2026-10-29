@@ -32,7 +32,7 @@ require_once '../config/sidebar.php';
 <div class="app-main flex-column flex-row-fluid" id="kt_app_main">
   <div class="d-flex flex-column flex-column-fluid">
     <div id="kt_app_toolbar" class="app-toolbar py-3 py-lg-6">
-      <div class="app-container container-xxl d-flex flex-stack">
+      <div class="app-container container-fluid d-flex flex-stack">
         <div>
           <h1 class="page-heading text-gray-900 fw-bold fs-3 my-0">Mesaj Şablonları</h1>
           <span class="text-muted fs-7">Değişkenler: <code>{firma}</code> <code>{il}</code> <code>{gonderen}</code> <code>{link}</code> <code>{kayit_link}</code> <code>{ret_link}</code> <code>{site}</code></span>
@@ -41,11 +41,18 @@ require_once '../config/sidebar.php';
       </div>
     </div>
     <div id="kt_app_content" class="app-content flex-column-fluid">
-      <div class="app-container container-xxl">
+      <div class="app-container container-fluid">
         <?php if ($flash): ?><div class="alert alert-<?= $e($flash[0]) ?> p-5 mb-6"><?= $e($flash[1]) ?></div><?php endif; ?>
+        <?php
+        // Kanal başına ayrı satır: WhatsApp 3 kart, E-posta 3 kart yan yana (xl: col-4)
+        $gruplar = ['whatsapp' => [], 'eposta' => []];
+        foreach ($sablonlar as $s) { $gruplar[$s['kanal']][] = $s; }
+        $grupBaslik = ['whatsapp' => 'WhatsApp şablonları', 'eposta' => 'E-posta şablonları'];
+        foreach ($gruplar as $kanal => $liste): if (!$liste) { continue; } ?>
+        <h4 class="fw-bold text-gray-800 mb-4 <?= $kanal === 'eposta' ? 'mt-10' : '' ?>"><?= $e($grupBaslik[$kanal]) ?></h4>
         <div class="row g-6">
-        <?php foreach ($sablonlar as $s): ?>
-          <div class="col-xl-6">
+        <?php foreach ($liste as $s): ?>
+          <div class="col-12 col-lg-6 col-xl-4">
             <form method="post" action="crm/lead_templates.php" class="card h-100">
               <?= csrfTokenField() ?><input type="hidden" name="action" value="save"><input type="hidden" name="sablon_id" value="<?= (int)$s['sablon_id'] ?>">
               <div class="card-header align-items-center">
@@ -60,7 +67,7 @@ require_once '../config/sidebar.php';
                   <input name="konu" class="form-control form-control-sm form-control-solid mb-3" value="<?= $e($s['konu']) ?>">
                 <?php endif; ?>
                 <label class="form-label fs-7">Metin</label>
-                <textarea name="govde" rows="10" class="form-control form-control-solid fs-7"><?= $e($s['govde']) ?></textarea>
+                <textarea name="govde" rows="12" class="form-control form-control-solid fs-7"><?= $e($s['govde']) ?></textarea>
                 <details class="mt-3"><summary class="text-muted fs-7 cursor-pointer">Önizleme</summary>
                   <div class="bg-light rounded p-4 mt-2 fs-7" style="white-space:pre-line"><?= $e(lead_sablon_doldur((string)$s['govde'], $ornek, $s['kanal'], lead_gonderen_adi())) ?></div>
                 </details>
@@ -70,6 +77,7 @@ require_once '../config/sidebar.php';
           </div>
         <?php endforeach; ?>
         </div>
+        <?php endforeach; ?>
       </div>
     </div>
   </div>
