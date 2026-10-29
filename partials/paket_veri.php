@@ -7,6 +7,9 @@
  * Veritabanına ulaşılamazsa sayfa boş kalmasın diye son çare yedek liste döner.
  * Yedek listedeki modüller, "Önerilen paket içerikleri" tablosuyla aynıdır.
  */
+require_once __DIR__ . '/onbellek.php';
+require_once __DIR__ . '/performans.php';
+
 if (!defined('VARSAYILAN_YILLIK_INDIRIM')) {
     define('VARSAYILAN_YILLIK_INDIRIM', 10); // paket_ozellikleri.yillik_indirim kolonu yoksa
 }
@@ -22,10 +25,18 @@ function prolynweb_modul_adlari(): array
     ];
 }
 
-function prolynweb_paketler(PDO $pdo): array
+function prolynweb_paketler(?PDO $pdo = null): array
 {
-    $paketler = [];
+    // 1) Önbellek (5 dk). Doluysa veritabanına hiç gidilmez.
+    $paketler = prolynweb_onbellek_oku('paketler') ?? [];
+    if ($paketler) {
+        prolynweb_perf_isaretle('paket', 'onbellek');
+    }
+    // 2) Yoksa DB'den oku ($pdo null ise — vitrin sayfaları lazy modda — burada bağlanır).
+    if (!$paketler) {
     try {
+        $pdo = $pdo ?? prolynweb_baglan();
+        prolynweb_perf_isaretle('paket', 'db');
         $satirlar = $pdo->query("SELECT * FROM paket_ozellikleri ORDER BY price ASC")->fetchAll();
         foreach ($satirlar as $r) {
             $paketler[] = [
@@ -44,6 +55,14 @@ function prolynweb_paketler(PDO $pdo): array
         }
     } catch (Throwable $e) {
         error_log('[prolynweb] paket_ozellikleri okunamadi: ' . $e->getMessage());
+    }
+    if ($paketler) {
+        prolynweb_onbellek_yaz('paketler', $paketler);
+    } else {
+        // DB okunamadıysa sabit yedek liste yerine son bilinen gerçek fiyatları göster.
+        $paketler = prolynweb_onbellek_oku('paketler', 0, true) ?? [];
+        if ($paketler) { prolynweb_perf_isaretle('paket', 'bayat'); }
+    }
     }
 
     if (empty($paketler)) {

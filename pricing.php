@@ -1,4 +1,4 @@
-<?php require_once 'db.php'; ?>
+<?php define('PROLYNWEB_LAZY_DB', true); require_once 'db.php'; ?>
 <?php
 /**
  * Fiyatlandırma: paket verisi TEK KAYNAKTAN (paket_ozellikleri) partials/paket_veri.php ile okunur.

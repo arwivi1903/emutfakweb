@@ -3,6 +3,7 @@
  * Sektör tanıtım sayfası: mutfak, dolap ve banyo firmaları
  * Kampanya bağlantıları ?ref=L{lead_id} taşır; kayıt olunca lead eşleşir.
  */
+define('PROLYNWEB_LAZY_DB', true); // ayarlar önbellekteyse DB'ye bağlanma
 require_once 'db.php';
 // Paket ve modül verisi site genelinde TEK KAYNAKTAN gelir (fiyat sayfası, ana sayfa, bu sayfa aynı rakamı gösterir)
 require_once __DIR__ . '/partials/paket_veri.php';

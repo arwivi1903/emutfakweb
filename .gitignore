@@ -31,3 +31,9 @@ p/config/rate_limit/
 
 # Kullanıcı/destek yüklemeleri (çalışma zamanı içeriği, repoya girmez)
 uploads/
+
+# Vitrin önbelleği ve performans günlüğü (çalışma zamanı verisi)
+cache/*
+!cache/.htaccess
+logs/*
+!logs/.htaccess

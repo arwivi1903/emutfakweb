@@ -1,4 +1,4 @@
-<?php require_once 'db.php'; ?>
+<?php define('PROLYNWEB_LAZY_DB', true); require_once 'db.php'; ?>
 <?php
 require_once __DIR__ . '/partials/paket_veri.php';
 require_once __DIR__ . '/partials/modul_icerik.php';

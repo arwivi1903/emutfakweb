@@ -1,4 +1,5 @@
 <?php
+define('PROLYNWEB_LAZY_DB', true); // ayarlar önbellekteyse DB'ye bağlanma
 require_once 'db.php';
 require_once __DIR__ . '/partials/paket_veri.php';
 require_once __DIR__ . '/partials/modul_icerik.php';
