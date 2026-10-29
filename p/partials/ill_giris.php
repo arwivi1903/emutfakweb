@@ -28,11 +28,17 @@
 
     <!-- Merkez: Prolyn paneli -->
     <g>
-        <circle class="f-a a-ring" cx="280" cy="215" r="62" opacity=".22" style="--d:0s"/>
-        <circle class="f-a a-ring" cx="280" cy="215" r="62" opacity=".22" style="--d:1.5s"/>
+        <circle class="f-a a-ring" cx="280" cy="215" r="95" opacity=".22" style="--d:0s"/>
+        <circle class="f-a a-ring" cx="280" cy="215" r="95" opacity=".22" style="--d:1.5s"/>
         <g class="a-float" style="--d:.4s">
-            <rect class="f-a sh" x="225" y="160" width="110" height="110" rx="30"/>
-            <path d="M262 244 V188 h26 a17 17 0 0 1 0 34 h-14" fill="none" stroke="#fff" stroke-width="11" stroke-linecap="round" stroke-linejoin="round"/>
+            <rect class="f-card sh" x="190" y="175" width="180" height="80" rx="24"/>
+            <!-- Merkez logo: gerçek Prolyn logosu (açık/koyu temaya göre) -->
+            <foreignObject x="190" y="175" width="180" height="80">
+                <div xmlns="http://www.w3.org/1999/xhtml" style="width:180px;height:80px;display:flex;align-items:center;justify-content:center">
+                    <img src="dist/logo/prolyn-logo-horizontal-sm.png" alt="Prolyn" class="theme-light-show" style="height:36px;width:auto">
+                    <img src="dist/logo/prolyn-logo-horizontal-white-sm.png" alt="Prolyn" class="theme-dark-show" style="height:36px;width:auto">
+                </div>
+            </foreignObject>
         </g>
     </g>
 

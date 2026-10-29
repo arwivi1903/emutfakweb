@@ -250,6 +250,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
         ", [$company_name, $official_name, $company_email, $company_phone, $industry, $status, $subscription_type, $trial_start_date, $trial_end_date,
             $musteri_paketi, $contact_person, $tax_office, $tax_number, $billing_address, $city_id, $district_id, $account_manager_id, $tenant_alias, $sozlesme_baslangic_tarihi, $sozlesme_bitis_tarihi, $allowed_modules, 
             $contact_person, $company_email, $company_phone, $customer_id]);
+        // Database::Update hatayı yutuyor; SQL hatası varsa sessiz kalma, kullanıcıya ve loga bildir.
+        if ($db->getLastError()) {
+            error_log('[tenant_form] kurumlar UPDATE hatası (customer_id=' . $customer_id . '): ' . $db->getLastError());
+            $_SESSION['swal_error'] = 'Kayıt güncellenemedi (veritabanı hatası): ' . $db->getLastError();
+        }
     } else {
         $customer_id = $db->Insert("
             INSERT INTO kurumlar
