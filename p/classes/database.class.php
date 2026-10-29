@@ -317,9 +317,9 @@ class Database
   private function logError($message){
     // Hata günlüğü
     $this->lastError = $message;
-    if($this->debugMode){
-      error_log("[DATABASE] " . date("Y-m-d H:i:s") . " - " . $message);
-    }
+    // Hatalar artık sessiz yutulmuyor: başarısız sorgular her zaman PHP hata günlüğüne yazılır (kullanıcıya gösterilmez).
+    // Sorgu metni parametre DEĞERİ içermez (prepared statement); mesaj 600 karakterle sınırlanır.
+    error_log("[DATABASE] " . date("Y-m-d H:i:s") . " [" . basename((string)($_SERVER['SCRIPT_NAME'] ?? 'cli')) . "] - " . mb_substr(preg_replace('/\s+/', ' ', (string)$message), 0, 600));
   }
 
   public function setDebugMode($debug = false){

@@ -57,7 +57,8 @@ function lead_kayit_linki(int $leadId, string $kanal): string
 
 function lead_ret_linki(string $token): string
 {
-    return lead_site_url('ret') . '?t=' . rawurlencode($token);
+    // Kısa ve okunur bağlantı: anahtarın ilk 16 karakteri (64 bit) yeterli ve tahmin edilemez; ret.php ön ek eşleşmesiyle çözer
+    return lead_site_url('ret') . '?t=' . rawurlencode(substr($token, 0, 16));
 }
 
 /** +905xx... → 905xx... (wa.me biçimi) */
@@ -140,23 +141,51 @@ function lead_sema_kur($db): void
                 [$s['kanal'], $s['kod'], $s['ad'], $s['konu'] ?? null, $s['govde'], $i + 1]);
         }
     }
+    lead_sablonlari_yenile($db);
+}
+
+/**
+ * Varsayılan şablon metinleri yenilendiğinde, kullanıcının hiç değiştirmediği (ilk sürümle birebir aynı) şablonları günceller.
+ * Elle düzenlenmiş şablonlara dokunulmaz. Değiştirilmemiş şablon yoksa tek bir hafif SELECT'ten ibarettir.
+ */
+function lead_sablonlari_yenile($db): void
+{
+    // kod => önceki varsayılan sürümlerin MD5'leri (bunlardan biriyle birebir aynıysa şablon hiç düzenlenmemiştir)
+    $eskiHash = [
+        'wa_tanisma' => ['9372df4df01268f9a8cae64bc124d099', '138376305b99491daf841e2c79833611', 'be93dd3c28b44b3980c2ae59faa9b062'],
+        'wa_takip' => ['303f815d90099a0045ec6ce793c479e3', '0fd7b3ba90ea52cbacda3e3b994bfdf9', '3a9b46b6c8455e2ce4b050a43dd9d96b'],
+        'wa_demo_sonrasi' => ['3e5fec4c07fde7e72ac7bde0a73333f3', '60ad2803b57ea2dd60a1a2efd4657932', 'e33fd0029867262d44a94c8c9af4ca99'],
+        'mail_tanisma' => ['b2ff85b2c8630554de184729268a555d', 'c27956fa4334c704c8d95b772edf011b', 'cb3fed4d6a651afd7edac23e74b2fe08', '4896d32ae081fc24b887ba4f96d64272'],
+        'mail_takip' => ['2d43f2e38b2c9a9e57fb0ce0d5c271e6', '8e428d49f99aa86f84b701e719563fc9', '4e64dfb9bdc71b1ced7cbcfd485a1487', '92f877585c5c81d13caef09e97c21e44'],
+        'mail_son' => ['271ec8b845f2819f8d1ab82ed6de79ae', '8d7b2de8ed5ee670da17732381ca6d29', '5a6a28fa9d93039dc1569a100b0478fd', '09de7e040cd3880d69a34ada81c5ff40'],
+    ];
+    $satirlar = $db->getRowsAssoc("SELECT kod, MD5(govde) h FROM lead_sablonlari WHERE kod IN ('" . implode("','", array_keys($eskiHash)) . "')") ?: [];
+    $yeni = null;
+    foreach ($satirlar as $r) {
+        if (!isset($eskiHash[$r['kod']]) || !in_array($r['h'], $eskiHash[$r['kod']], true)) { continue; }   // düzenlenmiş veya zaten yenilenmiş
+        $yeni ??= array_column(lead_varsayilan_sablonlar(), null, 'kod');
+        if (!isset($yeni[$r['kod']])) { continue; }
+        $y = $yeni[$r['kod']];
+        $db->Update("UPDATE lead_sablonlari SET ad = ?, konu = ?, govde = ? WHERE kod = ?", [$y['ad'], $y['konu'] ?? null, $y['govde'], $r['kod']]);
+    }
 }
 
 function lead_varsayilan_sablonlar(): array
 {
+    // Not: Metinlerde {yetkili} kullanılmaz (boşsa "Merhaba" döner). E-posta şablonlarında {ret_link} zorunludur.
     return [
         ['kanal' => 'whatsapp', 'kod' => 'wa_tanisma', 'ad' => '1. İlk tanışma',
-         'govde' => "Merhaba {firma} ekibi, ben {gonderen}, Prolyn'den yazıyorum.\n\nMutfak, dolap ve banyo firmaları için ölçü ve montaj randevularını, sözleşme ve tahsilatları, eksik malzeme takibini tek ekrandan yöneten bir program geliştirdik.\n\n30 gün ücretsiz deneyebilirsiniz; kurulumu ve mevcut müşteri listenizin aktarımını da ücretsiz biz yapıyoruz. Kısa tanıtım: {link}\n\nUygunsanız 15 dakikalık bir görüntülü demo ayarlayabilirim. İlgilenmiyorsanız \"hayır\" yazmanız yeterli, tekrar yazmam."],
+         'govde' => "Merhaba, ben Prolyn'den {gonderen}.\n\nMutfak ve dolap projelerinizde ölçü karmaşasını ve eksik malzeme kaynaklı maliyetleri azaltmak ister misiniz?\n\nProlyn, mutfak, dolap ve banyo firmalarının günlük işini tek ekranda toplamak için geliştirildi:\n• Ölçü/montaj randevuları ve ekip planı\n• Eksik malzeme ve sorunlu iş takibi\n• Müşteri, sözleşme, tahsilat, kasa ve çek\n\n{firma} için 30 gün ücretsiz deneme hesabı açabilirim. Kurulumu ve mevcut müşteri listenizin aktarımını gizlilikle biz yapıyoruz.\n\nKısa tanıtım: {link}\n\nSistemi kendi iş akışınızda görmek isterseniz 10 dakikalık kısa bir ekran paylaşımıyla gösterebilirim; yüz yüze görüşmeyi tercih ederseniz randevu da talep edebilirsiniz. İlgilenmiyorsanız \"hayır\" yazmanız yeterli, tekrar yazmam."],
         ['kanal' => 'whatsapp', 'kod' => 'wa_takip', 'ad' => '2. Takip (3-5 gün sonra)',
-         'govde' => "Merhaba {firma}, birkaç gün önce Prolyn için yazmıştım.\n\nFirmaların en çok zaman kaybettiği yer genelde montaj ekiplerinin günlük planı ve eksik parça takibi oluyor. Prolyn'de ikisini de tek listeden izliyorsunuz, müşteri ve tahsilat bilgisi aynı kayıtta duruyor.\n\nBu hafta 15 dakikalık bir demo için uygun olduğunuz bir gün var mı? {link}"],
-        ['kanal' => 'whatsapp', 'kod' => 'wa_demo_sonrasi', 'ad' => '3. Demo sonrası deneme daveti',
-         'govde' => "Merhaba {firma}, demo için teşekkürler.\n\nDeneme hesabınızı buradan 2 dakikada açabilirsiniz: {kayit_link}\n\nKurulum ve müşteri listenizin aktarımı bizden. Elinizdeki Excel listesini bu numaraya göndermeniz yeterli."],
-        ['kanal' => 'eposta', 'kod' => 'mail_tanisma', 'ad' => '1. İlk e-posta', 'konu' => '{firma} için ölçü, montaj ve tahsilat takibi tek ekranda',
-         'govde' => "Merhaba,\n\nBen {gonderen}, Prolyn'den yazıyorum. Prolyn, mutfak, dolap ve banyo firmalarının günlük işini tek panelde toplayan bulut tabanlı bir yazılım:\n\n- Ölçü ve montaj randevuları, ekiplerin günlük planı\n- Eksik malzeme ve sorunlu iş takibi\n- Müşteri, sözleşme, cari hesap, kasa, banka ve çek takibi\n- Şube ve personel bazında yetki\n\n{firma} için 30 günlük ücretsiz deneme hesabı açabiliriz. Kurulumu ve mevcut müşteri listenizin aktarımını ücretsiz biz yapıyoruz; kredi kartı istemiyoruz.\n\nKısa tanıtım: {link}\n\nUygun olursanız bu hafta 15 dakikalık bir görüntülü demo ayarlayalım. Bu e-postaya yanıt vermeniz yeterli.\n\nSaygılarımla,\n{gonderen}\nProlyn | {site}\n\n--\nBu e-postayı, Google Haritalar'da herkese açık yayımlanan işletme iletişim bilgileriniz üzerinden gönderdik. Bir daha almak istemezseniz: {ret_link}"],
-        ['kanal' => 'eposta', 'kod' => 'mail_takip', 'ad' => '2. Takip e-postası', 'konu' => 'Montaj ekiplerinin günlük planı: kısa bir örnek',
-         'govde' => "Merhaba,\n\nGeçen hafta Prolyn hakkında yazmıştım. Kısa bir örnekle anlatayım:\n\nSabah panelde günün ölçü ve montaj randevuları ekip ekip listelenir. Montajda eksik çıkan parça aynı randevuya not edilir ve eksik özetinden takip edilir. İş bitince tahsilat aynı müşteri kaydına işlenir; cari bakiye ve kasa otomatik güncellenir.\n\nİsterseniz bunu {firma}'nın kendi verileriyle 15 dakikada gösterebilirim. Tanıtım: {link}\n\nSaygılarımla,\n{gonderen}\nProlyn | {site}\n\n--\nBir daha almak istemezseniz: {ret_link}"],
-        ['kanal' => 'eposta', 'kod' => 'mail_son', 'ad' => '3. Son hatırlatma', 'konu' => 'Son kez yazıyorum: ücretsiz kurulum teklifi',
-         'govde' => "Merhaba,\n\nDaha önce iki kez yazdım; bu son e-postam.\n\n{firma} için ücretsiz kurulum ve müşteri listesi aktarımı teklifimiz geçerli. Deneme hesabını 2 dakikada açabilirsiniz: {kayit_link}\n\nŞu an uygun değilse sorun değil; bu e-postaya \"daha sonra\" yazarsanız birkaç ay sonra bir kez hatırlatırım.\n\nSaygılarımla,\n{gonderen}\nProlyn | {site}\n\n--\nBir daha almak istemezseniz: {ret_link}"],
+         'govde' => "Merhaba, ben Prolyn'den {gonderen}. Geçen günkü mesajıma ek olarak, sistemin işleyişini kısaca özetlemek istedim:\n\nSabah panelde o günün ölçü ve montaj randevuları ekip ekip görünür. Montajda eksik çıkan parça aynı randevuya işlenir, iş bitince tahsilat müşterinin cari hesabına geçer. Defter, Excel ve WhatsApp grupları arasında kaybolan bilgi kalmaz.\n\nSistemi kendi iş akışınızda görmek isterseniz 10 dakikalık kısa bir ekran paylaşımıyla gösterebilirim; yüz yüze görüşmeyi tercih ederseniz randevu da talep edebilirsiniz. Size uygun gün ve saati yazmanız yeterli.\n\nAyrıntılar: {link}"],
+        ['kanal' => 'whatsapp', 'kod' => 'wa_demo_sonrasi', 'ad' => '3. Görüşme sonrası deneme daveti',
+         'govde' => "Merhaba, görüşmemiz için teşekkür ederim.\n\n30 günlük ücretsiz deneme hesabınızı buradan 2 dakikada açabilirsiniz:\n{kayit_link}\n\nKurulum ve müşteri listenizin aktarımı bizden: elinizdeki Excel listesini bu numaraya güvenle gönderebilirsiniz; müşteri bilgilerinizi gizlilikle, yalnızca sizin hesabınızda kullanılmak üzere aktarırız. İlk randevu ve sözleşme kayıtlarını birlikte girerek başlayabiliriz.\n\nAklınıza takılan her konuda bu numaradan yazabilirsiniz.\n\n{gonderen}\nProlyn"],
+        ['kanal' => 'eposta', 'kod' => 'mail_tanisma', 'ad' => '1. İlk e-posta', 'konu' => '{firma} için ölçü ve montaj süreçlerini hızlandıracak bir öneri || Excel ve WhatsApp takibinden kurtulun ({firma})',
+         'govde' => "Merhaba,\n\nBen Prolyn'den {gonderen}. Mutfak ve dolap projelerinizde ölçü karmaşasını ve eksik malzeme kaynaklı maliyetleri azaltmak ister misiniz?\n\nÇoğu mutfak, dolap ve banyo firmasında ölçü randevusu, montaj planı, eksik malzeme, sözleşme ve tahsilat defter, Excel ve WhatsApp grupları arasında dağılıyor. Prolyn bunları tek ve kolay kullanımlı bir panelde topluyor:\n\n- Ölçü ve montaj randevuları, ekiplerin günlük planı\n- Eksik malzeme ve sorunlu iş takibi\n- Müşteri, sözleşme, cari hesap, kasa, banka ve çek takibi\n- Şube ve personel bazında yetkilendirme\n\n{firma} için 30 günlük ücretsiz deneme hesabı açabiliriz. Kurulumu ve mevcut müşteri listenizin aktarımını gizlilikle biz yapıyoruz; kredi kartı istemiyoruz.\n\nKısa tanıtım ve ekran görüntüleri: {link}\n\nSistemi kendi iş akışınızda görmek isterseniz 10 dakikalık kısa bir ekran paylaşımıyla gösterebilirim; yüz yüze görüşmeyi tercih ederseniz randevu da talep edebilirsiniz. Bu e-postaya yanıt vermeniz yeterli.\n\nSaygılarımla,\n{gonderen}\nProlyn | {site}\n\n--\nBu e-postayı, Google Haritalar'da herkese açık yayımlanan işletme iletişim bilgileriniz üzerinden gönderdik. Bir daha almak istemezseniz: {ret_link}"],
+        ['kanal' => 'eposta', 'kod' => 'mail_takip', 'ad' => '2. Takip e-postası', 'konu' => 'Günlük operasyonu kolaylaştıran kısa bir özet ({firma}) || {firma} için kısa bir hatırlatma',
+         'govde' => "Merhaba,\n\nGeçen günkü e-postama ek olarak, sistemin işleyişini kısaca özetlemek istedim. Prolyn'de bir iş günü şöyle akıyor:\n\n1. Sabah panelde günün ölçü ve montaj randevuları ekip ekip listelenir.\n2. Montajda eksik çıkan parça aynı randevuya not edilir ve eksik özetinden takip edilir.\n3. İş bitince tahsilat aynı müşteri kaydına işlenir; cari bakiye ve kasa otomatik güncellenir.\n\nSonuç: kimin ne zaman nereye gittiği, hangi işin neyi eksik olduğu ve kimden ne kadar tahsilat kaldığı tek ekranda görünür.\n\nTanıtım sayfası: {link}\n\nSistemi kendi iş akışınızda görmek isterseniz 10 dakikalık kısa bir ekran paylaşımıyla gösterebilirim; yüz yüze görüşmeyi tercih ederseniz randevu da talep edebilirsiniz. Bu e-postaya yanıt vermeniz yeterli.\n\nSaygılarımla,\n{gonderen}\nProlyn | {site}\n\n--\nBir daha almak istemezseniz: {ret_link}"],
+        ['kanal' => 'eposta', 'kod' => 'mail_son', 'ad' => '3. Son hatırlatma', 'konu' => 'Prolyn konusunu kapatmadan önce küçük bir soru || {firma} için dosyayı kapatıyorum',
+         'govde' => "Merhaba,\n\nDaha önce iki kez yazdım ama dönüş alamadım; yoğunsunuzdur. Bu konuyu kapatmadan önce merak ettiğim bir şey var: Prolyn hakkında aklınıza yatmayan nedir?\n\nFiyat mı, kullanımın zorluğu mu, mevcut programınızdan geçiş mi, yoksa ihtiyacınıza uymaması mı? Tek satırla yazmanız yeterli; dürüst geri bildiriminiz bizim için çok değerli.\n\n\"Daha sonra\" yazarsanız birkaç ay sonra yalnızca bir kez hatırlatırım. Yanıt gelmezse konuyu kapatır ve tekrar yazmam.\n\nSaygılarımla,\n{gonderen}\nProlyn | {site}\n\nPS: Merak ederseniz, {firma} için 30 günlük ücretsiz deneme hesabını 2 dakikada açabilirsiniz (kredi kartı gerekmez): {kayit_link}\n\n--\nBir daha almak istemezseniz: {ret_link}"],
     ];
 }
 
@@ -201,16 +230,29 @@ function lead_aktivite($db, int $leadId, string $tur, string $aciklama): void
         [$leadId, $tur, $aciklama, $_SESSION['admin_id'] ?? null]);
 }
 
+/**
+ * Şablon konusunda " || " ile ayrılmış birden fazla konu varsa lead_id'ye göre sırayla biri seçilir (A/B testi).
+ * Dönüş: [konu, varyant harfi]; tek konu varsa harf boş döner.
+ */
+function lead_konu_sec(string $konu, int $leadId): array
+{
+    $adaylar = array_values(array_filter(array_map('trim', explode('||', $konu)), static function ($k) { return $k !== ''; }));
+    if (count($adaylar) <= 1) { return [$adaylar[0] ?? '', '']; }
+    $i = $leadId % count($adaylar);
+    return [$adaylar[$i], chr(65 + $i)];
+}
+
 /** E-postayı mail kuyruğuna ekler (ret başlıkları ile). */
 function lead_mail_kuyruga_ekle($db, array $lead, array $sablon, string $gonderen): bool
 {
-    $konu = lead_sablon_doldur((string)$sablon['konu'], $lead, 'email', $gonderen);
+    [$konuHam, $varyant] = lead_konu_sec((string)$sablon['konu'], (int)$lead['lead_id']);
+    $konu = lead_sablon_doldur($konuHam, $lead, 'email', $gonderen);
     $govde = lead_sablon_doldur((string)$sablon['govde'], $lead, 'email', $gonderen);
     $retUrl = lead_ret_linki((string)$lead['ret_token']);
     $payload = json_encode(['headers' => [
         'List-Unsubscribe' => '<' . $retUrl . '>',
         'List-Unsubscribe-Post' => 'List-Unsubscribe=One-Click',
-    ], 'lead_id' => (int)$lead['lead_id'], 'sablon' => $sablon['kod']], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+    ], 'lead_id' => (int)$lead['lead_id'], 'sablon' => $sablon['kod'], 'konu_varyant' => $varyant], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
     $ok = $db->Insert("INSERT INTO mail_kuyrugu (channel, recipient, subject, message, source, status, attempts, payload, created_at) VALUES ('email', ?, ?, ?, 'lead_kampanya', 'pending', 0, ?, NOW())",
         [$lead['eposta'], $konu, $govde, $payload]);
     if ($ok === false) { return false; }
@@ -218,7 +260,7 @@ function lead_mail_kuyruga_ekle($db, array $lead, array $sablon, string $gondere
                  durum = IF(durum = 'yeni', 'iletisime_gecildi', durum),
                  sonraki_takip = IF(sonraki_takip IS NULL OR sonraki_takip < CURDATE(), DATE_ADD(CURDATE(), INTERVAL 4 DAY), sonraki_takip)
                  WHERE lead_id = ?", [(int)$lead['lead_id']]);
-    lead_aktivite($db, (int)$lead['lead_id'], 'eposta', 'Kuyruğa eklendi: ' . $sablon['ad'] . ' → ' . $lead['eposta']);
+    lead_aktivite($db, (int)$lead['lead_id'], 'eposta', 'Kuyruğa eklendi: ' . $sablon['ad'] . ($varyant !== '' ? ' [konu ' . $varyant . ']' : '') . ' → ' . $lead['eposta']);
     return true;
 }
 
@@ -229,8 +271,11 @@ function lead_bugun_gonderilen_mail($db): int
 
 function lead_gonderen_adi(): string
 {
-    $ad = trim((string)($_SESSION['full_name'] ?? ''));
-    return $ad !== '' ? $ad : 'Prolyn Ekibi';
+    // Profil Detayları'ndaki "Kullanıcı Adı" doluysa o; boşsa "Tam Adı"; ikisi de yoksa "Prolyn Ekibi"
+    $kullanici = trim((string)($_SESSION['username'] ?? ''));
+    if ($kullanici !== '') { return $kullanici; }
+    $tamAd = trim((string)($_SESSION['full_name'] ?? ''));
+    return $tamAd !== '' ? $tamAd : 'Prolyn Ekibi';
 }
 
 function lead_durum_rozet(string $durum): string

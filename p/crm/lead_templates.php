@@ -25,7 +25,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '') === 'save'
     }
 }
 $sablonlar = $db->getRowsAssoc("SELECT * FROM lead_sablonlari ORDER BY kanal DESC, sira");
-$ornek = ['lead_id' => 1, 'firma_adi' => 'Örnek Mutfak', 'yetkili' => '', 'il' => 'Kocaeli', 'ret_token' => str_repeat('0', 32)];
+$ornek = ['lead_id' => 1, 'firma_adi' => 'Örnek Mutfak', 'yetkili' => '', 'il' => 'Kocaeli', 'ret_token' => 'ornek'];
 $e = static fn($v) => htmlspecialchars((string)$v, ENT_QUOTES, 'UTF-8');
 require_once '../config/sidebar.php';
 ?>
@@ -64,7 +64,8 @@ require_once '../config/sidebar.php';
                 <input name="ad" class="form-control form-control-sm form-control-solid mb-3" value="<?= $e($s['ad']) ?>">
                 <?php if ($s['kanal'] === 'eposta'): ?>
                   <label class="form-label fs-7">Konu</label>
-                  <input name="konu" class="form-control form-control-sm form-control-solid mb-3" value="<?= $e($s['konu']) ?>">
+                  <input name="konu" class="form-control form-control-sm form-control-solid mb-1" value="<?= $e($s['konu']) ?>">
+                  <div class="text-muted fs-8 mb-3">Birden fazla konu denemek için <code>||</code> ile ayırın (örn. <code>Konu A || Konu B</code>); firmalara sırayla dağıtılır, hangisinin gittiği Geçmiş'e "[konu A]" diye yazılır.</div>
                 <?php endif; ?>
                 <label class="form-label fs-7">Metin</label>
                 <textarea name="govde" rows="12" class="form-control form-control-solid fs-7"><?= $e($s['govde']) ?></textarea>

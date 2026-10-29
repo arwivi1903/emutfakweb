@@ -434,7 +434,7 @@ require_once '../config/sidebar.php';
                         </div>
                         <?php if ($webB['tur'] !== ''): ?>
                         <div class="fs-8 fw-semibold mt-1">
-                          <a href="<?= $e($webB['url']) ?>" target="_blank" rel="noopener noreferrer" class="<?= $webB['tur'] === 'site' ? 'text-primary' : 'text-muted' ?> text-hover-primary text-truncate d-inline-block align-bottom" style="max-width:260px" title="<?= $e($webB['url']) ?>"><?= $webB['tur'] === 'site' ? 'Web sitesi' : 'Sosyal medya' ?>: <?= $e($webB['alan']) ?> ↗</a>
+                          <a href="<?= $e($webB['url']) ?>" target="_blank" rel="noopener noreferrer" class="<?= $webB['tur'] === 'site' ? 'text-primary' : 'text-muted' ?> text-hover-primary text-truncate d-inline-block align-bottom" style="max-width:260px" title="<?= $e($webB['url']) ?>"><?= $e($webB['alan']) ?> ↗</a>
                         </div>
                         <?php endif; ?>
                         <div class="mt-1">

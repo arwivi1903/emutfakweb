@@ -1,4 +1,21 @@
 <?php
+
+// Bitiş tarihine göre kalan gün rozeti (tarih bugünse "Bugün bitiyor", geçmişse "N gün geçti")
+if (!function_exists('kalan_gun_rozet')) {
+    function kalan_gun_rozet(?string $tarih): string
+    {
+        if (empty($tarih) || $tarih === '0000-00-00') { return ''; }
+        $bitis = strtotime($tarih);
+        if ($bitis === false) { return ''; }
+        $fark = (int)floor(($bitis - strtotime(date('Y-m-d'))) / 86400);
+        if ($fark < 0)       { $sinif = 'badge-light-danger';  $metin = abs($fark) . ' gün geçti'; }
+        elseif ($fark === 0) { $sinif = 'badge-light-danger';  $metin = 'Bugün bitiyor'; }
+        elseif ($fark <= 7)  { $sinif = 'badge-light-danger';  $metin = $fark . ' gün kaldı'; }
+        elseif ($fark <= 30) { $sinif = 'badge-light-warning'; $metin = $fark . ' gün kaldı'; }
+        else                 { $sinif = 'badge-light-success'; $metin = $fark . ' gün kaldı'; }
+        return '<span class="badge ' . $sinif . ' fs-8" style="width:fit-content;" title="Bitiş: ' . date('d.m.Y', $bitis) . '">' . $metin . '</span>';
+    }
+}
 /**
  * Prolyn Admin Panel - Tenants Management
  * Prolyn/p/crm/tenants.php
@@ -123,6 +140,7 @@ $tenants = $db->getRowsAssoc("SELECT k.*, y.full_name as account_manager_name
                                         <th>Müşteri Paketi & DB</th>
                                         <th>Durum</th>
                                         <th>Sözleşme Bitiş & Kayıt</th>
+                                        <th>Kalan Gün</th>
                                         <th class="text-end">İşlemler</th>
                                     </tr>
                                 </thead>
@@ -211,6 +229,21 @@ $tenants = $db->getRowsAssoc("SELECT k.*, y.full_name as account_manager_name
                                                     <?php endif; ?>
                                                 </div>
                                             </td>
+                                            <?php
+                                                // DataTables sıralaması için sayısal değer (tarih yoksa en sona)
+                                                $kg_t = (!empty($tenant['sozlesme_bitis_tarihi']) && $tenant['sozlesme_bitis_tarihi'] !== '0000-00-00')
+                                                    ? $tenant['sozlesme_bitis_tarihi'] : ($tenant['trial_end_date'] ?? null);
+                                                $kg_sira = (!empty($kg_t) && strtotime($kg_t) !== false) ? (int)floor((strtotime($kg_t) - strtotime(date('Y-m-d'))) / 86400) : 999999;
+                                            ?>
+                                            <td data-order="<?php echo $kg_sira; ?>">
+                                                <?php
+                                                    // Sözleşme bitişi varsa o, yoksa deneme bitişi esas alınır
+                                                    $kg_tarih = (!empty($tenant['sozlesme_bitis_tarihi']) && $tenant['sozlesme_bitis_tarihi'] !== '0000-00-00')
+                                                        ? $tenant['sozlesme_bitis_tarihi'] : ($tenant['trial_end_date'] ?? null);
+                                                    $kg_html = kalan_gun_rozet($kg_tarih);
+                                                    echo $kg_html !== '' ? $kg_html : '<span class="text-muted fs-8">-</span>';
+                                                ?>
+                                            </td>
                                             <td class="text-end">
                                                 <a href="crm/tenant_form.php?id=<?php echo $tenant['customer_id']; ?>" class="btn btn-icon btn-light-primary btn-sm me-1" title="Düzenle">
                                                     <i class="ki-duotone ki-pencil fs-3"><span class="path1"></span><span class="path2"></span></i>
@@ -222,7 +255,7 @@ $tenants = $db->getRowsAssoc("SELECT k.*, y.full_name as account_manager_name
                                         </tr>
                                         <?php endforeach; ?>
                                     <?php else: ?>
-                                        <tr><td colspan="6" class="text-center text-muted py-5">Sistemde henüz kayıtlı bir kurum bulunmuyor.</td></tr>
+                                        <tr><td colspan="7" class="text-center text-muted py-5">Sistemde henüz kayıtlı bir kurum bulunmuyor.</td></tr>
                                     <?php endif; ?>
                                 </tbody>
                             </table>
@@ -238,3 +271,25 @@ $tenants = $db->getRowsAssoc("SELECT k.*, y.full_name as account_manager_name
 <!-- Modal removed, now using tenant_form.php -->
 
 <?php require_once '../config/footer.php'; ?>
+<script>
+// Kurum tablosu: arama, sıralama, sayfalama (istemci tarafı; kurum sayısı küçük olduğundan yeterli)
+document.addEventListener('DOMContentLoaded', function () {
+    var tablo = document.getElementById('kt_tenants_table');
+    if (!tablo || !window.jQuery || !jQuery.fn.DataTable || tablo.querySelector('tbody td[colspan]')) { return; }
+    var dt = jQuery(tablo).DataTable({
+        pageLength: 25,
+        lengthMenu: [10, 25, 50, 100],
+        order: [],                                   // sunucudan gelen sıra korunur
+        columnDefs: [{ orderable: false, targets: -1 }],   // İşlemler sütunu
+        dom: "<'table-responsive'tr><'row mt-4'<'col-sm-12 col-md-5 d-flex align-items-center'li><'col-sm-12 col-md-7 d-flex justify-content-md-end'p>>",
+        language: {
+            emptyTable: 'Kayıt bulunamadı', zeroRecords: 'Eşleşen kurum bulunamadı',
+            info: '_TOTAL_ kurumdan _START_–_END_ arası', infoEmpty: 'Kayıt yok', infoFiltered: '(toplam _MAX_ kurum)',
+            lengthMenu: '_MENU_ satır', paginate: { previous: '‹', next: '›' }
+        }
+    });
+    var ara = document.querySelector('[data-kt-tenant-table-filter="search"]');
+    if (ara) { ara.addEventListener('input', function () { dt.search(this.value).draw(); }); }
+});
+</script>
+

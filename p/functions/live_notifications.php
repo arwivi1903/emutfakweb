@@ -95,6 +95,24 @@ if (!function_exists('prolyn_canli_bildirimler')) {
         } catch (Throwable $e) {
         }
 
+        // Son 3 günde iletişim listesinden çıkan potansiyel müşteriler (ret sayfasından)
+        try {
+            if (method_exists($db, 'tableExists') && $db->tableExists('potansiyel_musteriler')) {
+                $retler = $db->getRowsAssoc("SELECT lead_id, firma_adi, ret_tarihi FROM potansiyel_musteriler WHERE ret_tarihi IS NOT NULL AND ret_tarihi >= NOW() - INTERVAL 3 DAY ORDER BY ret_tarihi DESC LIMIT 5");
+                foreach ((array)$retler as $r) {
+                    $sonuc[] = [
+                        'notification_id' => 0,
+                        'title' => 'İletişimden Çıkış',
+                        'message' => (string)$r['firma_adi'] . ' iletişim listesinden çıkmak istedi.',
+                        'type' => 'error',
+                        'action_url' => 'crm/lead_detail.php?id=' . (int)$r['lead_id'],
+                        'created_at' => $r['ret_tarihi'],
+                    ];
+                }
+            }
+        } catch (Throwable $e) {
+        }
+
         // En yeni üstte
         usort($sonuc, static fn($a, $b) => strcmp((string)$b['created_at'], (string)$a['created_at']));
         return $sonuc;

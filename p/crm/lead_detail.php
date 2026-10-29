@@ -273,7 +273,7 @@ $oncelikRenk = ['A' => 'success', 'B' => 'primary', 'C' => 'secondary'][$lead['o
                 <div class="separator my-5"></div>
                 <div class="d-flex flex-wrap gap-2">
                   <?php if (!empty($lead['telefon'])): ?><a href="tel:<?= $e($lead['telefon']) ?>" class="btn btn-sm btn-light">Ara: <?= $e($lead['telefon']) ?></a><?php endif; ?>
-                  <?php $webB = lead_web_bilgi($lead['web'] ?? null); if ($webB['tur'] !== ''): ?><a href="<?= $e($webB['url']) ?>" target="_blank" rel="noopener noreferrer" class="btn btn-sm btn-light-primary"><?= $webB['tur'] === 'site' ? 'Web sitesi' : 'Sosyal medya' ?>: <?= $e($webB['alan']) ?> ↗</a><?php endif; ?>
+                  <?php $webB = lead_web_bilgi($lead['web'] ?? null); if ($webB['tur'] !== ''): ?><a href="<?= $e($webB['url']) ?>" target="_blank" rel="noopener noreferrer" class="btn btn-sm btn-light-primary"><?= $e($webB['alan']) ?> ↗</a><?php endif; ?>
                 </div>
                 <?php endif; ?>
               </div>

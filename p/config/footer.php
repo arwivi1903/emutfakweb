@@ -3289,6 +3289,89 @@ var hostUrl = "dist/assets/";
 <?php /* amCharts (11 harici CDN betiği) kaldırıldı: panelde kullanılmıyor (yalnızca Metronic demo widget kaynaklarında geçiyor) ve site CSP'si (script-src) bu adreslere zaten izin vermiyor; her sayfada 11 engellenen istek ve konsol hatası üretiyordu. Grafik gerekirse CSP'ye ekleyip yerel kopyadan yükleyin. */ ?>
 <script src="dist/assets/plugins/custom/datatables/datatables.bundle.js"></script>
 <script>
+// Tüm DataTables için varsayılan Türkçe metinler (doğrudan .DataTable() çağıran sayfalar dahil).
+// Bir sayfa kendi language ayarını verirse yalnızca verdiği anahtarlar ezilir.
+(function () {
+    var $ = window.jQuery;
+    if (!$ || !$.fn || !$.fn.dataTable) { return; }
+    $.extend(true, $.fn.dataTable.defaults, {
+        language: {
+            decimal: ',', thousands: '.',
+            search: 'Ara:', searchPlaceholder: 'Ara...', lengthMenu: 'Sayfada _MENU_ kayıt göster',
+            info: '_TOTAL_ kayıttan _START_ - _END_ arası gösteriliyor', infoEmpty: 'Kayıt yok',
+            infoFiltered: '(_MAX_ kayıt içinden bulunan)', zeroRecords: 'Eşleşen kayıt bulunamadı',
+            emptyTable: 'Tabloda veri yok', loadingRecords: 'Yükleniyor...', processing: 'İşleniyor...',
+            paginate: { first: 'İlk', previous: 'Önceki', next: 'Sonraki', last: 'Son' },
+            aria: { sortAscending: ': artan sırala', sortDescending: ': azalan sırala' }
+        }
+    });
+})();
+</script>
+<script>
+// ---- Otomatik DataTables: panelde "table" sınıfı taşıyan tüm listeler arama/sıralama/sayfalama kazanır ----
+// Atlananlar: zaten DataTable olanlar, data-dt="off" işaretliler, sunucu taraflı sayfalaması (.pagination) olan sayfalar,
+// birleştirilmiş hücre (colspan/rowspan) veya form alanı içeren tablolar, ana pano. Sayfalar kendi DataTable'ını window load'dan önce kurarsa dokunulmaz.
+(function () {
+    var $ = window.jQuery;
+    if (!$ || !$.fn || !$.fn.dataTable) { return; }
+
+    // Türkçe tarih (gg.aa.yyyy [ss:dd]) ve sayı (1.234,56 / ₺ / TL) sıralaması
+    var tarihRe = /^\s*(\d{1,2})\.(\d{1,2})\.(\d{4})(?:\s+(\d{1,2}):(\d{2})(?::(\d{2}))?)?\s*$/;
+    var sayiRe = /^\s*[-+]?(?:₺\s*)?\d{1,3}(?:\.\d{3})*(?:,\d+)?\s*(?:₺|TL|TRY|%)?\s*$|^\s*[-+]?(?:₺\s*)?\d+(?:,\d+)?\s*(?:₺|TL|TRY|%)?\s*$/;
+    function duz(d) { return $('<div>').html(d).text().trim(); }
+    $.fn.dataTable.ext.type.detect.unshift(function (d) { return (typeof d === 'string' && tarihRe.test(duz(d))) ? 'tr-tarih' : null; });
+    $.fn.dataTable.ext.type.detect.unshift(function (d) { return (typeof d === 'string' && /\d/.test(d) && sayiRe.test(duz(d))) ? 'tr-sayi' : null; });
+    $.extend($.fn.dataTable.ext.type.order, {
+        'tr-tarih-pre': function (d) {
+            var m = tarihRe.exec(duz(d)); if (!m) { return 0; }
+            return +(m[3] + ('0' + m[2]).slice(-2) + ('0' + m[1]).slice(-2) + ('0' + (m[4] || 0)).slice(-2) + ('0' + (m[5] || 0)).slice(-2) + ('0' + (m[6] || 0)).slice(-2));
+        },
+        'tr-sayi-pre': function (d) {
+            var t = duz(d).replace(/[^\d,.\-+]/g, '').replace(/\./g, '').replace(',', '.');
+            var n = parseFloat(t); return isNaN(n) ? 0 : n;
+        }
+    });
+
+    window.addEventListener('load', function () {
+        var yol = location.pathname.replace(/\/+$/, '');
+        if (/\/p$/.test(yol) || /\/p\/index\.php$/.test(yol)) { return; }                 // ana pano: özet kutuları
+        if (document.querySelector('ul.pagination, .pagination')) { return; }            // sunucu taraflı sayfalama var
+        document.querySelectorAll('.card-body table.table').forEach(function (tablo) {
+            if (tablo.getAttribute('data-dt') === 'off' || $.fn.DataTable.isDataTable(tablo)) { return; }
+            if (!tablo.tHead || !tablo.tBodies.length || tablo.tHead.rows.length !== 1) { return; }
+            var govde = tablo.tBodies[0];
+            if (govde.rows.length < 2) { return; }                                         // tek satırlık / boş tablolar
+            if (govde.querySelector('td[colspan], td[rowspan], th[colspan], th[rowspan], input:not([type="hidden"]), select, textarea')) { return; }
+            if (tablo.tHead.querySelector('th[colspan], th[rowspan]')) { return; }
+            var sutun = tablo.tHead.rows[0].cells.length;
+            for (var i = 0; i < govde.rows.length; i++) { if (govde.rows[i].cells.length !== sutun) { return; } }
+
+            // Sayfanın kendi arama kutusu varsa onu bağla, yoksa yerleşik "Ara" kutusunu göster
+            var kart = tablo.closest('.card');
+            var kendiAra = kart ? kart.querySelector('.card-header input[type="text"], .card-header input[type="search"]') : null;
+            var islemSutunu = [];
+            var basliklar = tablo.tHead.rows[0].cells;
+            for (var j = 0; j < basliklar.length; j++) {
+                var b = (basliklar[j].textContent || '').trim().toLowerCase();
+                if (b === '' || b === 'işlemler' || b === 'işlem' || b === 'actions' || basliklar[j].classList.contains('text-end') && /işlem|seçenek/.test(b)) { islemSutunu.push(j); }
+            }
+            var dt = $(tablo).DataTable({
+                pageLength: 25, lengthMenu: [10, 25, 50, 100], order: [],
+                columnDefs: islemSutunu.length ? [{ orderable: false, targets: islemSutunu }] : [],
+                dom: kendiAra
+                    ? "<'table-responsive'tr><'row mt-4'<'col-sm-12 col-md-5 d-flex align-items-center'li><'col-sm-12 col-md-7 d-flex justify-content-md-end'p>>"
+                    : "<'row mb-4'<'col-sm-6 d-flex align-items-center'l><'col-sm-6 d-flex justify-content-sm-end'f>><'table-responsive'tr><'row mt-4'<'col-sm-12 col-md-5 d-flex align-items-center'i><'col-sm-12 col-md-7 d-flex justify-content-md-end'p>>",
+                drawCallback: function () {   // tek sayfaysa sayfalama çubuğunu gizle
+                    var api = this.api(), $pg = $(api.table().container()).find('.dataTables_paginate');
+                    $pg.toggle(api.page.info().pages > 1);
+                }
+            });
+            if (kendiAra) { kendiAra.addEventListener('input', function () { dt.search(this.value).draw(); }); }
+        });
+    });
+})();
+</script>
+<script>
 // Reusable DataTable initializer
 window.initDataTable = function(selector, opts) {
     var $ = window.jQuery;
