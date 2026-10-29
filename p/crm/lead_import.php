@@ -11,6 +11,8 @@ require_once __DIR__ . '/../functions/lead.php';
 lead_sema_kur($db);
 
 $sonuc = null; $hata = null;
+// Web modu: yeni kayıt EKLEMEZ; mevcut leadlerin boş web alanını CSV'deki adresle doldurur
+$webModu = ($_POST['mod'] ?? '') === 'web_guncelle';
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '') === 'import') {
     $f = $_FILES['csv'] ?? null;
@@ -31,7 +33,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '') === 'impor
         if (!in_array('firma_adi', $basliklar, true)) {
             $hata = 'CSV başlığında "firma_adi" sütunu bulunamadı.';
         } else {
-            $eklenen = 0; $tekrar = 0; $bos = 0;
+            $eklenen = 0; $tekrar = 0; $bos = 0; $webGuncellenen = 0;
             while (($satir = fgetcsv($fh, 0, $ayrac, '"', '\\')) !== false) {
                 if (count($satir) === 1 && trim((string)$satir[0]) === '') { continue; }
                 $r = [];
@@ -48,7 +50,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '') === 'impor
                 if ($placeId !== '') { $var = $db->getColumn("SELECT lead_id FROM potansiyel_musteriler WHERE place_id = ?", [$placeId]); }
                 if (!$var && $tel !== '') { $var = $db->getColumn("SELECT lead_id FROM potansiyel_musteriler WHERE telefon = ?", [$tel]); }
                 if (!$var && $eposta !== '') { $var = $db->getColumn("SELECT lead_id FROM potansiyel_musteriler WHERE eposta = ?", [$eposta]); }
-                if ($var) { $tekrar++; continue; }
+                if ($var) {
+                    $tekrar++;
+                    // Mevcut kaydın web alanı boşsa ve CSV'de geçerli http(s) adresi varsa doldur
+                    $webCsv = mb_substr($r['web'] ?? '', 0, 255);
+                    if ($webModu && preg_match('~^https?://~i', $webCsv)) {
+                        $db->Update("UPDATE potansiyel_musteriler SET web = ? WHERE lead_id = ? AND (web IS NULL OR web = '')", [$webCsv, (int)$var]);
+                        $webGuncellenen++;
+                    }
+                    continue;
+                }
+                if ($webModu) { continue; }   // web modunda listede olmayan firma eklenmez
 
                 $oncelik = in_array($r['oncelik'] ?? '', ['A', 'B', 'C'], true) ? $r['oncelik'] : 'B';
                 $gp = is_numeric(str_replace(',', '.', $r['google_puan'] ?? '')) ? (float)str_replace(',', '.', $r['google_puan']) : null;
@@ -65,7 +77,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '') === 'impor
                 if ($ok !== false) { $eklenen++; }
             }
             fclose($fh);
-            $sonuc = compact('eklenen', 'tekrar', 'bos');
+            $sonuc = compact('eklenen', 'tekrar', 'bos', 'webGuncellenen', 'webModu');
         }
     }
 }
@@ -84,8 +96,13 @@ require_once '../config/sidebar.php';
         <?php if ($hata): ?><div class="alert alert-danger p-5 mb-6"><?= htmlspecialchars($hata) ?></div><?php endif; ?>
         <?php if ($sonuc): ?>
           <div class="alert alert-success p-5 mb-6">
+            <?php if (!empty($sonuc['webModu'])): ?>
+              <div class="fw-bold fs-5 mb-1">Web adresi işlenen kayıt: <?= (int)$sonuc['webGuncellenen'] ?></div>
+              <div>Listede bulunan <?= (int)$sonuc['tekrar'] ?> firma eşleşti (web adresi zaten dolu olanlara dokunulmadı). Listede olmayan firmalar eklenmedi.</div>
+            <?php else: ?>
             <div class="fw-bold fs-5 mb-1"><?= (int)$sonuc['eklenen'] ?> firma eklendi.</div>
             <div><?= (int)$sonuc['tekrar'] ?> kayıt zaten listede olduğu için atlandı<?= $sonuc['bos'] ? ', ' . (int)$sonuc['bos'] . ' satırda firma adı yoktu' : '' ?>.</div>
+            <?php endif; ?>
             <a href="crm/leads.php" class="btn btn-sm btn-success mt-3">Listeye git</a>
           </div>
         <?php endif; ?>
@@ -95,6 +112,10 @@ require_once '../config/sidebar.php';
               <?= csrfTokenField() ?><input type="hidden" name="action" value="import">
               <label class="form-label fw-bold">CSV dosyası</label>
               <input type="file" name="csv" accept=".csv,.txt" class="form-control form-control-solid mb-4" required>
+              <label class="form-check form-check-custom form-check-solid mb-4">
+                <input class="form-check-input" type="checkbox" name="mod" value="web_guncelle">
+                <span class="form-check-label">Yalnızca web adreslerini güncelle <span class="text-muted fs-8">(yeni firma eklemez; listede olan ve web alanı boş firmaların web adresini <code>place_id</code> / telefon eşleşmesiyle doldurur)</span></span>
+              </label>
               <button class="btn btn-primary">İçe aktar</button>
             </form>
             <div class="separator my-8"></div>

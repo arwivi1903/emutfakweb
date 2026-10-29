@@ -256,3 +256,33 @@ function lead_takip_etiket(?string $tarih, bool $kapali): array
     if ($fark === 1) { return ['Yarın', 'text-gray-800 fw-semibold', $tamTarih]; }
     return [$fark . ' gün sonra', 'text-gray-700', $tamTarih];
 }
+
+/** Sosyal medya / mesajlaşma adresleri: gerçek web sitesi sayılmaz. */
+const LEAD_SOSYAL_ALANLAR = ['instagram.com', 'facebook.com', 'fb.com', 'fb.me', 'linktr.ee', 'wa.me', 'tiktok.com', 'twitter.com', 'x.com', 'youtube.com', 'youtu.be'];
+
+/**
+ * Web alanını güvenli ve gösterilebilir hale getirir.
+ * Dönüş: ['tur' => 'site'|'sosyal'|'', 'url' => yalnızca http(s), 'alan' => www'suz alan adı]
+ */
+function lead_web_bilgi(?string $web): array
+{
+    $web = trim((string)$web);
+    if ($web === '') { return ['tur' => '', 'url' => '', 'alan' => '']; }
+    if (!preg_match('~^[a-z][a-z0-9+.-]*://~i', $web)) { $web = 'http://' . $web; }
+    if (!preg_match('~^https?://~i', $web)) { return ['tur' => '', 'url' => '', 'alan' => '']; }   // javascript:, data: vb. reddedilir
+    $host = strtolower((string)parse_url($web, PHP_URL_HOST));
+    if ($host === '') { return ['tur' => '', 'url' => '', 'alan' => '']; }
+    $alan = preg_replace('~^www\.~', '', $host);
+    $sosyal = false;
+    foreach (LEAD_SOSYAL_ALANLAR as $s) {
+        if ($alan === $s || substr($alan, -strlen('.' . $s)) === '.' . $s) { $sosyal = true; break; }
+    }
+    return ['tur' => $sosyal ? 'sosyal' : 'site', 'url' => $web, 'alan' => $alan];
+}
+
+/** SQL parçası: web alanı sosyal medya adresi mi? Sabit listeden üretilir; kullanıcı girdisi içermez. (REGEXP: alan adı sınırı korunur, "netflix.com" x.com sayılmaz) */
+function lead_sosyal_sql(): string
+{
+    $alanlar = implode('|', array_map(static function ($a) { return str_replace('.', '[.]', $a); }, LEAD_SOSYAL_ALANLAR));
+    return "(web REGEXP '^(https?://)?([a-z0-9-]+[.])*(" . $alanlar . ")([/:?#]|$)')";
+}

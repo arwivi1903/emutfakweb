@@ -81,9 +81,11 @@ $f = [
     'segment' => (string)($_GET['segment'] ?? ''),
     'kanal'   => (string)($_GET['kanal'] ?? ''),
     'takip'   => (string)($_GET['takip'] ?? ''),
+    'web'     => (string)($_GET['web'] ?? ''),     // site: web sitesi var, sosyal: yalnızca sosyal medya, yok: web adresi yok
     'hazir'   => (string)($_GET['hazir'] ?? ''),   // 1: kapanmış (deneme/müşteri/olumsuz/ret) kayıtları gizle
     'sirala'  => (string)($_GET['sirala'] ?? ''),
 ];
+if (!in_array($f['web'], ['site', 'sosyal', 'yok'], true)) { $f['web'] = ''; }
 $durdurSql = "'" . implode("','", LEAD_DURDUR) . "'";   // sabit listeden üretilir, kullanıcı girdisi değildir
 $where = ['1=1']; $p = [];
 if ($f['q'] !== '') { $where[] = '(firma_adi LIKE ? OR telefon LIKE ? OR eposta LIKE ? OR ilce LIKE ?)'; $like = '%' . $f['q'] . '%'; array_push($p, $like, $like, $like, $like); }
@@ -94,6 +96,10 @@ if ($f['segment'] !== '') { $where[] = 'segment = ?'; $p[] = $f['segment']; }
 if ($f['kanal'] === 'wa') { $where[] = 'whatsapp = 1'; }
 if ($f['kanal'] === 'mail') { $where[] = "eposta IS NOT NULL AND eposta <> ''"; }
 if ($f['takip'] === 'bugun') { $where[] = "sonraki_takip IS NOT NULL AND sonraki_takip <= CURDATE() AND durum NOT IN ($durdurSql)"; }
+$sosyalSql = lead_sosyal_sql();
+if ($f['web'] === 'site')   { $where[] = "web IS NOT NULL AND web <> '' AND NOT $sosyalSql"; }
+if ($f['web'] === 'sosyal') { $where[] = "web IS NOT NULL AND web <> '' AND $sosyalSql"; }
+if ($f['web'] === 'yok')    { $where[] = "(web IS NULL OR web = '')"; }
 if ($f['hazir'] === '1') { $where[] = "durum NOT IN ($durdurSql)"; }
 $whereSql = implode(' AND ', $where);
 
@@ -121,6 +127,7 @@ $ozet = $db->getRowAssoc("SELECT COUNT(*) toplam,
     SUM(whatsapp = 1 AND durum NOT IN ($durdurSql)) wa_hazir,
     SUM(eposta IS NOT NULL AND eposta <> '' AND durum NOT IN ($durdurSql)) mail_hazir,
     SUM(sonraki_takip IS NOT NULL AND sonraki_takip <= CURDATE() AND durum NOT IN ($durdurSql)) bugun,
+    SUM(web IS NOT NULL AND web <> '' AND NOT $sosyalSql AND durum NOT IN ($durdurSql)) web_site,
     SUM(durum IN ('deneme','musteri')) donusum
     FROM potansiyel_musteriler") ?: [];
 $durumSayilari = [];
@@ -144,7 +151,7 @@ $qs = function (array $degis) use ($f): string {
 };
 
 // Gelişmiş filtre açık mı? (bu alanlardan biri doluysa kutu açık gelir)
-$gelismisAcik = ($f['oncelik'] !== '' || $f['il'] !== '' || $f['segment'] !== '' || $f['kanal'] !== '' || $f['sirala'] !== '');
+$gelismisAcik = ($f['oncelik'] !== '' || $f['il'] !== '' || $f['segment'] !== '' || $f['kanal'] !== '' || $f['web'] !== '' || $f['sirala'] !== '');
 
 // Aktif filtre çipleri
 $cipler = [];
@@ -155,6 +162,7 @@ if ($f['hazir'] === '1')  { $cipler[] = ['Kapanmışlar gizli', $qs(['hazir' => 
 if ($f['oncelik'] !== '') { $cipler[] = ['Öncelik: ' . $f['oncelik'], $qs(['oncelik' => '', 'sayfa' => ''])]; }
 if ($f['il'] !== '')      { $cipler[] = ['İl: ' . $f['il'], $qs(['il' => '', 'sayfa' => ''])]; }
 if ($f['segment'] !== '') { $cipler[] = ['Segment: ' . $f['segment'], $qs(['segment' => '', 'sayfa' => ''])]; }
+if ($f['web'] !== '')     { $cipler[] = ['Web: ' . ['site' => 'web sitesi var', 'sosyal' => 'yalnızca sosyal medya', 'yok' => 'adres yok'][$f['web']] ?? $f['web'], $qs(['web' => '', 'sayfa' => ''])]; }
 if ($f['kanal'] !== '')   { $cipler[] = ['Kanal: ' . ($f['kanal'] === 'wa' ? 'WhatsApp' : 'E-posta'), $qs(['kanal' => '', 'sayfa' => ''])]; }
 
 // Satış hattı aşamaları (soldan sağa); kapalı durumlar ayrı gösterilir
@@ -228,7 +236,7 @@ require_once '../config/sidebar.php';
 
         <!-- 1) BUGÜN: yapılacak işler -->
         <div class="row g-4 mb-6">
-          <div class="col-12 col-md-6 col-xl-3">
+          <div class="col-12 col-md-6 col-xl">
             <a href="crm/leads.php?<?= $e($qs(['takip' => 'bugun', 'durum' => '', 'sayfa' => ''])) ?>" class="lp-band <?= (int)($ozet['bugun'] ?? 0) > 0 ? 'lp-urgent' : '' ?>">
               <span class="lp-ico bg-light-warning"><i class="ki-duotone ki-calendar-tick fs-1 text-warning"><span class="path1"></span><span class="path2"></span><span class="path3"></span><span class="path4"></span><span class="path5"></span><span class="path6"></span></i></span>
               <span>
@@ -237,7 +245,7 @@ require_once '../config/sidebar.php';
               </span>
             </a>
           </div>
-          <div class="col-12 col-md-6 col-xl-3">
+          <div class="col-12 col-md-6 col-xl">
             <a href="crm/leads.php?<?= $e($qs(['kanal' => 'wa', 'hazir' => '1', 'takip' => '', 'sayfa' => ''])) ?>" class="lp-band">
               <span class="lp-ico bg-light-success"><i class="ki-duotone ki-whatsapp fs-1 text-success"><span class="path1"></span><span class="path2"></span></i></span>
               <span>
@@ -246,7 +254,7 @@ require_once '../config/sidebar.php';
               </span>
             </a>
           </div>
-          <div class="col-12 col-md-6 col-xl-3">
+          <div class="col-12 col-md-6 col-xl">
             <a href="crm/leads.php?<?= $e($qs(['kanal' => 'mail', 'hazir' => '1', 'takip' => '', 'sayfa' => ''])) ?>" class="lp-band">
               <span class="lp-ico bg-light-info"><i class="ki-duotone ki-sms fs-1 text-info"><span class="path1"></span><span class="path2"></span></i></span>
               <span>
@@ -255,7 +263,16 @@ require_once '../config/sidebar.php';
               </span>
             </a>
           </div>
-          <div class="col-12 col-md-6 col-xl-3">
+          <div class="col-12 col-md-6 col-xl">
+            <a href="crm/leads.php?<?= $e($qs(['web' => 'site', 'hazir' => '1', 'takip' => '', 'sayfa' => ''])) ?>" class="lp-band">
+              <span class="lp-ico bg-light-primary"><i class="ki-duotone ki-screen fs-1 text-primary"><span class="path1"></span><span class="path2"></span><span class="path3"></span><span class="path4"></span></i></span>
+              <span>
+                <span class="lp-num text-gray-900 d-block"><?= number_format((int)($ozet['web_site'] ?? 0), 0, ',', '.') ?></span>
+                <span class="text-muted fs-7 fw-semibold">Web sitesi olan</span>
+              </span>
+            </a>
+          </div>
+          <div class="col-12 col-md-6 col-xl">
             <div class="lp-band flex-column align-items-stretch justify-content-center gap-2">
               <div class="d-flex justify-content-between align-items-baseline">
                 <span class="text-muted fs-7 fw-semibold">Bugünkü e-posta limiti</span>
@@ -333,6 +350,12 @@ require_once '../config/sidebar.php';
                       <option value="wa" <?= $f['kanal'] === 'wa' ? 'selected' : '' ?>>WhatsApp</option>
                       <option value="mail" <?= $f['kanal'] === 'mail' ? 'selected' : '' ?>>E-posta</option>
                     </select></div>
+                  <div class="col-6 col-md-2"><label class="form-label fs-7">Web adresi</label>
+                    <select name="web" class="form-select form-select-sm form-select-solid"><option value="">Tümü</option>
+                      <option value="site" <?= $f['web'] === 'site' ? 'selected' : '' ?>>Web sitesi var</option>
+                      <option value="sosyal" <?= $f['web'] === 'sosyal' ? 'selected' : '' ?>>Yalnızca sosyal medya</option>
+                      <option value="yok" <?= $f['web'] === 'yok' ? 'selected' : '' ?>>Adres yok</option>
+                    </select></div>
                   <div class="col-12 col-md-3"><label class="form-label fs-7">Sırala</label>
                     <select name="sirala" class="form-select form-select-sm form-select-solid">
                       <?php foreach ($siralamalar as $kod => $s): ?><option value="<?= $e($kod) ?>" <?= $f['sirala'] === $kod ? 'selected' : '' ?>><?= $e($s[0]) ?></option><?php endforeach; ?>
@@ -398,6 +421,7 @@ require_once '../config/sidebar.php';
                       [$mailOk, $mailNeden] = lead_gonderilebilir_mi($l, 'eposta');
                       $oncelikRenk = ['A' => 'success', 'B' => 'primary', 'C' => 'secondary'][$l['oncelik']] ?? 'secondary';
                       $durumRenk = LEAD_DURUMLAR[$l['durum']][1] ?? 'secondary';
+                      $webB = lead_web_bilgi($l['web'] ?? null);
                       $konum = trim(trim((string)$l['ilce']) . ' / ' . trim((string)$l['il']), ' /');
                       $satirSinif = ($gecikti ? 'lp-gecikti ' : '') . ($bugunSatir ? 'lp-bugun ' : '') . ($kapali ? 'lp-kapali-satir' : '');
                   ?>
@@ -408,6 +432,11 @@ require_once '../config/sidebar.php';
                         <div class="text-muted fs-8 fw-semibold">
                           <?= $e($konum) ?><?php if (!empty($l['telefon'])): ?><?= $konum !== '' ? ' · ' : '' ?><a href="tel:<?= $e($l['telefon']) ?>" class="text-muted text-hover-primary"><?= $e($l['telefon']) ?></a><?php endif; ?>
                         </div>
+                        <?php if ($webB['tur'] !== ''): ?>
+                        <div class="fs-8 fw-semibold mt-1">
+                          <a href="<?= $e($webB['url']) ?>" target="_blank" rel="noopener noreferrer" class="<?= $webB['tur'] === 'site' ? 'text-primary' : 'text-muted' ?> text-hover-primary text-truncate d-inline-block align-bottom" style="max-width:260px" title="<?= $e($webB['url']) ?>"><?= $webB['tur'] === 'site' ? 'Web sitesi' : 'Sosyal medya' ?>: <?= $e($webB['alan']) ?> ↗</a>
+                        </div>
+                        <?php endif; ?>
                         <div class="mt-1">
                           <?php if ($l['segment']): ?><span class="badge badge-light fs-9 me-1"><?= $e($l['segment']) ?></span><?php endif; ?>
                           <?php if ((int)$l['imalat_montaj']): ?><span class="badge badge-light-primary fs-9 me-1">imalat/montaj</span><?php endif; ?>
