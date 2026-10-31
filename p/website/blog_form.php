@@ -80,6 +80,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $content     = $_POST['content'] ?? '';
     $status      = ($_POST['status'] ?? 'draft') === 'published' ? 'published' : 'draft';
     $cover_image = trim($_POST['cover_image'] ?? '') ?: null;
+    // Zero Trust: elle yazılan adres yalnızca http(s) olabilir (javascript: vb. reddedilir).
+    if ($cover_image !== null && !preg_match('#^https?://#i', $cover_image)) {
+        $formError = 'Görsel adresi http:// veya https:// ile başlamalıdır.';
+        $cover_image = null;
+    }
+    // URL alanı boşsa mevcut kapak (yüklenmiş dosya olabilir) korunur; yalnızca "kaldır" işaretliyse silinir.
+    if ($cover_image === null && !isset($_POST['cover_kaldir'])) {
+        $cover_image = $post['cover_image'] ?: null;
+    }
 
     // Dosya yüklendiyse URL alanının önüne geçer
     if (!empty($_FILES['cover_image_file']['name'])) {
@@ -129,7 +138,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 $kategoriListesi = array_column((array)$db->getRowsAssoc("SELECT DISTINCT kategori FROM blog_yazilari WHERE kategori IS NOT NULL AND kategori <> '' ORDER BY kategori"), 'kategori');
 ?>
 
-<div class="app-main" flex-column flex-row-fluid" id="kt_app_main">
+<div class="app-main flex-column flex-row-fluid" id="kt_app_main">
     <div class="d-flex flex-column flex-column-fluid">
         <!-- Toolbar -->
         <div id="kt_app_toolbar" class="app-toolbar py-3 py-lg-6">
@@ -210,6 +219,10 @@ $kategoriListesi = array_column((array)$db->getRowsAssoc("SELECT DISTINCT katego
                                 <div class="card-body">
                                     <?php if (!empty($post['cover_image'])): ?>
                                         <img src="<?php echo htmlspecialchars(strpos($post['cover_image'], 'http') === 0 ? $post['cover_image'] : '../' . $post['cover_image']); ?>" class="w-100 rounded mb-4" style="max-height:160px;object-fit:cover;" alt="" />
+                                        <label class="form-check form-check-custom form-check-solid mb-5">
+                                            <input class="form-check-input" type="checkbox" name="cover_kaldir" value="1" />
+                                            <span class="form-check-label text-gray-700">Kapak görselini kaldır</span>
+                                        </label>
                                     <?php endif; ?>
                                     <div class="fv-row mb-5">
                                         <label class="fs-6 fw-semibold mb-2">Görsel Yükle</label>
