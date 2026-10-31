@@ -92,7 +92,10 @@ $sbMenu = [
         ['href' => 'website/module_form.php', 'baslik' => '', 'gizli' => true],
         ['href' => 'website/blog.php', 'baslik' => 'Blog'],
         ['href' => 'website/blog_form.php', 'baslik' => '', 'gizli' => true],
+        ['href' => 'website/blog_sil.php', 'baslik' => '', 'gizli' => true],
         ['href' => 'website/videos.php', 'baslik' => 'Videolar'],
+        ['href' => 'website/video_form.php', 'baslik' => '', 'gizli' => true],
+        ['href' => 'website/video_sil.php', 'baslik' => '', 'gizli' => true],
     ]],
 
     ['bolum' => 'Paketler ve Sistem'],

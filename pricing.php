@@ -40,8 +40,8 @@ foreach ($packages as $pk) {
     <link href="p/dist/assets/css/style.bundle.css" rel="stylesheet" type="text/css" />
     <!-- New Custom Redesign CSS -->
     <link href="assets/css/style.css?v=12" rel="stylesheet" type="text/css" />
-    <link href="assets/css/tema.css?v=2" rel="stylesheet" type="text/css" />
-    <link href="assets/css/modul.css?v=1" rel="stylesheet" type="text/css" />
+    <link href="assets/css/tema.css?v=4" rel="stylesheet" type="text/css" />
+    <link href="assets/css/modul.css?v=2" rel="stylesheet" type="text/css" />
 <style>
 /* ── Aylık / Yıllık periyot seçimi ─────────────────────────────── */
 .py-periyot-sar{display:flex;flex-direction:column;align-items:center;gap:12px;margin-bottom:44px;}

@@ -58,7 +58,7 @@ function prolyn_blog_kapak_yukle(array $file): ?string
 }
 
 $id = isset($_GET['id']) ? (int)$_GET['id'] : 0;
-$post = ['title' => '', 'excerpt' => '', 'cover_image' => '', 'content' => '', 'status' => 'draft'];
+$post = ['title' => '', 'excerpt' => '', 'kategori' => '', 'cover_image' => '', 'content' => '', 'status' => 'draft'];
 $isEdit = false;
 
 if ($id > 0) {
@@ -76,6 +76,7 @@ $formError = null;
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $title       = trim($_POST['title'] ?? '');
     $excerpt     = trim($_POST['excerpt'] ?? '');
+    $kategori    = mb_substr(trim((string)($_POST['kategori'] ?? '')), 0, 60) ?: null;
     $content     = $_POST['content'] ?? '';
     $status      = ($_POST['status'] ?? 'draft') === 'published' ? 'published' : 'draft';
     $cover_image = trim($_POST['cover_image'] ?? '') ?: null;
@@ -99,8 +100,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $published_at = date('Y-m-d H:i:s');
             }
             $db->Update(
-                "UPDATE blog_yazilari SET title=?, excerpt=?, content=?, cover_image=?, status=?, published_at=?, updated_at=NOW() WHERE id=?",
-                [$title, $excerpt, $content, $cover_image, $status, $published_at, $id]
+                "UPDATE blog_yazilari SET title=?, excerpt=?, kategori=?, content=?, cover_image=?, status=?, published_at=?, updated_at=NOW() WHERE id=?",
+                [$title, $excerpt, $kategori, $content, $cover_image, $status, $published_at, $id]
             );
         } else {
             $slug = prolyn_blog_slug($title);
@@ -112,9 +113,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             }
             $published_at = $status === 'published' ? date('Y-m-d H:i:s') : null;
             $db->Insert(
-                "INSERT INTO blog_yazilari (title, slug, excerpt, content, cover_image, status, published_at, created_by, created_at)
-                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, NOW())",
-                [$title, $slug, $excerpt, $content, $cover_image, $status, $published_at, $_SESSION['admin_id'] ?? null]
+                "INSERT INTO blog_yazilari (title, slug, excerpt, kategori, content, cover_image, status, published_at, created_by, created_at)
+                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())",
+                [$title, $slug, $excerpt, $kategori, $content, $cover_image, $status, $published_at, $_SESSION['admin_id'] ?? null]
             );
         }
 
@@ -123,11 +124,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 
     // Hata varsa formu girilen değerlerle yeniden göster
-    $post = array_merge($post, ['title' => $title, 'excerpt' => $excerpt, 'content' => $content, 'status' => $status, 'cover_image' => $cover_image]);
+    $post = array_merge($post, ['title' => $title, 'excerpt' => $excerpt, 'kategori' => (string)$kategori, 'content' => $content, 'status' => $status, 'cover_image' => $cover_image]);
 }
+$kategoriListesi = array_column((array)$db->getRowsAssoc("SELECT DISTINCT kategori FROM blog_yazilari WHERE kategori IS NOT NULL AND kategori <> '' ORDER BY kategori"), 'kategori');
 ?>
 
-<div class="app-main flex-column flex-row-fluid" id="kt_app_main">
+<div class="app-main" flex-column flex-row-fluid" id="kt_app_main">
     <div class="d-flex flex-column flex-column-fluid">
         <!-- Toolbar -->
         <div id="kt_app_toolbar" class="app-toolbar py-3 py-lg-6">
@@ -191,6 +193,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                                             <option value="published" <?php echo ($post['status'] ?? '') === 'published' ? 'selected' : ''; ?>>Yayında</option>
                                         </select>
                                     </div>
+                                </div>
+                            </div>
+
+                            <div class="card mb-6">
+                                <div class="card-header"><h3 class="card-title">Kategori</h3></div>
+                                <div class="card-body">
+                                    <input type="text" class="form-control form-control-solid" name="kategori" maxlength="60" list="blog-kat" value="<?php echo htmlspecialchars((string)($post['kategori'] ?? '')); ?>" placeholder="ör. Tahsilat ve Cari" />
+                                    <datalist id="blog-kat"><?php foreach ($kategoriListesi as $kt): ?><option value="<?php echo htmlspecialchars($kt); ?>"><?php endforeach; ?></datalist>
+                                    <div class="form-text">Blog liste sayfasında süzgeç olarak görünür. Mevcut bir kategoriyi seçin ya da yenisini yazın.</div>
                                 </div>
                             </div>
 

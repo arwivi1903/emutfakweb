@@ -99,8 +99,8 @@ $sayfaAciklama = 'Ölçü ve montaj randevuları, montaj ekipleri, eksik malzeme
     <link href="p/dist/assets/plugins/global/plugins.bundle.css" rel="stylesheet" type="text/css" />
     <link href="p/dist/assets/css/style.bundle.css" rel="stylesheet" type="text/css" />
     <link href="assets/css/style.css?v=12" rel="stylesheet" type="text/css" />
-    <link href="assets/css/tema.css?v=2" rel="stylesheet" type="text/css" />
-    <link href="assets/css/modul.css?v=1" rel="stylesheet" type="text/css" />
+    <link href="assets/css/tema.css?v=4" rel="stylesheet" type="text/css" />
+    <link href="assets/css/modul.css?v=2" rel="stylesheet" type="text/css" />
     <link href="assets/css/sektor.css?v=1" rel="stylesheet" type="text/css" />
     <style>
 /* v2: fiyat satırı ve paket kartı notu (paketler bölümü modul.css'teki .pk-* sınıflarını kullanır) */

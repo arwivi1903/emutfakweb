@@ -80,3 +80,9 @@ function blog_okuma_suresi(string $metin): int
     $k = count(preg_split('/\s+/u', trim(strip_tags($metin))) ?: []);
     return max(1, (int)round($k / 200));
 }
+
+/** Yalnızca karakter sayısı biliniyorsa (liste sorgusunda içerik çekilmez) okuma süresi tahmini. */
+function blog_okuma_suresi_uzunluk(int $karakter): int
+{
+    return max(1, (int)round($karakter / 1400)); // ~7 karakter/kelime, 200 kelime/dk
+}

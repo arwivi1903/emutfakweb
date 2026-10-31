@@ -48,3 +48,25 @@
 .blog-related{margin-top:70px}
 .blog-related>h2{color:#fff;font-size:24px;font-weight:800;margin-bottom:20px}
 @media (max-width:991px){.blog-featured{grid-template-columns:1fr}.blog-featured-art{min-height:200px}.blog-layout{grid-template-columns:1fr;gap:24px}.blog-toc{position:static}.blog-post{padding-top:120px}}
+
+/* v2: kategori, arama, sayfalama */
+.blog-search{position:relative;max-width:520px;margin:0 auto}
+.blog-search input{width:100%;height:52px;padding:0 56px 0 20px;border-radius:999px;border:1px solid rgba(255,255,255,.14);background:rgba(255,255,255,.06);color:#fff;font-size:16px}
+.blog-search input::placeholder{color:#7d869b}
+.blog-search input:focus{outline:none;border-color:#667eea;box-shadow:0 0 0 3px rgba(102,126,234,.3)}
+.blog-search button{position:absolute;right:6px;top:6px;width:40px;height:40px;border:0;border-radius:50%;background:#667eea;color:#fff}
+.blog-cats{display:flex;flex-wrap:wrap;gap:10px;justify-content:center;margin-bottom:32px}
+.blog-cats a{display:inline-flex;gap:8px;align-items:center;padding:8px 16px;border-radius:999px;font-size:14px;font-weight:600;color:#aab3c8;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.09);text-decoration:none}
+.blog-cats a span{font-size:12px;opacity:.7}
+.blog-cats a:hover,.blog-cats a.on{color:#fff;background:rgba(102,126,234,.22);border-color:rgba(102,126,234,.5)}
+.blog-result-info{text-align:center;color:#9aa3b8;margin:-8px 0 24px}.blog-result-info a{color:#8fb0ff}
+.blog-pill-sm{font-size:11px;padding:3px 10px}
+.blog-pager{display:flex;justify-content:center;flex-wrap:wrap;gap:8px;margin-top:40px}
+.blog-pager a{min-width:42px;height:42px;padding:0 12px;display:grid;place-items:center;border-radius:12px;color:#aab3c8;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.09);font-weight:600;text-decoration:none}
+.blog-pager a:hover,.blog-pager a.on{color:#fff;background:#667eea;border-color:#667eea}
+.blog-crumb .blog-crumb-kat{color:#8fb0ff}
+.blog-video-note{margin:20px 0 0;color:#9aa3b8;font-size:15px}.blog-video-note i{color:#8fb0ff;margin-right:6px}.blog-video-note a{color:#8fb0ff}
+
+/* Light tema: arama kutusu beyaz yazı/şeffaf zemin nedeniyle görünmüyordu */
+html[data-tema="light"] .blog-search input{background:var(--pw-surface,#fff);color:var(--pw-ink,#0e1a33);border-color:var(--pw-line,#d9dfeb);-webkit-text-fill-color:var(--pw-ink,#0e1a33)}
+html[data-tema="light"] .blog-search input::placeholder{color:var(--pw-faint,#6b7690)}

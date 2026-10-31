@@ -25,12 +25,22 @@ $canonical = $base . '/blog_detail.php?slug=' . rawurlencode($post['slug']);
 $sektorYazisi = (bool)preg_match('/mutfak|dolap|banyo|montaj|tezgah/iu', $post['title'] . ' ' . $post['content']);
 $ctaUrl = $sektorYazisi ? 'mutfak-dolap-yazilimi?utm_source=blog&utm_medium=yazi&utm_campaign=' . rawurlencode($post['slug']) : 'register.php';
 
+$kategori = trim((string)($post['kategori'] ?? ''));
 $digerYazilar = [];
 try {
-    $stmt = $pdo->prepare("SELECT title, slug, excerpt, cover_image, published_at, content FROM blog_yazilari WHERE status = 'published' AND slug != ? ORDER BY published_at DESC LIMIT 3");
-    $stmt->execute([$slug]);
+    // Önce aynı kategorideki yazılar, sonra en yeniler. İçerik çekilmez (okuma süresi uzunluktan tahmin edilir).
+    $stmt = $pdo->prepare("SELECT title, slug, excerpt, cover_image, published_at, CHAR_LENGTH(content) AS uzunluk
+                           FROM blog_yazilari WHERE status = 'published' AND slug != ?
+                           ORDER BY (kategori = ?) DESC, published_at DESC LIMIT 3");
+    $stmt->execute([$slug, $kategori]);
     $digerYazilar = $stmt->fetchAll();
-} catch (Throwable $e) {}
+} catch (Throwable $e) {
+    try { // kategori sutunu henüz yoksa
+        $stmt = $pdo->prepare("SELECT title, slug, excerpt, cover_image, published_at, CHAR_LENGTH(content) AS uzunluk FROM blog_yazilari WHERE status = 'published' AND slug != ? ORDER BY published_at DESC LIMIT 3");
+        $stmt->execute([$slug]);
+        $digerYazilar = $stmt->fetchAll();
+    } catch (Throwable $e2) {}
+}
 
 $kapak = (string)($post['cover_image'] ?? '');
 $kapakUrl = $kapak === '' ? null : (preg_match('#^https?://#', $kapak) ? $kapak : $base . '/' . ltrim($kapak, '/'));
@@ -64,6 +74,7 @@ $kapakUrl = $kapak === '' ? null : (preg_match('#^https?://#', $kapak) ? $kapak 
                 'dateModified' => !empty($post['updated_at']) ? date('c', strtotime($post['updated_at'])) : null,
                 'wordCount' => $icerik['kelime'],
                 'inLanguage' => 'tr-TR',
+                'articleSection' => $kategori !== '' ? $kategori : null,
                 'author' => ['@type' => 'Organization', 'name' => $appSettings['site_name'] ?? 'Prolyn', 'url' => $base],
                 'publisher' => ['@type' => 'Organization', 'name' => $appSettings['site_name'] ?? 'Prolyn', 'url' => $base],
                 'mainEntityOfPage' => $canonical,
@@ -82,8 +93,8 @@ $kapakUrl = $kapak === '' ? null : (preg_match('#^https?://#', $kapak) ? $kapak 
     <link href="p/dist/assets/plugins/global/plugins.bundle.css" rel="stylesheet" type="text/css" />
     <link href="p/dist/assets/css/style.bundle.css" rel="stylesheet" type="text/css" />
     <link href="assets/css/style.css?v=12" rel="stylesheet" type="text/css" />
-    <link href="assets/css/tema.css?v=2" rel="stylesheet" type="text/css" />
-    <link href="assets/css/blog.css?v=1" rel="stylesheet" type="text/css" />
+    <link href="assets/css/tema.css?v=4" rel="stylesheet" type="text/css" />
+    <link href="assets/css/blog.css?v=3" rel="stylesheet" type="text/css" />
 </head>
 <body id="kt_body" class="app-blank">
     <!--begin::Root-->
@@ -93,8 +104,9 @@ $kapakUrl = $kapak === '' ? null : (preg_match('#^https?://#', $kapak) ? $kapak 
         <!--begin::Post-->
         <article class="blog-post">
             <div class="container-xxl">
-                <nav class="blog-crumb" aria-label="Sayfa yolu"><a href="index.php">Ana sayfa</a><span>/</span><a href="blog.php">Blog</a></nav>
+                <nav class="blog-crumb" aria-label="Sayfa yolu"><a href="index.php">Ana sayfa</a><span>/</span><a href="blog.php">Blog</a><?php if ($kategori !== ''): ?><span>/</span><a href="blog.php?kategori=<?= urlencode($kategori) ?>" class="blog-crumb-kat"><?= htmlspecialchars($kategori) ?></a><?php endif; ?></nav>
                 <header class="blog-head">
+                    <?php if ($kategori !== ''): ?><a href="blog.php?kategori=<?= urlencode($kategori) ?>" class="blog-pill mb-4 d-inline-block text-decoration-none"><?= htmlspecialchars($kategori) ?></a><?php endif; ?>
                     <h1><?= htmlspecialchars($post['title']) ?></h1>
                     <?php if (trim((string)($post['excerpt'] ?? '')) !== ''): ?><p class="blog-lead"><?= htmlspecialchars($post['excerpt']) ?></p><?php endif; ?>
                     <div class="blog-meta">
@@ -145,17 +157,18 @@ $kapakUrl = $kapak === '' ? null : (preg_match('#^https?://#', $kapak) ? $kapak 
                                 <a href="<?= htmlspecialchars($ctaUrl) ?>" class="btn btn-primary-glow px-7 py-3 fw-bold">Ücretsiz dene</a>
                             <?php endif; ?>
                         </div>
+                        <p class="blog-video-note"><i class="bi bi-play-circle"></i> Adım adım görmek ister misiniz? <a href="video.php">Video rehberlerimize</a> göz atın.</p>
                     </div>
                 </div>
 
                 <?php if ($digerYazilar): ?>
                 <section class="blog-related">
-                    <h2>Diğer yazılar</h2>
+                    <h2><?= $kategori !== '' ? 'İlgili yazılar' : 'Diğer yazılar' ?></h2>
                     <div class="row g-6">
                         <?php foreach ($digerYazilar as $d): ?>
                         <div class="col-md-4">
                             <a href="blog_detail.php?slug=<?= urlencode($d['slug']) ?>" class="glass-card blog-card h-100">
-                                <span class="blog-card-meta"><?= !empty($d['published_at']) ? date('d.m.Y', strtotime($d['published_at'])) : '' ?> · <?= blog_okuma_suresi((string)$d['content']) ?> dk</span>
+                                <span class="blog-card-meta"><?= !empty($d['published_at']) ? date('d.m.Y', strtotime($d['published_at'])) : '' ?> · <?= blog_okuma_suresi_uzunluk((int)$d['uzunluk']) ?> dk</span>
                                 <h3><?= htmlspecialchars($d['title']) ?></h3>
                                 <?php if (!empty($d['excerpt'])): ?><p><?= htmlspecialchars(mb_strimwidth($d['excerpt'], 0, 140, '…')) ?></p><?php endif; ?>
                             </a>

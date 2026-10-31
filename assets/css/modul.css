@@ -273,5 +273,4 @@ html:not(.js) .ill * { animation: none !important; }
 @media (max-width: 1199.98px) { .sorun-sar { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
 @media (max-width: 575.98px) { .sorun-sar { grid-template-columns: minmax(0, 1fr); } }
 
-/* ---------- Genel: orta genişlikte ekranlarda kenar boşluğu ---------- */
-@media (min-width: 576px) { .container-xxl { padding-left: 2rem; padding-right: 2rem; } }
+/* container kenar boşluğu artık tüm sayfalarda tema.css içinde (menü kaymasın diye) */

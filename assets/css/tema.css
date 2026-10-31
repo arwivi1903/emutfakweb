@@ -349,3 +349,12 @@ html[data-tema="light"] .dashboard-mockup { box-shadow: var(--pw-shadow-lg); bor
 /* Paket kartı modül listesi taşmasın */
 .pricing-card li > span, [class*="pricing"] li > span { min-width: 0; overflow-wrap: anywhere; }
 html[data-tema="light"] .sk-btn-wa, html[data-tema="light"] .sk-btn-wa i { color: #fff !important; }
+
+/* Üst menü sayfalar arası kaymasın: kısa sayfalarda kaydırma çubuğu olmayınca
+   ortalanan container sağa/sola oynuyordu. Çubuk alanı her zaman ayrılır. */
+html { overflow-y: scroll; scrollbar-gutter: stable; }
+.landing-header .nav-link { white-space: nowrap; }
+
+/* Kenar boşluğu TÜM sayfalarda aynı olmalı. Eskiden bu kural yalnız modul.css yüklenen
+   sayfalarda (anasayfa, modüller, fiyat) vardı; blog/video/iletişimde menü 16px kayıyordu. */
+@media (min-width: 576px) { .container-xxl { padding-left: 2rem; padding-right: 2rem; } }
