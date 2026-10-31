@@ -80,8 +80,8 @@ foreach ($liste as $v) {
     <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Inter:400,500,600,700,800&display=swap" />
     <link href="p/dist/assets/plugins/global/plugins.bundle.css" rel="stylesheet" type="text/css" />
     <link href="p/dist/assets/css/style.bundle.css" rel="stylesheet" type="text/css" />
-    <link href="assets/css/style.css?v=12" rel="stylesheet" type="text/css" />
-    <link href="assets/css/tema.css?v=4" rel="stylesheet" type="text/css" />
+    <link href="assets/css/style.css?v=13" rel="stylesheet" type="text/css" />
+    <link href="assets/css/tema.css?v=5" rel="stylesheet" type="text/css" />
     <link href="assets/css/video.css?v=1" rel="stylesheet" type="text/css" />
 </head>
 <body id="kt_body" class="app-blank">

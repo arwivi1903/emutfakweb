@@ -462,51 +462,80 @@ a {
     border-color: transparent;
 }
 
-/* Floating Action Buttons */
+/* Floating Action Buttons (sağ alt: ara / WhatsApp / yukarı çık) */
 .floating-action-buttons {
     position: fixed;
-    bottom: 30px;
-    right: 30px;
+    bottom: 24px;
+    right: 24px;
     display: flex;
     flex-direction: column;
-    gap: 15px;
+    align-items: center;
+    gap: 14px;
     z-index: 9999;
 }
 
 .fab-btn {
-    width: 50px;
-    height: 50px;
+    position: relative;
+    width: 58px;
+    height: 58px;
     border-radius: 50%;
     display: flex;
     align-items: center;
     justify-content: center;
-    color: white;
-    font-size: 1.5rem;
-    box-shadow: 0 4px 15px rgba(0,0,0,0.3);
-    transition: transform 0.3s ease, box-shadow 0.3s ease;
+    color: #fff;
+    font-size: 1.7rem;
+    line-height: 1;
+    box-shadow: 0 6px 18px rgba(0,0,0,.22);
+    transition: transform .25s ease, box-shadow .25s ease;
     border: none;
     cursor: pointer;
     text-decoration: none;
 }
-
-.fab-btn:hover {
-    transform: translateY(-5px);
-    box-shadow: 0 8px 25px rgba(0,0,0,0.4);
-    color: white;
+.fab-btn:hover, .fab-btn:focus-visible {
+    transform: scale(1.08);
+    box-shadow: 0 10px 26px rgba(0,0,0,.3);
+    color: #fff;
 }
+.fab-btn:focus-visible { outline: 3px solid rgba(255,255,255,.9); outline-offset: 2px; }
 
-.fab-phone {
-    background-color: var(--prolyn-primary);
+.fab-phone    { background-color: var(--prolyn-primary); --fab-ring: 102, 126, 234; }
+.fab-whatsapp { background-color: #25D366;               --fab-ring: 37, 211, 102; }
+.fab-whatsapp .bi { font-size: 1.9rem; }
+
+/* Nabız halkası: dikkat çeker ama göz yormaz (yavaş, tek halka) */
+.fab-phone, .fab-whatsapp { animation: fab-pulse 2.6s ease-out infinite; }
+.fab-whatsapp { animation-delay: 1.3s; }
+@keyframes fab-pulse {
+    0%   { box-shadow: 0 6px 18px rgba(0,0,0,.22), 0 0 0 0 rgba(var(--fab-ring), .45); }
+    70%  { box-shadow: 0 6px 18px rgba(0,0,0,.22), 0 0 0 16px rgba(var(--fab-ring), 0); }
+    100% { box-shadow: 0 6px 18px rgba(0,0,0,.22), 0 0 0 0 rgba(var(--fab-ring), 0); }
 }
+.fab-phone:hover, .fab-whatsapp:hover { animation-play-state: paused; }
 
-.fab-whatsapp {
-    background-color: #25D366;
-}
-
+/* Yukarı çık: küçük, sayfa kaydırılınca belirir */
 .fab-scrolltop {
-    background-color: rgba(30, 35, 45, 0.8);
+    width: 44px;
+    height: 44px;
+    font-size: 1.9rem;
+    background-color: rgba(30, 35, 45, 0.85);
     backdrop-filter: blur(5px);
     border: 1px solid var(--prolyn-card-border);
+    opacity: 0;
+    visibility: hidden;
+    transform: translateY(10px);
+    transition: opacity .25s ease, transform .25s ease, visibility .25s, box-shadow .25s ease;
+}
+.fab-scrolltop.is-visible { opacity: 1; visibility: visible; transform: none; }
+.fab-scrolltop.is-visible:hover { transform: scale(1.08); }
+
+@media (max-width: 575.98px) {
+    .floating-action-buttons { right: 14px; bottom: 14px; gap: 12px; }
+    .fab-btn { width: 52px; height: 52px; font-size: 1.55rem; }
+    .fab-scrolltop { width: 40px; height: 40px; }
+}
+@media (prefers-reduced-motion: reduce) {
+    .fab-phone, .fab-whatsapp { animation: none; }
+    .fab-btn, .fab-scrolltop { transition: none; }
 }
 
 /* Fix header stickiness universally */

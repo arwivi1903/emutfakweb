@@ -13,6 +13,9 @@ if ($__fText === '' || stripos($__fText, 'yeni nesil çözüm ortağınız') !==
 // Anahtar veritabanında hiç yoksa varsayılan; varsa (boş olsa bile) panelde girilen değer geçerli.
 $__fYt = trim((string)($appSettings['social_youtube'] ?? 'https://www.youtube.com/@echoLabs2'));
 $__fIg = trim((string)($appSettings['social_instagram'] ?? 'https://www.instagram.com/echolab2/'));
+// X: panelde boşsa varsayılan hesap (Vitrin Yönetimi'nden değiştirilebilir).
+$__fX  = trim((string)($appSettings['social_twitter'] ?? ''));
+if ($__fX === '') { $__fX = 'https://x.com/echolab2'; }
 ?>
         <!--begin::Footer-->
         <footer class="site-footer mt-auto">
@@ -59,8 +62,8 @@ $__fIg = trim((string)($appSettings['social_instagram'] ?? 'https://www.instagra
                     <div class="col-lg-2 col-6">
                         <h4 class="text-white fw-bold fs-5 mb-5">Bizi Takip Edin</h4>
                         <div class="d-flex gap-3">
-                            <?php if (!empty($appSettings['social_twitter'])): ?>
-                            <a href="<?= htmlspecialchars($appSettings['social_twitter']) ?>" target="_blank" rel="noopener" class="btn btn-icon btn-light-primary btn-sm rounded-circle" aria-label="X (Twitter)"><i class="bi bi-twitter-x fs-4"></i></a>
+                            <?php if ($__fX !== ''): ?>
+                            <a href="<?= htmlspecialchars($__fX) ?>" target="_blank" rel="noopener" class="btn btn-icon btn-light-primary btn-sm rounded-circle" aria-label="X (Twitter)"><i class="bi bi-twitter-x fs-4"></i></a>
                             <?php endif; ?>
                             <?php if (!empty($appSettings['social_linkedin'])): ?>
                             <a href="<?= htmlspecialchars($appSettings['social_linkedin']) ?>" target="_blank" rel="noopener" class="btn btn-icon btn-light-primary btn-sm rounded-circle" aria-label="LinkedIn"><i class="bi bi-linkedin fs-4"></i></a>

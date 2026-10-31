@@ -5,7 +5,7 @@ require_once __DIR__ . '/partials/modul_icerik.php';
 $packages = prolynweb_paketler($pdo);
 $faqItems = [
     ['Prolyn nedir?', 'Prolyn, işletmeler için geliştirilmiş bulut tabanlı bir ERP ve ön muhasebe yazılımıdır. Müşteri (CRM), randevu, cari hesap, kasa ve banka, sözleşme, personel ve destek süreçlerini tek panelden yönetmenizi sağlar. Her firmanın verisi kendi ayrı veritabanında tutulur ve ilk 30 gün ücretsiz denenebilir.'],
-    ['Prolyn kimler için uygun?', 'Müşteri, randevu, kasa, cari ve çek takibini bir arada yapmak isteyen küçük ve orta ölçekli işletmeler için. Şu an en çok mutfak, dolap ve banyo firmalarının ölçü, montaj, kapora, taksit ve çek süreçlerine uygun şekilde kullanılıyor; farklı bir sektördeyseniz 30 günlük denemeyle kendi işinize uyup uymadığını görebilirsiniz.'],
+    ['Prolyn kimler için uygun?', 'Müşteri, randevu, kasa, cari ve çek takibini bir arada yapmak isteyen küçük ve orta ölçekli işletmeler için. Şu an en çok mutfak, dolap ve banyo firmalarının montaj, kapora, taksit ve çek süreçlerine uygun şekilde kullanılıyor; farklı bir sektördeyseniz 30 günlük denemeyle kendi işinize uyup uymadığını görebilirsiniz.'],
     ['Excel veya defter tutmaktan ne farkı var?', 'Müşteri, randevu, sözleşme, ödeme ve cari kayıtları ayrı dosyalarda değil tek panelde ve birbirine bağlı tutulur. Bir müşterinin borcunu, taksitini ve randevusunu aynı yerden görürsünüz; aramak, toplamak ve el ile eşleştirmek zorunda kalmazsınız.'],
     ['Prolyn hangi modülleri içerir?', 'Müşteri ve cari yönetimi, randevu ve servis takibi, kasa ve banka hareketleri, çek ve sözleşme yönetimi, personel giderleri, raporlama ve işlem kayıtları ile destek talebi modülü Prolyn ile birlikte gelir. Kullanabileceğiniz modüller seçtiğiniz pakete göre belirlenir; güncel liste Modüller sayfasında yer alır.'],
     ['30 günlük deneme sürümünde kısıtlama var mı?', 'Hayır. Deneme sürecinde de kendi ayrı veri alanınızla, seçtiğiniz pakete uygun modüllerle çalışırsınız. Kredi kartı istemiyoruz; süre sonunda dilerseniz ücretli pakete geçersiniz, dilerseniz vazgeçersiniz. Aynı vergi numarası veya T.C. kimlik numarasıyla bir kez deneme hesabı açılabilir.'],
@@ -84,8 +84,8 @@ $faqItems = [
     <link href="p/dist/assets/plugins/global/plugins.bundle.css" rel="stylesheet" type="text/css" />
     <link href="p/dist/assets/css/style.bundle.css" rel="stylesheet" type="text/css" />
     <!-- New Custom Redesign CSS -->
-    <link href="assets/css/style.css?v=12" rel="stylesheet" type="text/css" />
-    <link href="assets/css/tema.css?v=4" rel="stylesheet" type="text/css" />
+    <link href="assets/css/style.css?v=13" rel="stylesheet" type="text/css" />
+    <link href="assets/css/tema.css?v=5" rel="stylesheet" type="text/css" />
     <link href="assets/css/modul.css?v=2" rel="stylesheet" type="text/css" />
 </head>
 
@@ -110,7 +110,7 @@ $faqItems = [
                             </h1>
 
                             <p class="hero-lead mb-8 mx-auto mx-lg-0">
-                                Müşteriden ölçü randevusuna, sözleşmeden taksit ve çeke, ana kasadan personel giderine kadar
+                                Müşteriden montaj randevusuna, sözleşmeden taksit ve çeke, ana kasadan personel giderine kadar
                                 işin her adımı birbirine bağlı kayıtlarla ilerler. Her firmanın verisi kendi ayrı
                                 veritabanında tutulur; ilk 30 gün ücretsiz denenebilir.
                             </p>
@@ -118,7 +118,7 @@ $faqItems = [
                             <ul class="hero-audience justify-content-center justify-content-lg-start"
                                 aria-label="Kimler için">
                                 <li>Mutfak, dolap ve banyo firmaları</li>
-                                <li>Ölçü, montaj ve servis randevusu olan işletmeler</li>
+                                <li>Montaj ve servis randevusu olan işletmeler</li>
                                 <li>Kapora, taksit ve çek takibi yapan firmalar</li>
                             </ul>
 
@@ -187,7 +187,7 @@ $faqItems = [
                     <div class="sorun"><s>Müşteri bir dosyada, ödeme başka dosyada</s><h3>Müşteri, sözleşme ve ödeme bir arada</h3><p>Bir müşterinin kartında sözleşmesini, randevularını, ödemelerini ve kalan borcunu birlikte görürsünüz.</p></div>
                     <div class="sorun"><s>Kim ne kadar borçlu, elle hesaplanıyor</s><h3>Cari hesap ve tahsilat takibi</h3><p>Müşteri bakiyelerini, kapora ve taksit ödemelerini anlık takip edersiniz.</p></div>
                     <div class="sorun"><s>Çek ve taksit vadeleri not kâğıdında</s><h3>Çek, kasa ve banka takibi</h3><p>Vadesi gelen taksitleri izler, kasa ve banka hareketlerini tek ekranda görürsünüz.</p></div>
-                    <div class="sorun"><s>Ölçü ve montaj günleri karışıyor</s><h3>Randevu ve montaj planı</h3><p>Ölçü, montaj ve servis randevularını takvimde planlar, eksik malzemeleri takip edersiniz.</p></div>
+                    <div class="sorun"><s>Montaj günleri karışıyor</s><h3>Randevu ve montaj planı</h3><p>Montaj ve servis randevularını takvimde planlar, eksik malzemeleri takip edersiniz.</p></div>
                 </div>
             </div>
         </div>
@@ -270,7 +270,7 @@ $faqItems = [
                         <div class="glass-card audience-card">
                             <div class="audience-icon"><i class="bi bi-house-gear"></i></div>
                             <h4>Mutfak, dolap ve banyo firmaları</h4>
-                            <p>Ölçü, üretim ve montaj sürecinde kapora, taksit, çek ve randevu takibini tek yerde yapın. <a href="mutfak-dolap-yazilimi.php" class="text-primary">Sektöre özel sayfayı inceleyin</a></p>
+                            <p>Üretim ve montaj sürecinde kapora, taksit, çek ve randevu takibini tek yerde yapın. <a href="mutfak-dolap-yazilimi.php" class="text-primary">Sektöre özel sayfayı inceleyin</a></p>
                         </div>
                     </div>
                     <div class="col-md-4">

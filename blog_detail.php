@@ -92,8 +92,8 @@ $kapakUrl = $kapak === '' ? null : (preg_match('#^https?://#', $kapak) ? $kapak 
     <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Inter:400,500,600,700,800&display=swap" />
     <link href="p/dist/assets/plugins/global/plugins.bundle.css" rel="stylesheet" type="text/css" />
     <link href="p/dist/assets/css/style.bundle.css" rel="stylesheet" type="text/css" />
-    <link href="assets/css/style.css?v=12" rel="stylesheet" type="text/css" />
-    <link href="assets/css/tema.css?v=4" rel="stylesheet" type="text/css" />
+    <link href="assets/css/style.css?v=13" rel="stylesheet" type="text/css" />
+    <link href="assets/css/tema.css?v=5" rel="stylesheet" type="text/css" />
     <link href="assets/css/blog.css?v=3" rel="stylesheet" type="text/css" />
 </head>
 <body id="kt_body" class="app-blank">
@@ -146,7 +146,7 @@ $kapakUrl = $kapak === '' ? null : (preg_match('#^https?://#', $kapak) ? $kapak 
                             <?php if ($sektorYazisi): ?>
                                 <div>
                                     <h2>Mutfak, dolap ve banyo firmaları için Prolyn</h2>
-                                    <p>Ölçü ve montaj randevuları, eksik malzeme, sözleşme, taksit ve cari takibi tek ekranda. 30 gün ücretsiz; kurulum ve müşteri listesi aktarımı bizden.</p>
+                                    <p>Montaj ve servis randevuları, eksik malzeme, sözleşme, taksit ve cari takibi tek ekranda. 30 gün ücretsiz; kurulum ve müşteri listesi aktarımı bizden.</p>
                                 </div>
                                 <a href="<?= htmlspecialchars($ctaUrl) ?>" class="btn btn-primary-glow px-7 py-3 fw-bold">Sektör sayfasını incele</a>
                             <?php else: ?>

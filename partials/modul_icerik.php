@@ -39,7 +39,7 @@ function prolynweb_modul_icerik(): array
         ],
         [
             'slug' => 'randevu', 'ad' => 'Randevu ve montaj', 'anahtarlar' => ['appointment'], 'renk' => 'randevu', 'durum' => 'hazir',
-            'baslik' => 'Ölçü, montaj ve servis günleri takvimde; durumu renkten okursunuz',
+            'baslik' => 'Montaj ve servis günleri takvimde; durumu renkten okursunuz',
             'ozet' => 'Her iş bir randevu kaydıdır ve altı durumdan birinde durur. Takvime bakan, hangi işin planlandığını, hangisinin imalatta, hangisinin eksik malzemede beklediğini anlar.',
             'maddeler' => [
                 ['Ay, hafta ve liste görünümü', 'Türkçe takvimde günlük planı ya da aylık yükü görün; boş güne tıklayıp yeni randevu açın.'],

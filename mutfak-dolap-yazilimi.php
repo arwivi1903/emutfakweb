@@ -48,19 +48,19 @@ $enUcuzAylik = !empty($packages) ? (float)$packages[0]['price_monthly'] : 0;
 $destekAd = ['email' => 'E-posta desteği', 'priority' => 'Öncelikli destek', 'dedicated' => 'Özel destek'];
 
 $sss = [
-    ['Prolyn mutfak ve dolap firmaları için uygun mu?', 'Evet. Prolyn; ölçü ve montaj randevuları, montaj ekiplerinin planı, eksik malzeme takibi, sözleşme, taksit, çek ve cari hesap gibi mutfak, dolap ve banyo firmalarının günlük işlerini tek panelde toplar.'],
+    ['Prolyn mutfak ve dolap firmaları için uygun mu?', 'Evet. Prolyn; montaj ve servis randevuları, montaj ekiplerinin planı, eksik malzeme takibi, sözleşme, taksit, çek ve cari hesap gibi mutfak, dolap ve banyo firmalarının günlük işlerini tek panelde toplar.'],
     ['Ekiplerim telefondan kullanabilir mi?', 'Prolyn web tabanlıdır; bilgisayar, tablet ve telefon tarayıcısından kurulum gerektirmeden açılır. Her personel kendi kullanıcısıyla, yalnızca yetkili olduğu ekranları görür.'],
     ['Kurulum ve verilerin aktarılması ne kadar sürer?', 'Kampanya süresince kurulumu ve mevcut müşteri ile cari listenizin aktarımını ücretsiz biz yapıyoruz. Elinizdeki Excel listesini göndermeniz yeterli; çoğu firma aynı gün kullanmaya başlıyor.'],
     ['Stok takibi var mı?', 'Ürün kartları ve montajda eksik çıkan malzemenin takibi bugün kullanılabilir. Ayrıntılı depo stok modülü geliştirme aşamasında ve yakında açılacak.'],
     ['Verilerim güvende mi?', 'Her firma kendi ayrı veritabanında çalışır; verileriniz başka bir firmayla aynı tabloyu paylaşmaz. Bağlantılar şifrelidir ve kullanıcı yetkilerini siz belirlersiniz.'],
     ['30 günlük deneme bitince ne olur?', 'Deneme süresince kredi kartı istemiyoruz. Süre sonunda dilerseniz size uygun paketle devam edersiniz, dilerseniz hesabınız kapanır; ek bir ücret çıkmaz.'],
-    ['Hangi paketi almalıyım?', 'Ölçü ve montaj randevusu, sözleşme, taksit, kasa ve çek takibini birlikte kullanacak çoğu mutfak ve dolap firması için önerdiğimiz paket işaretlidir. Yalnızca randevu, sözleşme ve cari takibi isteyen küçük ekipler için ilk paket yeterlidir. Planlama ve imalat panolarını da kullanacaksanız en üst paket gerekir. Yanlış seçerseniz ek kurulum gerekmeden sonradan yükseltebilirsiniz.'],
+    ['Hangi paketi almalıyım?', 'Montaj randevusu, sözleşme, taksit, kasa ve çek takibini birlikte kullanacak çoğu mutfak ve dolap firması için önerdiğimiz paket işaretlidir. Yalnızca randevu, sözleşme ve cari takibi isteyen küçük ekipler için ilk paket yeterlidir. Planlama ve imalat panolarını da kullanacaksanız en üst paket gerekir. Yanlış seçerseniz ek kurulum gerekmeden sonradan yükseltebilirsiniz.'],
     ['Fiyatlara KDV dahil mi, yıllık ödemede indirim var mı?', 'Fiyatlara %20 KDV dahildir. Yıllık peşin ödemede paketin aylık fiyatına göre indirim uygulanır; tutarlar yukarıdaki paket kartlarında yıllık ve aylık karşılığıyla birlikte görünür.'],
 ];
 $base = rtrim((string)prolynweb_env('BASE_URL', 'https://prolyn.net'), '/');
 $canonical = $base . '/mutfak-dolap-yazilimi';
 $sayfaBaslik = 'Mutfak, Dolap ve Banyo Firmaları için İş Takip Programı | Prolyn';
-$sayfaAciklama = 'Ölçü ve montaj randevuları, montaj ekipleri, eksik malzeme, sözleşme, taksit, çek ve cari takibi tek ekranda. 30 gün ücretsiz deneme, ücretsiz kurulum ve veri aktarımı.';
+$sayfaAciklama = 'Montaj ve servis randevuları, montaj ekipleri, eksik malzeme, sözleşme, taksit, çek ve cari takibi tek ekranda. 30 gün ücretsiz deneme, ücretsiz kurulum ve veri aktarımı.';
 ?>
 <!DOCTYPE html>
 <html lang="tr" data-bs-theme="light" data-tema="light">
@@ -98,8 +98,8 @@ $sayfaAciklama = 'Ölçü ve montaj randevuları, montaj ekipleri, eksik malzeme
     <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Inter:400,500,600,700,800&display=swap" />
     <link href="p/dist/assets/plugins/global/plugins.bundle.css" rel="stylesheet" type="text/css" />
     <link href="p/dist/assets/css/style.bundle.css" rel="stylesheet" type="text/css" />
-    <link href="assets/css/style.css?v=12" rel="stylesheet" type="text/css" />
-    <link href="assets/css/tema.css?v=4" rel="stylesheet" type="text/css" />
+    <link href="assets/css/style.css?v=13" rel="stylesheet" type="text/css" />
+    <link href="assets/css/tema.css?v=5" rel="stylesheet" type="text/css" />
     <link href="assets/css/modul.css?v=2" rel="stylesheet" type="text/css" />
     <link href="assets/css/sektor.css?v=1" rel="stylesheet" type="text/css" />
     <style>
@@ -223,7 +223,7 @@ html[data-tema="dark"] .sk-flow{--fl-bd:rgba(255,255,255,.07)}
                     <div class="col-lg-6 animate-fade-in-up">
                         <span class="sk-badge">Mutfak · Dolap · Banyo firmaları için</span>
                         <h1 class="text-white fw-bolder fs-2hx fs-lg-3x lh-sm mt-6 mb-6">
-                            Ölçüden montaja, sözleşmeden tahsilata <span class="text-gradient-primary">her iş tek ekranda</span>
+                            Sözleşmeden montaja, montajdan tahsilata <span class="text-gradient-primary">her iş tek ekranda</span>
                         </h1>
                         <p class="fs-4 text-gray-400 mb-8">
                             Randevular defterde, eksik parçalar WhatsApp gruplarında, taksitler Excel'de kalmasın. Prolyn, mutfak ve dolap firmalarının günlük işini tek panelde toplar.
@@ -247,7 +247,7 @@ html[data-tema="dark"] .sk-flow{--fl-bd:rgba(255,255,255,.07)}
                                 <span class="sk-dot"></span><span class="sk-dot"></span><span class="sk-dot"></span>
                                 <span class="ms-3 text-gray-400 fs-7">Bugünkü randevular · örnek</span>
                             </div>
-                            <div class="sk-row"><span class="sk-time">09:00</span><div><b>Ölçü</b> · Kartepe, A. Yılmaz<small>Ekip 1 · mutfak + banyo dolabı</small></div><span class="sk-tag sk-blue">Ölçü</span></div>
+                            <div class="sk-row"><span class="sk-time">09:00</span><div><b>Servis</b> · Kartepe, A. Yılmaz<small>Ekip 1 · kapak menteşe değişimi</small></div><span class="sk-tag sk-blue">Servis</span></div>
                             <div class="sk-row"><span class="sk-time">10:30</span><div><b>Montaj</b> · İzmit, Ş. Demir<small>Ekip 2 · üst dolap kapağı eksik</small></div><span class="sk-tag sk-red">1 eksik</span></div>
                             <div class="sk-row"><span class="sk-time">13:00</span><div><b>Tezgah</b> · Gebze, M. Kaya<small>Ekip 1 · granit tezgah montajı</small></div><span class="sk-tag sk-amber">Yolda</span></div>
                             <div class="sk-row"><span class="sk-time">16:00</span><div><b>Teslim</b> · Başiskele, E. Arslan<small>Kalan bakiye tahsil edilecek</small></div><span class="sk-tag sk-green">Tahsilat</span></div>
@@ -297,7 +297,7 @@ SVG,
 SVG,
                     ];
                     foreach ([
-                        ['bi-calendar-x', 'Randevular dağınık', 'Ölçü ve montaj tarihleri defterde, telefonda ve WhatsApp gruplarında. Kim, nereye, ne zaman gidecek her sabah yeniden konuşuluyor.'],
+                        ['bi-calendar-x', 'Randevular dağınık', 'Montaj ve servis tarihleri defterde, telefonda ve WhatsApp gruplarında. Kim, nereye, ne zaman gidecek her sabah yeniden konuşuluyor.'],
                         ['bi-box-seam', 'Eksik parça unutuluyor', 'Montajda eksik çıkan kapak, menteşe ya da tezgah parçası kayda geçmiyor; müşteri tekrar arayana kadar kimse takip etmiyor.'],
                         ['bi-cash-coin', 'Kapora ve taksit takibi zor', 'Kapora, ara ödeme, çek ve senet ayrı ayrı yerlerde. Hangi müşterinin ne kadar borcu kaldığı anında bilinmiyor.'],
                         ['bi-people', 'Ekip ve şube kontrolü yok', 'Satış, imalat ve montaj aynı bilgiyi farklı yerden görüyor. Kim neyi değiştirdi belli değil.'],
@@ -344,7 +344,7 @@ SVG,
                     ];
                     foreach ([
                         ['Müşteri ve sözleşme', 'Müşteri kartı, teklif ve sözleşme; kapora ve taksit planı.'],
-                        ['Ölçü randevusu', 'Ekip ve saat atanır; durum rengiyle takvimde görünür.'],
+                        ['Montaj randevusu', 'Montaj ustası, tarih ve saat atanır; durum rengiyle takvimde görünür.'],
                         ['İmalat', 'İmalathane panosu hangi işin hangi aşamada olduğunu gösterir.'],
                         ['Montaj', 'Ekiplerin günlük planı; eksik malzeme ve sorunlar kayda geçer.'],
                         ['Tahsilat ve cari', 'Nakit, kart, havale, çek; cari bakiye ve kasa anında güncellenir.'],

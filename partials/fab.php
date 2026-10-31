@@ -21,7 +21,17 @@ $__fabWaText = $fabWhatsappText ?? 'Merhaba, Prolyn hakkında bilgi almak istiyo
         <i class="bi bi-whatsapp"></i>
     </a>
     <?php endif; ?>
-    <button class="fab-btn fab-scrolltop" onclick="window.scrollTo({top: 0, behavior: 'smooth'});" title="Yukarı Çık" aria-label="Yukarı çık">
+    <button type="button" class="fab-btn fab-scrolltop" id="fabTop" onclick="window.scrollTo({top: 0, behavior: 'smooth'});" title="Yukarı Çık" aria-label="Yukarı çık">
         <i class="bi bi-arrow-up-short"></i>
     </button>
 </div>
+<script>
+// Yukarı çık butonu yalnızca sayfa biraz kaydırılınca görünür.
+(function () {
+    var b = document.getElementById('fabTop');
+    if (!b) return;
+    function g() { b.classList.toggle('is-visible', window.scrollY > 400); }
+    window.addEventListener('scroll', g, { passive: true });
+    g();
+})();
+</script>
