@@ -379,13 +379,41 @@ $iller = $stmtCities->fetchAll(PDO::FETCH_ASSOC);
     <link href="p/dist/assets/plugins/global/plugins.bundle.css" rel="stylesheet" type="text/css" />
     <link href="p/dist/assets/css/style.bundle.css" rel="stylesheet" type="text/css" />
     <!-- New Custom Redesign CSS -->
-    <link href="assets/css/style.css?v=13" rel="stylesheet" type="text/css" />
+    <link href="assets/css/style.css?v=15" rel="stylesheet" type="text/css" />
     <link href="assets/css/tema.css?v=5" rel="stylesheet" type="text/css" />
     <style>
     /* Şifre göster/gizle düğmesi */
     .sifre-goz { position:absolute; top:50%; right:.5rem; transform:translateY(-50%); width:38px; height:38px; display:inline-flex; align-items:center; justify-content:center; border:0; background:transparent; color:var(--pw-muted, #6b7a99); border-radius:10px; cursor:pointer; }
     .sifre-goz:hover { color:var(--pw-ink, #1b2a4e); background:rgba(127,127,127,.12); }
     .sifre-goz:focus-visible { outline:2px solid var(--pw-primary, #2f5bea); outline-offset:1px; }
+
+    /* "Neden ücretsiz denemelisiniz?" paneli: sayfa açılınca sırayla canlanır */
+    .neden-sar { --nd-ok:var(--pw-ok,#16a34a); --nd-pr:var(--pw-primary,#2f5bea); }
+    .nd-bas { display:flex; align-items:center; justify-content:space-between; gap:1rem; margin-bottom:2rem; }
+    .nd-halka { position:relative; flex:none; width:60px; height:60px; display:grid; place-items:center; text-align:center; }
+    .nd-halka svg { position:absolute; inset:0; width:100%; height:100%; transform:rotate(-90deg); fill:none; stroke-width:4; stroke-linecap:round; }
+    .nd-halka .iz { stroke:rgba(127,127,127,.22); }
+    .nd-halka .dol { stroke:var(--nd-pr); stroke-dasharray:1; stroke-dashoffset:1; animation:nd-ring 1.8s cubic-bezier(.4,0,.2,1) .3s forwards; }
+    .nd-halka b { font-size:1.15rem; line-height:1; color:var(--nd-pr); animation:nd-pop .5s ease .3s both; }
+    .nd-halka em { position:absolute; bottom:12px; font-style:normal; font-size:.55rem; letter-spacing:.06em; text-transform:uppercase; color:var(--pw-muted,#8a93a6); }
+    .nd-li { display:flex; align-items:flex-start; gap:1rem; animation:nd-in .6s cubic-bezier(.2,.7,.2,1) calc(.35s + var(--i) * .28s) both; }
+    .nd-ikon { flex:none; width:46px; height:46px; border-radius:14px; display:grid; place-items:center; background:color-mix(in srgb, var(--nd-pr) 12%, transparent); color:var(--nd-pr); animation:nd-pop .6s cubic-bezier(.3,1.5,.5,1) calc(.45s + var(--i) * .28s) both; transition:transform .25s ease; }
+    .nd-li:hover .nd-ikon { transform:translateY(-3px) rotate(-6deg); }
+    .nd-ikon svg { width:26px; height:26px; fill:none; stroke:currentColor; stroke-width:1.8; stroke-linecap:round; stroke-linejoin:round; }
+    .nd-ikon svg * { stroke-dasharray:1; stroke-dashoffset:1; animation:nd-draw .9s ease calc(.7s + var(--i) * .28s) forwards; }
+    .nd-ikon .nd-yok { stroke:#e5484d; stroke-width:2.4; animation-delay:calc(1.5s + var(--i) * .28s); }
+    .nd-tik { flex:none; width:18px; height:18px; margin:.2rem 0 0 auto; fill:none; stroke:var(--nd-ok); stroke-width:2.4; stroke-linecap:round; stroke-linejoin:round; }
+    .nd-tik path { stroke-dasharray:1; stroke-dashoffset:1; animation:nd-draw .45s ease calc(1.1s + var(--i) * .28s) forwards; }
+    .nd-guvenli { animation:nd-in .6s ease 1.7s both; }
+    .nd-guvenli .info-box-icon { display:inline-block; animation:nd-nabiz 2.4s ease-in-out 2.4s infinite; }
+    @keyframes nd-in { from { opacity:0; transform:translateY(16px); } to { opacity:1; transform:none; } }
+    @keyframes nd-pop { from { opacity:0; transform:scale(.5) rotate(-12deg); } to { opacity:1; transform:none; } }
+    @keyframes nd-draw { to { stroke-dashoffset:0; } }
+    @keyframes nd-ring { to { stroke-dashoffset:0; } }
+    @keyframes nd-nabiz { 0%,100% { transform:scale(1); } 50% { transform:scale(1.18); } }
+    @media (prefers-reduced-motion: reduce) {
+        .nd-li, .nd-ikon, .nd-ikon svg *, .nd-tik path, .nd-halka .dol, .nd-halka b, .nd-guvenli, .nd-guvenli .info-box-icon { animation:none !important; opacity:1; transform:none; stroke-dashoffset:0; }
+    }
     </style>
 </head>
 <body id="kt_body" class="app-blank">
@@ -394,7 +422,7 @@ $iller = $stmtCities->fetchAll(PDO::FETCH_ASSOC);
 <?php $navActive = ''; require __DIR__ . '/partials/site_header.php'; ?>
 
         <!--begin::Hero-->
-        <div class="hero-section text-center">
+        <div class="hero-section hero-compact text-center">
             <div class="hero-glow-1"></div>
             <div class="container-xxl position-relative z-index-2">
                 <div class="mb-5 animate-fade-in-up">
@@ -415,41 +443,48 @@ $iller = $stmtCities->fetchAll(PDO::FETCH_ASSOC);
                     
                     <!-- Information Panel -->
                     <div class="col-lg-5 animate-fade-in-up delay-100 d-none d-lg-block">
-                        <div class="glass-card p-10 h-100">
-                            <h3 class="text-white fs-2 fw-bold mb-8">Neden Ücretsiz Denemelisiniz?</h3>
-                            
-                            <ul class="check-list list-unstyled d-flex flex-column gap-6 mb-10">
-                                <li>
-                                    <i class="ki-duotone ki-check-circle fs-2 text-success me-3"></i>
+                        <div class="glass-card p-10 h-100 neden-sar">
+                            <div class="nd-bas">
+                                <h3 class="text-white fs-2 fw-bold mb-0">Neden Ücretsiz Denemelisiniz?</h3>
+                                <span class="nd-halka" role="img" aria-label="30 gün ücretsiz"><svg viewBox="0 0 44 44" aria-hidden="true"><circle class="iz" cx="22" cy="22" r="18"/><circle class="dol" pathLength="1" cx="22" cy="22" r="18"/></svg><b>30</b><em>gün</em></span>
+                            </div>
+
+                            <ul class="check-list list-unstyled d-flex flex-column gap-6 mb-10 neden-liste">
+                                <li class="nd-li" style="--i:0">
+                                    <span class="nd-ikon" aria-hidden="true"><svg viewBox="0 0 24 24"><path pathLength="1" d="M7 18a4 4 0 0 1-.6-7.95A6 6 0 0 1 18 9.6 4.2 4.2 0 0 1 17.4 18z"/><path pathLength="1" d="M9.5 13.6l2 2 3.6-3.8"/></svg></span>
                                     <div>
                                         <span class="d-block fw-bold text-white fs-5 mb-1">Kurulum yok</span>
                                         <span class="text-gray-400">Program yüklemezsiniz; kayıttan sonra tarayıcıdan giriş yapıp başlarsınız.</span>
                                     </div>
+                                    <svg class="nd-tik" viewBox="0 0 16 16" aria-hidden="true"><path pathLength="1" d="M3 8.5l3.2 3.2L13 5"/></svg>
                                 </li>
-                                <li>
-                                    <i class="ki-duotone ki-check-circle fs-2 text-success me-3"></i>
+                                <li class="nd-li" style="--i:1">
+                                    <span class="nd-ikon" aria-hidden="true"><svg viewBox="0 0 24 24"><path pathLength="1" d="M4 6c0-1.7 3.6-3 8-3s8 1.3 8 3-3.6 3-8 3-8-1.3-8-3z"/><path pathLength="1" d="M4 6v6c0 1.7 3.6 3 8 3s8-1.3 8-3V6"/><path pathLength="1" d="M4 12v6c0 1.7 3.6 3 8 3s8-1.3 8-3v-6"/></svg></span>
                                     <div>
                                         <span class="d-block fw-bold text-white fs-5 mb-1">Verileriniz size özel</span>
                                         <span class="text-gray-400">Her firmanın kayıtları kendi ayrı veritabanında tutulur.</span>
                                     </div>
+                                    <svg class="nd-tik" viewBox="0 0 16 16" aria-hidden="true"><path pathLength="1" d="M3 8.5l3.2 3.2L13 5"/></svg>
                                 </li>
-                                <li>
-                                    <i class="ki-duotone ki-check-circle fs-2 text-success me-3"></i>
+                                <li class="nd-li" style="--i:2">
+                                    <span class="nd-ikon" aria-hidden="true"><svg viewBox="0 0 24 24"><rect pathLength="1" x="3.5" y="3.5" width="7" height="7" rx="1.6"/><rect pathLength="1" x="13.5" y="3.5" width="7" height="7" rx="1.6"/><rect pathLength="1" x="3.5" y="13.5" width="7" height="7" rx="1.6"/><rect pathLength="1" x="13.5" y="13.5" width="7" height="7" rx="1.6"/></svg></span>
                                     <div>
                                         <span class="d-block fw-bold text-white fs-5 mb-1">Paketinizin tüm modülleri</span>
                                         <span class="text-gray-400">Deneme süresince seçtiğiniz paketteki tüm modülleri kullanırsınız.</span>
                                     </div>
+                                    <svg class="nd-tik" viewBox="0 0 16 16" aria-hidden="true"><path pathLength="1" d="M3 8.5l3.2 3.2L13 5"/></svg>
                                 </li>
-                                <li>
-                                    <i class="ki-duotone ki-check-circle fs-2 text-success me-3"></i>
+                                <li class="nd-li" style="--i:3">
+                                    <span class="nd-ikon" aria-hidden="true"><svg viewBox="0 0 24 24"><rect pathLength="1" x="3" y="5.5" width="18" height="13" rx="2.2"/><path pathLength="1" d="M3 10h18"/><path class="nd-yok" pathLength="1" d="M4 20L20 4"/></svg></span>
                                     <div>
                                         <span class="d-block fw-bold text-white fs-5 mb-1">Kredi Kartı Yok</span>
                                         <span class="text-gray-400">Deneme süreci için herhangi bir kart bilgisi istemiyoruz.</span>
                                     </div>
+                                    <svg class="nd-tik" viewBox="0 0 16 16" aria-hidden="true"><path pathLength="1" d="M3 8.5l3.2 3.2L13 5"/></svg>
                                 </li>
                             </ul>
-                            
-                            <div class="info-box">
+
+                            <div class="info-box nd-guvenli">
                                 <div class="d-flex align-items-center mb-3">
                                     <i class="bi bi-shield-check info-box-icon me-3"></i>
                                     <span class="info-box-title">Güvenli bağlantı</span>

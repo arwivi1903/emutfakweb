@@ -23,7 +23,8 @@
     max-width: 62ch;
     margin: 0;
 }
-.bolum-bas { margin-bottom: 3rem; }
+.bolum-bas { margin-bottom: 2.25rem; }
+
 .bolum-bas.orta { text-align: center; }
 .bolum-bas.orta .bolum-giris { margin-inline: auto; }
 
@@ -96,7 +97,7 @@ html.js .yol-iz i { animation: yol-iz 12s ease-in-out infinite both; }
 @media (max-width: 991.98px) { .mod-nav-sar { top: 66px; } }
 
 /* ---------- Modül bölümü ---------- */
-.mod { padding: clamp(3rem, 6vw, 5.5rem) 0; scroll-margin-top: 130px; }
+.mod { padding: clamp(2rem, 4vw, 3.25rem) 0; scroll-margin-top: 130px; }
 .mod + .mod { border-top: 1px solid var(--pw-line); }
 .mod-kutu { display: grid; grid-template-columns: minmax(0, 1.05fr) minmax(0, 1fr); gap: clamp(1.5rem, 4vw, 4rem); align-items: center; }
 .mod:nth-of-type(even) .mod-kutu { grid-template-columns: minmax(0, 1fr) minmax(0, 1.05fr); }

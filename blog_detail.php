@@ -92,9 +92,9 @@ $kapakUrl = $kapak === '' ? null : (preg_match('#^https?://#', $kapak) ? $kapak 
     <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Inter:400,500,600,700,800&display=swap" />
     <link href="p/dist/assets/plugins/global/plugins.bundle.css" rel="stylesheet" type="text/css" />
     <link href="p/dist/assets/css/style.bundle.css" rel="stylesheet" type="text/css" />
-    <link href="assets/css/style.css?v=13" rel="stylesheet" type="text/css" />
+    <link href="assets/css/style.css?v=15" rel="stylesheet" type="text/css" />
     <link href="assets/css/tema.css?v=5" rel="stylesheet" type="text/css" />
-    <link href="assets/css/blog.css?v=3" rel="stylesheet" type="text/css" />
+    <link href="assets/css/blog.css?v=4" rel="stylesheet" type="text/css" />
 </head>
 <body id="kt_body" class="app-blank">
     <!--begin::Root-->
@@ -138,7 +138,7 @@ $kapakUrl = $kapak === '' ? null : (preg_match('#^https?://#', $kapak) ? $kapak 
                             <span>Paylaş:</span>
                             <a href="https://wa.me/?text=<?= rawurlencode($post['title'] . ' ' . $canonical) ?>" target="_blank" rel="noopener" aria-label="WhatsApp ile paylaş"><i class="bi bi-whatsapp"></i></a>
                             <a href="https://www.linkedin.com/sharing/share-offsite/?url=<?= rawurlencode($canonical) ?>" target="_blank" rel="noopener" aria-label="LinkedIn'de paylaş"><i class="bi bi-linkedin"></i></a>
-                            <a href="https://x.com/intent/post?url=<?= rawurlencode($canonical) ?>&text=<?= rawurlencode($post['title']) ?>" target="_blank" rel="noopener" aria-label="X'te paylaş"><i class="bi bi-twitter-x"></i></a>
+                            <a href="https://x.com/intent/post?url=<?= rawurlencode($canonical) ?>&text=<?= rawurlencode($post['title']) ?>" target="_blank" rel="noopener" aria-label="X'te paylaş"><svg class="x-logo" viewBox="0 0 24 24" width="1em" height="1em" aria-hidden="true" focusable="false" fill="currentColor"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg></a>
                             <button type="button" class="blog-copy" data-url="<?= htmlspecialchars($canonical) ?>" aria-label="Bağlantıyı kopyala"><i class="bi bi-link-45deg"></i></button>
                         </div>
 

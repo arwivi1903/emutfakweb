@@ -696,7 +696,7 @@ a {
 }
 
 /* İç sayfa hero alanı: ana sayfaya göre daha kompakt */
-.hero-section.hero-compact { padding: 130px 0 10px 0 !important; }
+.hero-section.hero-compact { padding: 112px 0 10px 0 !important; }
 .hero-section.hero-compact .hero-glow-1 { opacity: .6; }
 .hero-section.hero-compact h1 { margin-bottom: 1rem !important; }
 .hero-section.hero-compact .fs-4.text-gray-400 { margin-bottom: 1.5rem !important; }
@@ -829,3 +829,13 @@ img, video, iframe { max-width: 100%; }
 .info-box-text { color: #e4e8f2; margin: 0; line-height: 1.65; }
 .info-box-text a { color: #fff; text-decoration: underline; text-underline-offset: 3px; font-weight: 600; }
 .info-box-icon { color: #a5b4fc; font-size: 1.75rem; line-height: 1; }
+
+/* ---------- Bölümler arası boşluk (tüm site): bölüm başına yaklaşık 52 px, eskiden 80 px ---------- */
+.py-15 { padding-top: 2.75rem !important; padding-bottom: 2.75rem !important; }
+.py-20 { padding-top: 3.25rem !important; padding-bottom: 3.25rem !important; }
+@media (min-width: 992px) {
+    .py-lg-15 { padding-top: 3rem !important; padding-bottom: 3rem !important; }
+    .py-lg-20 { padding-top: 3.25rem !important; padding-bottom: 3.25rem !important; }
+}
+.mb-20 { margin-bottom: 1.5rem !important; }
+.mt-15 { margin-top: 2.5rem !important; }

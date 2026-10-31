@@ -63,7 +63,7 @@ if ($__fX === '') { $__fX = 'https://x.com/echolab2'; }
                         <h4 class="text-white fw-bold fs-5 mb-5">Bizi Takip Edin</h4>
                         <div class="d-flex gap-3">
                             <?php if ($__fX !== ''): ?>
-                            <a href="<?= htmlspecialchars($__fX) ?>" target="_blank" rel="noopener" class="btn btn-icon btn-light-primary btn-sm rounded-circle" aria-label="X (Twitter)"><i class="bi bi-twitter-x fs-4"></i></a>
+                            <a href="<?= htmlspecialchars($__fX) ?>" target="_blank" rel="noopener" class="btn btn-icon btn-light-primary btn-sm rounded-circle" aria-label="X (Twitter)"><svg class="x-logo" viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" focusable="false" fill="currentColor"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg></a>
                             <?php endif; ?>
                             <?php if (!empty($appSettings['social_linkedin'])): ?>
                             <a href="<?= htmlspecialchars($appSettings['social_linkedin']) ?>" target="_blank" rel="noopener" class="btn btn-icon btn-light-primary btn-sm rounded-circle" aria-label="LinkedIn"><i class="bi bi-linkedin fs-4"></i></a>
