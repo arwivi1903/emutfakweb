@@ -106,7 +106,7 @@ $faqItems = [
                             <span class="hero-eyebrow">Bulut tabanlı ERP ve ön muhasebe yazılımı</span>
 
                             <h1 class="fs-3x fs-lg-4x mb-6">
-                                Müşteri, randevu, kasa ve cari takibini tek panelden yönetin
+                                Müşteri, Randevu, Kasa ve Cari Takibini tek panelden yönetin
                             </h1>
 
                             <p class="hero-lead mb-8 mx-auto mx-lg-0">
