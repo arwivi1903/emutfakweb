@@ -88,8 +88,24 @@ $f = [
 if (!in_array($f['web'], ['site', 'sosyal', 'yok'], true)) { $f['web'] = ''; }
 $durdurSql = "'" . implode("','", LEAD_DURDUR) . "'";   // sabit listeden üretilir, kullanıcı girdisi değildir
 $where = ['1=1']; $p = [];
-if ($f['durum'] !== 'musteri') { $where[] = "durum <> 'musteri'"; }   // müşteriler yalnızca Müşteri aşaması seçilince listelenir
-if ($f['q'] !== '') { $where[] = '(firma_adi LIKE ? OR telefon LIKE ? OR eposta LIKE ? OR ilce LIKE ?)'; $like = '%' . $f['q'] . '%'; array_push($p, $like, $like, $like, $like); }
+// Müşteri ve kapananlar (Olumsuz, İletişim istemiyor) varsayılan listede görünmez;
+// yalnızca ilgili aşama seçilince listelenir. Sabit listeden üretilir, kullanıcı girdisi SQL'e girmez.
+foreach (['musteri', 'olumsuz', 'ret'] as $gizliDurum) {
+    if ($f['durum'] !== $gizliDurum) { $where[] = "durum <> '$gizliDurum'"; }
+}
+unset($gizliDurum);
+if ($f['q'] !== '') {
+    $like = '%' . $f['q'] . '%';
+    // Telefon: yazılan rakamlar alınır ("0532 123", "(532) 123" → 532123); baştaki 0 atılır çünkü kayıtlar +90... biçimindedir.
+    $telRakam = ltrim(preg_replace('/\D/', '', $f['q']), '0');
+    if (strlen($telRakam) >= 3) {
+        $where[] = '(firma_adi LIKE ? OR telefon LIKE ? OR telefon LIKE ? OR eposta LIKE ? OR ilce LIKE ?)';
+        array_push($p, $like, $like, '%' . $telRakam . '%', $like, $like);
+    } else {
+        $where[] = '(firma_adi LIKE ? OR telefon LIKE ? OR eposta LIKE ? OR ilce LIKE ?)';
+        array_push($p, $like, $like, $like, $like);
+    }
+}
 if (isset(LEAD_DURUMLAR[$f['durum']])) { $where[] = 'durum = ?'; $p[] = $f['durum']; }
 if (in_array($f['oncelik'], ['A', 'B', 'C'], true)) { $where[] = 'oncelik = ?'; $p[] = $f['oncelik']; }
 if ($f['il'] !== '') { $where[] = 'il = ?'; $p[] = $f['il']; }
@@ -323,13 +339,13 @@ require_once '../config/sidebar.php';
               <?php endif; endforeach; ?>
               <div class="d-flex gap-2 flex-wrap align-items-center">
                 <div class="flex-grow-1" style="min-width:240px">
-                  <input type="search" name="q" value="<?= $e($f['q']) ?>" class="form-control form-control-solid" placeholder="Firma, telefon, e-posta veya ilçe ara…" aria-label="Ara">
+                  <input type="search" name="q" id="leadAra" value="<?= $e($f['q']) ?>" class="form-control form-control-solid" placeholder="Firma, telefon, e-posta veya ilçe ara…" aria-label="Ara" autocomplete="off">
                 </div>
                 <button class="btn btn-primary">Ara</button>
                 <button type="button" class="btn btn-light" data-bs-toggle="collapse" data-bs-target="#lpGelismis" aria-expanded="<?= $gelismisAcik ? 'true' : 'false' ?>">
                   <i class="ki-duotone ki-filter fs-3"><span class="path1"></span><span class="path2"></span></i> Filtreler
                 </button>
-                <?php if ($cipler): ?><a href="crm/leads.php" class="btn btn-light-danger">Temizle</a><?php endif; ?>
+                <span id="leadTemizleYer"><?php if ($cipler): ?><a href="crm/leads.php" class="btn btn-light-danger">Temizle</a><?php endif; ?></span>
               </div>
 
               <div class="collapse <?= $gelismisAcik ? 'show' : '' ?>" id="lpGelismis">
@@ -366,6 +382,7 @@ require_once '../config/sidebar.php';
               </div>
             </form>
 
+            <div id="leadChipler">
             <?php if ($cipler): ?>
             <div class="d-flex flex-wrap gap-2 align-items-center mt-4">
               <span class="text-muted fs-8 fw-semibold">Aktif filtreler:</span>
@@ -374,6 +391,7 @@ require_once '../config/sidebar.php';
               <?php endforeach; ?>
             </div>
             <?php endif; ?>
+            </div>
           </div>
         </div>
 
@@ -544,6 +562,8 @@ require_once '../config/sidebar.php';
 </div>
 <script>
 (function () {
+  // Liste her yenilendiğinde (canlı arama) yeniden bağlanan olaylar
+  function baglaListe() {
   var tumu = document.getElementById('leadTumu');
   var bar = document.getElementById('leadBulkBar');
   var sayi = document.getElementById('leadSecSayi');
@@ -612,5 +632,42 @@ require_once '../config/sidebar.php';
     });
   }
   guncelle();
+  }
+  baglaListe();
+
+  // Yazdıkça filtrele: 300 ms beklenir, sayfa yenilenmeden yalnızca liste/özet bölgeleri değişir.
+  // Aynı adres tam sayfa isteğiyle de çalışır (JS kapalıysa "Ara" düğmesi normal gönderir).
+  var aramaKutusu = document.getElementById('leadAra');
+  if (aramaKutusu && window.fetch && window.DOMParser) {
+    var zaman = null, iptal = null, yazimda = false;
+    var bolgeler = ['leadBulkForm', 'leadDurumForm', 'leadChipler', 'leadTemizleYer'];
+    var ara = function () {
+      var fd = new URLSearchParams(new FormData(aramaKutusu.form));
+      Array.from(fd.keys()).forEach(function (k) { if (fd.get(k) === '') { fd.delete(k); } });
+      var qs = fd.toString();
+      var url = 'crm/leads.php' + (qs ? '?' + qs : '');
+      if (iptal) { iptal.abort(); }
+      iptal = window.AbortController ? new AbortController() : null;
+      fetch(url, { credentials: 'same-origin', signal: iptal ? iptal.signal : undefined, headers: { 'X-Requested-With': 'fetch' } })
+        .then(function (r) { if (!r.ok) { throw new Error('http'); } return r.text(); })
+        .then(function (html) {
+          var d = new DOMParser().parseFromString(html, 'text/html');
+          if (!d.getElementById('leadBulkForm')) { throw new Error('bos'); }   // oturum düştüyse vb.
+          bolgeler.forEach(function (id) {
+            var yeni = d.getElementById(id), eski = document.getElementById(id);
+            if (yeni && eski) { eski.replaceWith(yeni); }
+          });
+          try { history.replaceState(null, '', location.pathname + (qs ? '?' + qs : '')); } catch (e) {}
+          baglaListe();
+        })
+        .catch(function (err) { if (err && err.name === 'AbortError') { return; } aramaKutusu.form.submit(); });
+    };
+    aramaKutusu.addEventListener('compositionstart', function () { yazimda = true; });
+    aramaKutusu.addEventListener('compositionend', function () { yazimda = false; clearTimeout(zaman); zaman = setTimeout(ara, 300); });
+    aramaKutusu.addEventListener('input', function () {
+      if (yazimda) { return; }
+      clearTimeout(zaman); zaman = setTimeout(ara, 300);
+    });
+  }
 })();
 </script>
