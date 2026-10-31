@@ -1,0 +1,49 @@
+#!/usr/bin/env bash
+# Prolynweb otomatik sürüm takibi (post-commit hook).
+# Neden post-commit: commit-msg içinde yapılan "git add" o commit'e girmez (tree önceden yazılır).
+# Burada commit oluştuktan sonra sürüm artırılır ve commit amend ile aynı commit'e eklenir.
+# Mesajda [major] -> X+1.0.0 · [minor] -> X.Y+1.0 · aksi halde patch+1.
+
+# Amend sırasında tekrar tetiklenmeyi engelle
+[ -n "$PROLYN_VERSION_BUMP" ] && exit 0
+
+GIT_DIR=$(git rev-parse --git-dir)
+# Rebase / cherry-pick / merge / revert sırasında dokunma
+for f in rebase-merge rebase-apply CHERRY_PICK_HEAD MERGE_HEAD REVERT_HEAD; do
+  [ -e "$GIT_DIR/$f" ] && exit 0
+done
+
+ROOT=$(git rev-parse --show-toplevel)
+VERSION_FILE="p/config/version.json"
+[ -f "$ROOT/$VERSION_FILE" ] || exit 0
+cd "$ROOT" || exit 0
+
+MSG=$(git log -1 --format=%B)
+# Merge (birden fazla parent) ve revert commit'lerinde artırma
+[ "$(git rev-list --parents -n1 HEAD | wc -w)" -gt 2 ] && exit 0
+case "$MSG" in Revert*) exit 0;; esac
+# Commit yalnızca sürüm dosyasını değiştiriyorsa tekrar artırma
+[ "$(git diff-tree --no-commit-id --name-only -r HEAD)" = "$VERSION_FILE" ] && exit 0
+
+# Sürümü HEAD'deki dosyadan oku (çalışma ağacındaki yarım değişikliklere güvenme)
+CUR=$(git show "HEAD:$VERSION_FILE" 2>/dev/null || cat "$VERSION_FILE")
+get() { echo "$CUR" | grep -o "\"$1\": *[0-9]*" | grep -o '[0-9]*$'; }
+MAJOR=$(get major); MINOR=$(get minor); PATCH=$(get patch)
+MAJOR=${MAJOR:-1}; MINOR=${MINOR:-0}; PATCH=${PATCH:-0}
+
+if echo "$MSG" | grep -iq '\[major\]'; then MAJOR=$((MAJOR+1)); MINOR=0; PATCH=0
+elif echo "$MSG" | grep -iq '\[minor\]'; then MINOR=$((MINOR+1)); PATCH=0
+else PATCH=$((PATCH+1)); fi
+
+cat > "$VERSION_FILE" <<JSON
+{
+    "major": $MAJOR,
+    "minor": $MINOR,
+    "patch": $PATCH
+}
+JSON
+
+git add "$VERSION_FILE"
+# Aynı commit'e ekle; mesaj ve yazar korunur. --no-verify: diğer hook'ları atla
+PROLYN_VERSION_BUMP=1 git commit --amend --no-verify --no-edit -q >/dev/null 2>&1
+exit 0
