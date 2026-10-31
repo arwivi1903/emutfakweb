@@ -86,7 +86,7 @@ $faqItems = [
     <!-- New Custom Redesign CSS -->
     <link href="assets/css/style.css?v=13" rel="stylesheet" type="text/css" />
     <link href="assets/css/tema.css?v=5" rel="stylesheet" type="text/css" />
-    <link href="assets/css/modul.css?v=2" rel="stylesheet" type="text/css" />
+    <link href="assets/css/modul.css?v=9" rel="stylesheet" type="text/css" />
 </head>
 
 <body id="kt_body" class="app-blank">
@@ -179,15 +179,34 @@ $faqItems = [
         <!--begin::Problem-->
         <div id="sorun" class="py-15 py-lg-20">
             <div class="container-xxl">
-                <div class="bolum-bas orta">
+                <div class="bolum-bas orta scroll-reveal">
                     <h2 class="bolum-baslik">Prolyn hangi sorunu çözer?</h2>
                     <p class="bolum-giris">Müşteri Excel'de, randevu WhatsApp'ta, borçlar defterde... Kayıtlar dağınık olunca kimin ne kadar borcu olduğunu, hangi çekin ne zaman vadesinin geldiğini bulmak zaman alır. Prolyn bunları tek yerde, birbirine bağlı tutar.</p>
                 </div>
+                <div class="dagin scroll-reveal" role="img" aria-label="Excel, WhatsApp ve defterdeki dağınık kayıtlar tek bir Prolyn paneline toplanır">
+                    <div class="dagin-sol" aria-hidden="true">
+                        <div class="arac arac-excel"><div class="arac-bas">Excel</div>
+                            <div class="xl"><b>Müşteri</b><b>Tutar</b><b>Vade</b><span>A. Yılmaz</span><span>12.500</span><span>?</span><span>Ş. Demir</span><span class="hata">#YOK</span><span>15.11</span><span>M. Kaya</span><span>8.000</span><span class="hata">?</span></div></div>
+                        <div class="arac arac-wa"><div class="arac-bas">WhatsApp</div>
+                            <div class="wa"><i class="g">Yarın 10:00 olur mu?</i><i class="b">Tamam abi, ödemeyi yarın yaparım</i><i class="g">Hangi çek? Hatırlamıyorum</i></div></div>
+                        <div class="arac arac-defter"><div class="arac-bas">Defter</div>
+                            <div class="df"><span>Ahmet 12.500 ₺ ???</span><span>çek 15 kasım (kimin?)</span><span>kapora - yazılmadı</span></div></div>
+                    </div>
+                    <svg class="dagin-ok" viewBox="0 0 120 40" aria-hidden="true" preserveAspectRatio="none"><path pathLength="1" d="M4 22 C30 6 60 36 96 18"/><path pathLength="1" d="M84 6 L100 18 L86 32"/></svg>
+                    <div class="dagin-sag" aria-hidden="true">
+                        <div class="pn-bas"><span class="pn-logo">P</span><b>Prolyn</b><em>tek panel</em></div>
+                        <div class="pn-satir" style="--i:0"><span>Müşteri</span><b>A. Yılmaz</b><svg class="tk" viewBox="0 0 16 16" aria-hidden="true"><path pathLength="1" d="M3 8.5l3.2 3.2L13 5"/></svg></div>
+                        <div class="pn-satir" style="--i:1"><span>Montaj randevusu</span><b>Cmt 10:00</b><svg class="tk" viewBox="0 0 16 16" aria-hidden="true"><path pathLength="1" d="M3 8.5l3.2 3.2L13 5"/></svg></div>
+                        <div class="pn-satir" style="--i:2"><span>Taksit ve çek</span><b>15 Kas · vade</b><svg class="tk" viewBox="0 0 16 16" aria-hidden="true"><path pathLength="1" d="M3 8.5l3.2 3.2L13 5"/></svg></div>
+                        <div class="pn-satir" style="--i:3"><span>Kalan borç</span><b>12.500 ₺</b><svg class="tk" viewBox="0 0 16 16" aria-hidden="true"><path pathLength="1" d="M3 8.5l3.2 3.2L13 5"/></svg></div>
+                        <div class="pn-alt"><span class="pn-nokta"></span>Hepsi birbirine bağlı</div>
+                    </div>
+                </div>
                 <div class="sorun-sar">
-                    <div class="sorun"><s>Müşteri bir dosyada, ödeme başka dosyada</s><h3>Müşteri, sözleşme ve ödeme bir arada</h3><p>Bir müşterinin kartında sözleşmesini, randevularını, ödemelerini ve kalan borcunu birlikte görürsünüz.</p></div>
-                    <div class="sorun"><s>Kim ne kadar borçlu, elle hesaplanıyor</s><h3>Cari hesap ve tahsilat takibi</h3><p>Müşteri bakiyelerini, kapora ve taksit ödemelerini anlık takip edersiniz.</p></div>
-                    <div class="sorun"><s>Çek ve taksit vadeleri not kâğıdında</s><h3>Çek, kasa ve banka takibi</h3><p>Vadesi gelen taksitleri izler, kasa ve banka hareketlerini tek ekranda görürsünüz.</p></div>
-                    <div class="sorun"><s>Montaj günleri karışıyor</s><h3>Randevu ve montaj planı</h3><p>Montaj ve servis randevularını takvimde planlar, eksik malzemeleri takip edersiniz.</p></div>
+                    <div class="sorun scroll-reveal delay-1"><span class="sorun-ikon" aria-hidden="true"><svg viewBox="0 0 24 24"><path pathLength="1" d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path pathLength="1" d="M14 3v5h5"/><path pathLength="1" d="M9 13h6M9 17h4"/></svg></span><s>Müşteri bir dosyada, ödeme başka dosyada</s><h3>Müşteri, sözleşme ve ödeme bir arada</h3><p>Bir müşterinin kartında sözleşmesini, randevularını, ödemelerini ve kalan borcunu birlikte görürsünüz.</p></div>
+                    <div class="sorun scroll-reveal delay-2"><span class="sorun-ikon" aria-hidden="true"><svg viewBox="0 0 24 24"><path pathLength="1" d="M3 7h16a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><path pathLength="1" d="M3 7l12-4v4"/><path pathLength="1" d="M17 13.5h4"/></svg></span><s>Kim ne kadar borçlu, elle hesaplanıyor</s><h3>Cari hesap ve tahsilat takibi</h3><p>Müşteri bakiyelerini, kapora ve taksit ödemelerini anlık takip edersiniz.</p></div>
+                    <div class="sorun scroll-reveal delay-3"><span class="sorun-ikon" aria-hidden="true"><svg viewBox="0 0 24 24"><rect pathLength="1" x="3" y="5" width="18" height="14" rx="2"/><path pathLength="1" d="M3 10h18M7 15h4"/></svg></span><s>Çek ve taksit vadeleri not kâğıdında</s><h3>Çek, kasa ve banka takibi</h3><p>Vadesi gelen taksitleri izler, kasa ve banka hareketlerini tek ekranda görürsünüz.</p></div>
+                    <div class="sorun scroll-reveal delay-4"><span class="sorun-ikon" aria-hidden="true"><svg viewBox="0 0 24 24"><rect pathLength="1" x="3" y="5" width="18" height="16" rx="2"/><path pathLength="1" d="M8 3v4M16 3v4M3 10h18"/><path pathLength="1" d="M9 15l2 2 4-4"/></svg></span><s>Montaj günleri karışıyor</s><h3>Randevu ve montaj planı</h3><p>Montaj ve servis randevularını takvimde planlar, eksik malzemeleri takip edersiniz.</p></div>
                 </div>
             </div>
         </div>
