@@ -49,4 +49,20 @@ if ($action === 'mark_read') {
     exit;
 }
 
+// Canlı (hesaplanan) bildirimleri bu yönetici için okundu işaretler
+if ($action === 'mark_live_read') {
+    $keys = $_POST['keys'] ?? [];
+    if (!is_array($keys)) { $keys = [$keys]; }
+    $adet = 0;
+    foreach (array_slice($keys, 0, 50) as $k) {
+        $k = (string)$k;
+        if (!preg_match('/^[a-f0-9]{32}$/', $k)) { continue; }   // yalnızca md5 anahtarı
+        if (!$db->tableExists('canli_bildirim_okundu')) { break; }
+        $db->Insert("INSERT IGNORE INTO canli_bildirim_okundu (admin_id, anahtar) VALUES (?, ?)", [(int)$admin_id, $k]);
+        $adet++;
+    }
+    echo json_encode(['success' => true, 'count' => $adet]);
+    exit;
+}
+
 echo json_encode(['success' => false, 'message' => 'Geçersiz işlem']);

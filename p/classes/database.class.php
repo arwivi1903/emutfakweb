@@ -30,7 +30,8 @@ class Database
         \PDO::ATTR_ERRMODE => \PDO::ERRMODE_EXCEPTION,
         \PDO::ATTR_DEFAULT_FETCH_MODE => \PDO::FETCH_OBJ,
         \PDO::ATTR_TIMEOUT => 30,
-        \PDO::MYSQL_ATTR_INIT_COMMAND => "SET NAMES '".$this->CHARSET."' COLLATE '".$this->COLLATION."'"
+        // PHP 8.5+: PDO::MYSQL_ATTR_INIT_COMMAND kullanımdan kalktı (Pdo\Mysql::ATTR_INIT_COMMAND); eski sürümlerle uyumlu kalır
+        (class_exists('Pdo\\Mysql') ? \Pdo\Mysql::ATTR_INIT_COMMAND : \PDO::MYSQL_ATTR_INIT_COMMAND) => "SET NAMES '".$this->CHARSET."' COLLATE '".$this->COLLATION."'"
       ];
       $this->pdo = new \PDO($SQL, $this->MYSQL_USER, $this->MYSQL_PASS, $options);
     }catch(PDOException $e){

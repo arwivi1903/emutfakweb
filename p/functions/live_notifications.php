@@ -4,8 +4,10 @@
  *
  * bildirimler tablosuna yazılmaz; her çağrıda güncel durum sorgulanır,
  * koşul ortadan kalkınca (süre uzatılınca, tarih geçince) kendiliğinden
- * kaybolur. "Okundu" ile işaretlenemez — notification_id=0 ile ayırt
- * edilir (bkz. p/config/header.php ve p/dist/api/notifications_api.php).
+ * kaybolur. notification_id=0 ile ayırt edilir. "Okundu" yapılınca yönetici
+ * bazında canli_bildirim_okundu tablosuna anahtar (key) yazılır; aynı içerik
+ * bir daha gösterilmez, içerik değişince (sayı, tarih) yeniden görünür.
+ * (bkz. p/config/header.php ve p/dist/api/notifications_api.php).
  */
 if (!function_exists('prolyn_canli_bildirimler')) {
     function prolyn_canli_bildirimler(Database $db): array
@@ -111,6 +113,33 @@ if (!function_exists('prolyn_canli_bildirimler')) {
                 }
             }
         } catch (Throwable $e) {
+        }
+
+        // Her bildirime kararlı bir anahtar ver; "Bugün Takip" her gün yeniden gelsin
+        foreach ($sonuc as &$b) {
+            $b['key'] = md5((string)$b['title'] . '|' . (string)$b['message'] . '|' . ($b['title'] === 'Bugün Takip' ? date('Y-m-d') : ''));
+        }
+        unset($b);
+
+        // Bu yöneticinin okundu işaretlediklerini ele
+        $adminId = (int)($_SESSION['admin_id'] ?? 0);
+        if ($adminId > 0 && $sonuc) {
+            try {
+                if (!$db->tableExists('canli_bildirim_okundu')) {
+                    $db->TableOperations("CREATE TABLE IF NOT EXISTS canli_bildirim_okundu (
+                        admin_id INT(11) NOT NULL,
+                        anahtar CHAR(32) NOT NULL,
+                        created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                        PRIMARY KEY (admin_id, anahtar)
+                    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='Okundu işaretlenen canlı bildirimler'");
+                }
+                $okunan = array_column($db->getRowsAssoc("SELECT anahtar FROM canli_bildirim_okundu WHERE admin_id = ?", [$adminId]) ?: [], 'anahtar');
+                if ($okunan) {
+                    $sonuc = array_values(array_filter($sonuc, static fn($b) => !in_array($b['key'], $okunan, true)));
+                }
+            } catch (Throwable $e) {
+                // tablo okunamazsa bildirimler yine gösterilir
+            }
         }
 
         // En yeni üstte

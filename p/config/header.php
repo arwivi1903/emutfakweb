@@ -3733,7 +3733,7 @@ target="_blank">
                                                             }
                                                         ?>
                                                         <?php $notifCanli = (int)($notif['notification_id'] ?? 0) === 0; ?>
-                                                        <div class="d-flex flex-column border-bottom border-gray-200 py-4" data-notification-id="<?= (int)($notif['notification_id'] ?? 0) ?>">
+                                                        <div class="d-flex flex-column border-bottom border-gray-200 py-4" data-notification-id="<?= (int)($notif['notification_id'] ?? 0) ?>"<?= $notifCanli ? ' data-live-key="' . htmlspecialchars((string)($notif['key'] ?? ''), ENT_QUOTES) . '"' : '' ?>>
                                                             <div class="d-flex align-items-center justify-content-between mb-1">
                                                                 <span class="fw-bold text-gray-800"><?= htmlspecialchars((string)$notif['title']) ?></span>
                                                                 <span class="badge <?= $notifBadgeClass ?>"><?= htmlspecialchars(['info' => 'Bilgi', 'warning' => 'Uyarı', 'error' => 'Hata', 'success' => 'Başarılı'][$notifType] ?? (string)$notifType) ?></span>
@@ -3742,7 +3742,10 @@ target="_blank">
                                                             <div class="d-flex align-items-center justify-content-between">
                                                                 <span class="text-muted fs-8"><?= date('d.m.Y H:i', strtotime((string)$notif['created_at'])) ?></span>
                                                                 <?php if ($notifCanli): ?>
-                                                                    <a href="<?= htmlspecialchars((string)($notif['action_url'] ?? '#')) ?>" class="btn btn-sm btn-light-primary py-1 px-2">Görüntüle</a>
+                                                                    <span class="d-flex gap-2">
+                                                                        <a href="<?= htmlspecialchars((string)($notif['action_url'] ?? '#')) ?>" class="btn btn-sm btn-light py-1 px-2">Görüntüle</a>
+                                                                        <button type="button" class="btn btn-sm btn-light-primary py-1 px-2 mark-notification-read-btn">Okundu</button>
+                                                                    </span>
                                                                 <?php else: ?>
                                                                     <span class="d-flex gap-2">
                                                                         <?php if (!empty($notif['action_url'])): ?><a href="<?= htmlspecialchars((string)$notif['action_url']) ?>" class="btn btn-sm btn-light py-1 px-2">Görüntüle</a><?php endif; ?>
@@ -3814,11 +3817,12 @@ target="_blank">
                                     const rows = items.map((item) => {
                                         const type = item.type || 'info';
                                         const canli = Number(item.notification_id || 0) === 0;
+                                        const okunduBtn = '<button type="button" class="btn btn-sm btn-light-primary py-1 px-2 mark-notification-read-btn">Okundu</button>';
                                         const actionHtml = canli
-                                            ? '<a href="' + escapeHtml(item.action_url || '#') + '" class="btn btn-sm btn-light-primary py-1 px-2">Görüntüle</a>'
-                                            : '<button type="button" class="btn btn-sm btn-light-primary py-1 px-2 mark-notification-read-btn">Okundu</button>';
+                                            ? '<span class="d-flex gap-2"><a href="' + escapeHtml(item.action_url || '#') + '" class="btn btn-sm btn-light py-1 px-2">Görüntüle</a>' + okunduBtn + '</span>'
+                                            : okunduBtn;
                                         return ''
-                                            + '<div class="d-flex flex-column border-bottom border-gray-200 py-4" data-notification-id="' + Number(item.notification_id || 0) + '">'
+                                            + '<div class="d-flex flex-column border-bottom border-gray-200 py-4" data-notification-id="' + Number(item.notification_id || 0) + '"' + (canli ? ' data-live-key="' + escapeHtml(item.key || '') + '"' : '') + '>'
                                             + '  <div class="d-flex align-items-center justify-content-between mb-1">'
                                             + '    <span class="fw-bold text-gray-800">' + escapeHtml(item.title || '') + '</span>'
                                             + '    <span class="badge ' + typeBadgeClass(type) + '">' + escapeHtml(String(type).toUpperCase()) + '</span>'
@@ -3854,10 +3858,16 @@ target="_blank">
                                     }
                                 }
 
-                                async function markNotificationRead(notificationId) {
+                                async function markNotificationRead(notificationId, liveKey) {
                                     const form = new URLSearchParams();
-                                    form.append('action', 'mark_read');
-                                    form.append('notification_id', String(notificationId));
+                                    if (liveKey) {
+                                        // Canlı bildirim: anahtarı yönetici bazında okundu olarak kaydet
+                                        form.append('action', 'mark_live_read');
+                                        form.append('keys[]', liveKey);
+                                    } else {
+                                        form.append('action', 'mark_read');
+                                        form.append('notification_id', String(notificationId));
+                                    }
 
                                     const response = await fetch('dist/api/notifications_api.php', {
                                         method: 'POST',
@@ -3881,10 +3891,11 @@ target="_blank">
                                     if (!row) return;
 
                                     const id = Number(row.getAttribute('data-notification-id') || '0');
-                                    if (!id) return;
+                                    const liveKey = row.getAttribute('data-live-key') || '';
+                                    if (!id && !liveKey) return;
 
                                     btn.disabled = true;
-                                    const ok = await markNotificationRead(id);
+                                    const ok = await markNotificationRead(id, liveKey);
                                     if (ok) {
                                         row.remove();
                                         updateBadge(list.querySelectorAll('[data-notification-id]').length);
@@ -3895,17 +3906,21 @@ target="_blank">
 
                                 markAllBtn.addEventListener('click', async function (event) {
                                     event.preventDefault();
-                                    const ids = Array.from(list.querySelectorAll('[data-notification-id]'))
+                                    const rows = Array.from(list.querySelectorAll('[data-notification-id]'));
+                                    const ids = rows
                                         .map((el) => Number(el.getAttribute('data-notification-id') || '0'))
                                         .filter((n) => n > 0);
+                                    const liveKeys = rows
+                                        .map((el) => el.getAttribute('data-live-key') || '')
+                                        .filter((k) => k);
 
-                                    if (ids.length === 0) {
+                                    if (ids.length === 0 && liveKeys.length === 0) {
                                         updateBadge(0);
                                         return;
                                     }
 
                                     markAllBtn.classList.add('disabled');
-                                    await Promise.all(ids.map((id) => markNotificationRead(id)));
+                                    await Promise.all(ids.map((id) => markNotificationRead(id, '')).concat(liveKeys.map((k) => markNotificationRead(0, k))));
                                     list.querySelectorAll('[data-notification-id]').forEach((el) => el.remove());
                                     updateBadge(0);
                                     markAllBtn.classList.remove('disabled');
