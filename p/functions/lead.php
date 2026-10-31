@@ -14,7 +14,7 @@ const LEAD_DURUMLAR = [
     'ilgileniyor'       => ['İlgileniyor', 'primary'],
     'demo'              => ['Demo planlandı', 'warning'],
     'deneme'            => ['Denemede', 'success'],
-    'musteri'           => ['Müşteri', 'success'],
+    'musteri'           => ['Müşteri', 'purple'],
     'olumsuz'           => ['Olumsuz', 'dark'],
     'ret'               => ['İletişim istemiyor', 'danger'],
 ];

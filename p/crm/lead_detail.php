@@ -365,8 +365,26 @@ $oncelikRenk = ['A' => 'success', 'B' => 'primary', 'C' => 'secondary'][$lead['o
     });
   });
   // Geri dönüşü zor durumlar (olumsuz / iletişim istemiyor) için onay
+
+  // Onay penceresi (SweetAlert2): onaylanınca butonun name/value değeriyle formu gönderir
+  function swalOnay(b, soru) {
+    Swal.fire({
+      title: 'Emin misiniz?', text: soru, icon: 'warning',
+      showCancelButton: true, confirmButtonText: 'Evet', cancelButtonText: 'Vazgeç',
+      buttonsStyling: false,
+      customClass: { confirmButton: 'btn btn-primary', cancelButton: 'btn btn-light ms-2' }
+    }).then(function (r) {
+      if (!r.isConfirmed) { return; }
+      var f = b.form;
+      if (b.name) {
+        var h = document.createElement('input');
+        h.type = 'hidden'; h.name = b.name; h.value = b.value; f.appendChild(h);
+      }
+      f.submit();
+    });
+  }
   document.querySelectorAll('.js-kapat').forEach(function (b) {
-    b.addEventListener('click', function (ev) { if (!confirm(b.dataset.soru)) { ev.preventDefault(); } });
+    b.addEventListener('click', function (ev) { ev.preventDefault(); swalOnay(b, b.dataset.soru); });
   });
 })();
 </script>

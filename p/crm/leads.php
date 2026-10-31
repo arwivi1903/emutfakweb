@@ -88,6 +88,7 @@ $f = [
 if (!in_array($f['web'], ['site', 'sosyal', 'yok'], true)) { $f['web'] = ''; }
 $durdurSql = "'" . implode("','", LEAD_DURDUR) . "'";   // sabit listeden üretilir, kullanıcı girdisi değildir
 $where = ['1=1']; $p = [];
+if ($f['durum'] !== 'musteri') { $where[] = "durum <> 'musteri'"; }   // müşteriler yalnızca Müşteri aşaması seçilince listelenir
 if ($f['q'] !== '') { $where[] = '(firma_adi LIKE ? OR telefon LIKE ? OR eposta LIKE ? OR ilce LIKE ?)'; $like = '%' . $f['q'] . '%'; array_push($p, $like, $like, $like, $like); }
 if (isset(LEAD_DURUMLAR[$f['durum']])) { $where[] = 'durum = ?'; $p[] = $f['durum']; }
 if (in_array($f['oncelik'], ['A', 'B', 'C'], true)) { $where[] = 'oncelik = ?'; $p[] = $f['oncelik']; }
@@ -565,10 +566,34 @@ require_once '../config/sidebar.php';
     guncelle();
   });
 
-  // Toplu işlem onayı (modal değil, tarayıcı onayı)
+
+  // Onay penceresi (SweetAlert2): onaylanınca butonun name/value değeriyle formu gönderir
+  function swalOnay(b, soru) {
+    Swal.fire({
+      title: 'Emin misiniz?', text: soru, icon: 'warning',
+      showCancelButton: true, confirmButtonText: 'Evet', cancelButtonText: 'Vazgeç',
+      buttonsStyling: false,
+      customClass: { confirmButton: 'btn btn-primary', cancelButton: 'btn btn-light ms-2' }
+    }).then(function (r) {
+      if (!r.isConfirmed) { return; }
+      var f = b.form;
+      if (b.name) {
+        var h = document.createElement('input');
+        h.type = 'hidden'; h.name = b.name; h.value = b.value; f.appendChild(h);
+      }
+      f.submit();
+    });
+  }
+
+  // Toplu işlem onayı
   document.querySelectorAll('.js-bulk').forEach(function (b) {
     b.addEventListener('click', function (ev) {
-      if (!document.querySelector('.lead-sec:checked') || !confirm(b.dataset.soru)) { ev.preventDefault(); }
+      ev.preventDefault();
+      if (!document.querySelector('.lead-sec:checked')) {
+        Swal.fire({ text: 'Önce listeden en az bir firma seçin.', icon: 'info', buttonsStyling: false, confirmButtonText: 'Tamam', customClass: { confirmButton: 'btn btn-primary' } });
+        return;
+      }
+      swalOnay(b, b.dataset.soru);
     });
   });
 
