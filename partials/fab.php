@@ -33,5 +33,11 @@ $__fabWaText = $fabWhatsappText ?? 'Merhaba, Prolyn hakkında bilgi almak istiyo
     function g() { b.classList.toggle('is-visible', window.scrollY > 400); }
     window.addEventListener('scroll', g, { passive: true });
     g();
+    // Mobil menü açıkken butonları gizle (CSS :has desteklemeyen eski tarayıcılar için yedek).
+    var m = document.getElementById('mobileMenu');
+    if (m) {
+        m.addEventListener('show.bs.offcanvas', function () { document.body.classList.add('menu-acik'); });
+        m.addEventListener('hidden.bs.offcanvas', function () { document.body.classList.remove('menu-acik'); });
+    }
 })();
 </script>

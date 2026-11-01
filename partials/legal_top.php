@@ -25,7 +25,7 @@ $__lBase = rtrim((string)prolynweb_env('BASE_URL', ''), '/');
     <link href="p/dist/assets/plugins/global/plugins.bundle.css" rel="stylesheet" type="text/css" />
     <link href="p/dist/assets/css/style.bundle.css" rel="stylesheet" type="text/css" />
     <link href="assets/css/style.css?v=15" rel="stylesheet" type="text/css" />
-    <link href="assets/css/tema.css?v=5" rel="stylesheet" type="text/css" />
+    <link href="assets/css/tema.css?v=7" rel="stylesheet" type="text/css" />
     <link href="assets/css/legal.css?v=2" rel="stylesheet" type="text/css" />
 </head>
 <body id="kt_body" class="app-blank">

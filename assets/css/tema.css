@@ -361,3 +361,33 @@ html { scrollbar-gutter: stable; }
 /* Kenar boşluğu TÜM sayfalarda aynı olmalı. Eskiden bu kural yalnız modul.css yüklenen
    sayfalarda (anasayfa, modüller, fiyat) vardı; blog/video/iletişimde menü 16px kayıyordu. */
 @media (min-width: 576px) { .container-xxl { padding-left: 2rem; padding-right: 2rem; } }
+
+/* ===== Mobil düzeltmeleri (2026-11-01) ===== */
+/* 1) Yatay kayma: yatay kaydırmalı sarmalayıcıların içindeki position:absolute öğeler
+   (ör. tablodaki .visually-hidden başlık) sarmalayıcı konumlandırılmamışsa overflow
+   kırpmasından kaçar ve sayfayı genişletir (mobilde ~602px'e çıkıyordu, sayfa sağa-sola
+   kayıyordu). Sarmalayıcıyı containing block yapmak yeterli. */
+.pk-tablo-sar, .legal-table-wrap, .table-responsive, .mod-nav { position: relative; }
+
+/* 2) Mobil menü açıkken sağ alttaki ara/WhatsApp/yukarı butonları (z-index 9999)
+   menünün "30 Gün Ücretsiz Dene / Giriş Yap" düğmelerinin üstüne biniyordu. */
+body:has(#mobileMenu.show) .floating-action-buttons,
+body:has(#mobileMenu.showing) .floating-action-buttons,
+body.menu-acik .floating-action-buttons { opacity: 0; visibility: hidden; pointer-events: none; }
+
+/* 3) Telefonda butonlar metnin üstünü daha az kapatsın: biraz küçük, nabız halkası kapalı. */
+@media (max-width: 575.98px) {
+    .floating-action-buttons { right: 12px; bottom: calc(12px + env(safe-area-inset-bottom, 0px)); gap: 10px; }
+    .fab-btn { width: 46px; height: 46px; font-size: 1.35rem; }
+    .fab-whatsapp .bi { font-size: 1.6rem; }
+    .fab-scrolltop { width: 38px; height: 38px; font-size: 1.6rem; }
+    .fab-phone, .fab-whatsapp { animation: none; }
+}
+
+/* 4) iOS Safari body{overflow-x:hidden}'ı yok sayar; ekran dışındaki fixed öğeler (kapalı mobil menü)
+   ve taşan herhangi bir öğe sayfayı sağa genişletip "sağda boşluk" bıraktırır.
+   overflow-x:clip kaydırma alanı OLUŞTURMAZ: html'e verildiğinde viewport'a "hidden" olarak geçer,
+   body kaydırma kabına dönüşmez (çift kaydırma çubuğu / footer sonrası boşluk olmaz),
+   position:sticky de bozulmaz. clip desteklemeyen eski tarayıcıda mevcut hidden davranışı kalır. */
+html { overflow-x: clip; }
+html body, html body#kt_body { overflow-x: hidden; overflow-x: clip; }
