@@ -66,7 +66,7 @@ $queue = $db->getRowsAssoc($query);
                     <i class="ki-duotone ki-shield-tick fs-2hx text-success me-4"><span class="path1"></span><span class="path2"></span></i>
                     <div class="d-flex flex-column">
                         <h4 class="mb-1 text-success">Başarılı</h4>
-                        <span>Kuyruk işlemi başarıyla uygulandı.</span>
+                        <span><?= ($_GET['success'] ?? '') === 'resend' ? 'E-posta yeni alıcıya gönderilmek üzere kuyruğa eklendi; bir dakika içinde gönderilir.' : 'Kuyruk işlemi başarıyla uygulandı.' ?></span>
                     </div>
                 </div>
                 <?php endif; ?>
@@ -123,6 +123,10 @@ $queue = $db->getRowsAssoc($query);
                                                     elseif ($q['status'] == 'cancelled') $status_class = 'badge-light-dark';
                                                 ?>
                                                 <span class="badge <?php echo $status_class; ?> text-uppercase"><?php echo htmlspecialchars($q['status']); ?></span>
+                                                <?php if($q['status'] === 'sent' && !empty($q['last_error'])): ?>
+                                                    <!-- Gönderildi ama Gönderilenler kopyası alınamadı -->
+                                                    <i class="ki-duotone ki-information-5 text-warning ms-1" data-bs-toggle="tooltip" title="<?php echo htmlspecialchars($q['last_error']); ?>"><span class="path1"></span><span class="path2"></span><span class="path3"></span></i>
+                                                <?php endif; ?>
                                                 <?php if($q['status'] == 'failed' && !empty($q['last_error'])): ?>
                                                     <i class="ki-duotone ki-information-5 text-danger ms-1" data-bs-toggle="tooltip" title="<?php echo htmlspecialchars($q['last_error']); ?>"><span class="path1"></span><span class="path2"></span><span class="path3"></span></i>
                                                 <?php endif; ?>
@@ -136,10 +140,15 @@ $queue = $db->getRowsAssoc($query);
                                                 </div>
                                             </td>
                                             <td class="text-end">
-                                                <button type="button" class="btn btn-icon btn-light-info btn-sm me-1" title="İçeriği Gör" 
-                                                    onclick="viewContent(<?php echo htmlspecialchars(json_encode($q)); ?>)">
+                                                <!-- Modal yerine ayrı sayfa: içerik + alıcıyı düzeltip tekrar gönder -->
+                                                <a href="settings/email_resend.php?id=<?php echo (int)($q['queue_id'] ?? 0); ?>" class="btn btn-icon btn-light-info btn-sm me-1" title="İçeriği gör / düzeltip tekrar gönder" aria-label="İçeriği gör">
                                                     <i class="ki-duotone ki-eye fs-3"><span class="path1"></span><span class="path2"></span><span class="path3"></span></i>
-                                                </button>
+                                                </a>
+                                                <?php if (in_array($q['status'], ['sent', 'failed', 'cancelled'], true)): ?>
+                                                <a href="settings/email_resend.php?id=<?php echo (int)($q['queue_id'] ?? 0); ?>" class="btn btn-icon btn-light-primary btn-sm me-1" title="Alıcıyı düzeltip tekrar gönder" aria-label="Alıcıyı düzeltip tekrar gönder" data-bs-toggle="tooltip">
+                                                    <i class="ki-duotone ki-arrows-loop fs-3"><span class="path1"></span><span class="path2"></span></i>
+                                                </a>
+                                                <?php endif; ?>
                                                 <?php if($q['status'] === 'failed' || $q['status'] === 'cancelled'): ?>
                                                 <form action="settings/email_queue.php" method="POST" class="d-inline" onsubmit="event.preventDefault(); Swal.fire({title: 'Emin misiniz?', text: 'Bu e-postayı tekrar kuyruğa almak istediğinize emin misiniz?', icon: 'warning', showCancelButton: true, confirmButtonText: 'Evet', cancelButtonText: 'Hayır'}).then((result) => { if(result.isConfirmed) { this.submit(); } });">
                             <?= csrfTokenField() ?>
@@ -177,68 +186,7 @@ $queue = $db->getRowsAssoc($query);
     </div>
 </div>
 
-<!-- Modal: E-posta İçeriğini Göster -->
-<div class="modal fade" id="kt_modal_view_content" tabindex="-1" aria-hidden="true">
-    <div class="modal-dialog modal-dialog-centered mw-800px">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h2 class="fw-bold">E-posta İçerik Detayı</h2>
-                <div class="btn btn-icon btn-sm btn-active-icon-primary" data-bs-dismiss="modal">
-                    <i class="ki-duotone ki-cross fs-1"><span class="path1"></span><span class="path2"></span></i>
-                </div>
-            </div>
-            <div class="modal-body scroll-y mx-5 mx-xl-15 my-7">
-                
-                <div class="d-flex flex-column mb-5">
-                    <span class="text-muted fs-7 fw-bold mb-1">Alıcı (To):</span>
-                    <span class="text-gray-800 fs-6" id="view_to"></span>
-                </div>
-                
-                <div class="d-flex flex-column mb-5">
-                    <span class="text-muted fs-7 fw-bold mb-1">Konu (Subject):</span>
-                    <span class="text-gray-800 fs-6" id="view_subject"></span>
-                </div>
-
-                <div class="d-flex flex-column mb-8">
-                    <span class="text-muted fs-7 fw-bold mb-1">HTML İçerik (Raw):</span>
-                    <div class="p-5 bg-light rounded border border-gray-300 font-monospace" style="max-height: 400px; overflow-y: auto;">
-                        <pre id="view_body_html" class="mb-0 text-gray-800" style="white-space: pre-wrap; word-break: break-all;"></pre>
-                    </div>
-                </div>
-                
-                <div class="d-flex flex-column" id="view_error_container" style="display: none !important;">
-                    <span class="text-danger fs-7 fw-bold mb-1">Son Hata (Last Error):</span>
-                    <div class="p-4 bg-light-danger text-danger rounded border border-danger border-dashed">
-                        <span id="view_last_error" style="white-space: pre-wrap;"></span>
-                    </div>
-                </div>
-
-            </div>
-            <div class="modal-footer flex-center">
-                <button type="button" class="btn btn-light" data-bs-dismiss="modal">Kapat</button>
-            </div>
-        </div>
-    </div>
-</div>
-
 <script>
-function viewContent(data) {
-    document.getElementById('view_to').innerText = data.recipient || '-';
-    document.getElementById('view_subject').innerText = data.subject || '-';
-    document.getElementById('view_body_html').textContent = data.message || 'İçerik Yok';
-    
-    var errorContainer = document.getElementById('view_error_container');
-    if (data.last_error && data.status === 'failed') {
-        errorContainer.style.setProperty('display', 'flex', 'important');
-        document.getElementById('view_last_error').innerText = data.last_error;
-    } else {
-        errorContainer.style.setProperty('display', 'none', 'important');
-    }
-    
-    var modal = new bootstrap.Modal(document.getElementById('kt_modal_view_content'));
-    modal.show();
-}
-
 // Tooltip Initialize
 var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'))
 var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {

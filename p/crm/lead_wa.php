@@ -9,7 +9,8 @@ require_once __DIR__ . '/../classes/allClass.php';
 require_once __DIR__ . '/../functions/combine.php';
 $db = new Database();
 oturumkontrol();
-Auth::requireModule('manage_tenants');
+// Lead ekranı: müşteri temsilcisi (manage_leads) veya firma yöneticisi (manage_tenants) erişebilir
+Auth::requireAnyModule(['manage_leads', 'manage_tenants']);
 require_once __DIR__ . '/../functions/lead.php';
 lead_sema_kur($db);
 

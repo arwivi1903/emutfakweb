@@ -73,12 +73,23 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             ]);
 
             // Bildirim e-postasını kuyruğa ekle (mail worker gönderecek). Best-effort.
-            $notifyTo = trim((string)prolynweb_env('CONTACT_NOTIFY_TO', '')) ?: prolynweb_env('MAIL_FROM', 'noreply@prolyn.net');
+            // Alıcı: panel > Mail Ayarları > "Bildirim alıcısı"; gönderen noreply. Reply-To ziyaretçi olduğundan
+            // bildirime "Yanıtla" denince doğrudan ziyaretçiye yazılır.
+            require_once __DIR__ . '/p/functions/mailer.php';
+            $mailAyar = prolyn_mail_ayarlari();
+            $notifyTo = $mailAyar['notify_email'];
             try {
                 $mailSubject = 'Yeni İletişim Mesajı: ' . $subject;
                 $mailBody = "Ad: {$name}\nE-posta: {$email}\nKonu: {$subject}\n\n{$body}";
-                $pdo->prepare("INSERT INTO mail_kuyrugu (channel, recipient, subject, message, source, status, attempts, created_at) VALUES ('email', ?, ?, ?, 'iletisim_formu', 'pending', 0, NOW())")
-                    ->execute([$notifyTo, $mailSubject, $mailBody]);
+                $mailPayload = json_encode(['headers' => ['Reply-To' => $email], 'kimlik' => 'noreply'], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+                $pdo->prepare("INSERT INTO mail_kuyrugu (channel, recipient, subject, message, source, status, attempts, payload, created_at) VALUES ('email', ?, ?, ?, 'iletisim_formu', 'pending', 0, ?, NOW())")
+                    ->execute([$notifyTo, $mailSubject, $mailBody, $mailPayload]);
+                // WhatsApp bildirimi (ayarlarda aktif ve numara girilmişse). Metin kısa tutulur; ayrıntı panelde.
+                if ($mailAyar['whatsapp']['enabled'] && $mailAyar['whatsapp']['notify'] !== '') {
+                    $waMetin = "Prolyn: yeni iletişim mesajı\n{$name} <{$email}>\nKonu: " . mb_substr($subject, 0, 120);
+                    $pdo->prepare("INSERT INTO mail_kuyrugu (channel, recipient, subject, message, source, status, attempts, created_at) VALUES ('whatsapp', ?, ?, ?, 'iletisim_formu', 'pending', 0, NOW())")
+                        ->execute([$mailAyar['whatsapp']['notify'], 'WhatsApp: yeni iletişim mesajı', $waMetin]);
+                }
             } catch (\Throwable $qe) {
                 // mail_kuyrugu tablosu yoksa yoksay; mesaj yine DB'ye kaydedildi.
                 error_log('[contact] mail kuyruk hatası: ' . $qe->getMessage());

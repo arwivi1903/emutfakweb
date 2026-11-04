@@ -264,6 +264,53 @@ function lead_mail_kuyruga_ekle($db, array $lead, array $sablon, string $gondere
     return true;
 }
 
+/** Bu lead için kuyruğa giren en son kampanya e-postası (yoksa null). payload içindeki "lead_id":N, kalıbıyla eşleşir. */
+function lead_son_kampanya_maili($db, int $leadId): ?array
+{
+    $r = $db->getRowAssoc("SELECT * FROM mail_kuyrugu WHERE source = 'lead_kampanya' AND payload LIKE ? ORDER BY queue_id DESC LIMIT 1",
+        ['%"lead_id":' . $leadId . ',%']);
+    return $r ?: null;
+}
+
+/**
+ * Hatalı adrese giden son e-posta, kayıttaki (düzeltilmiş) adrese tekrar gönderilebilir mi? [bool, neden]
+ * Koşul: son e-posta başka bir adrese gitmiş ya da başarısız olmuş olmalı; iletişim reddi / kapalı durum engeller.
+ */
+function lead_tekrar_gonderilebilir_mi(array $lead, ?array $son): array
+{
+    if (!$son) { return [false, 'daha önce e-posta gönderilmemiş']; }
+    $yeni = strtolower(trim((string)($lead['eposta'] ?? '')));
+    if ($yeni === '' || !filter_var($yeni, FILTER_VALIDATE_EMAIL)) { return [false, 'kayıtta geçerli e-posta yok']; }
+    if (!empty($lead['ret_tarihi']) || $lead['durum'] === 'ret') { return [false, 'iletişim istemiyor']; }
+    if (in_array($lead['durum'], LEAD_DURDUR, true)) { return [false, 'durum: ' . (LEAD_DURUMLAR[$lead['durum']][0] ?? $lead['durum'])]; }
+    $ayniAdres = strtolower(trim((string)$son['recipient'])) === $yeni;
+    if ($ayniAdres && $son['status'] !== 'failed') { return [false, 'son e-posta zaten bu adrese gönderildi']; }
+    return [true, ''];
+}
+
+/**
+ * Son kampanya e-postasının kopyasını kayıttaki adrese kuyruğa ekler. Kampanya sayacını (mail_sayisi) artırmaz:
+ * ilk e-posta alıcıya ulaşmadığı için yeni bir temas sayılmaz. Eski kayıt hâlâ bekliyorsa iptal edilir.
+ */
+function lead_mail_yeniden_gonder($db, array $lead, array $son): bool
+{
+    $payload = json_decode((string)($son['payload'] ?? ''), true) ?: [];
+    $payload['lead_id'] = (int)$lead['lead_id'];
+    $payload['tekrar_of'] = (int)$son['queue_id'];
+    // "lead_id" anahtarı headers'tan hemen sonra kalsın: lead_son_kampanya_maili() bu sırayla eşleşir
+    $payload = ['headers' => $payload['headers'] ?? [], 'lead_id' => (int)$lead['lead_id']] + $payload;
+    $yeni = strtolower(trim((string)$lead['eposta']));
+    $ok = $db->Insert("INSERT INTO mail_kuyrugu (channel, recipient, subject, message, source, status, attempts, payload, created_at) VALUES ('email', ?, ?, ?, 'lead_kampanya', 'pending', 0, ?, NOW())",
+        [$yeni, $son['subject'], $son['message'], json_encode($payload, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES)]);
+    if ($ok === false) { return false; }
+    if ($son['status'] === 'pending') {
+        $db->Update("UPDATE mail_kuyrugu SET status = 'cancelled', last_error = 'Adres düzeltildi, yeni adrese tekrar gönderildi', processed_at = NOW() WHERE queue_id = ? AND status = 'pending'", [(int)$son['queue_id']]);
+    }
+    $db->Update("UPDATE potansiyel_musteriler SET son_mail = NOW(), son_iletisim = NOW() WHERE lead_id = ?", [(int)$lead['lead_id']]);
+    lead_aktivite($db, (int)$lead['lead_id'], 'eposta', 'Tekrar gönderim (adres düzeltildi): ' . $son['recipient'] . ' → ' . $yeni . ' · konu: ' . $son['subject']);
+    return true;
+}
+
 function lead_bugun_gonderilen_mail($db): int
 {
     return (int)$db->getColumn("SELECT COUNT(*) FROM mail_kuyrugu WHERE source = 'lead_kampanya' AND created_at >= CURDATE()");

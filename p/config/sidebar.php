@@ -142,6 +142,61 @@ $sbMenu = [
     ]],
 ];
 
+// Menü öğesi → sayfanın istediği izin(ler). Sayfalardaki Auth::requireModule / requireAnyModule ile aynı tutulmalı.
+// Listede olmayan sayfa herkese görünür (ör. Dashboard). Bu yalnızca görünüm içindir; erişimi sayfa kendisi denetler.
+$sbIzin = [
+    'crm/messages.php' => ['manage_leads', 'manage_tenants'],
+    'crm/leads.php' => ['manage_leads', 'manage_tenants'],
+    'crm/lead_detail.php' => ['manage_leads', 'manage_tenants'],
+    'crm/lead_import.php' => 'manage_tenants', 'crm/lead_templates.php' => 'manage_tenants',
+    'crm/tenants.php' => 'manage_tenants', 'crm/tenant_detail.php' => 'manage_tenants',
+    'crm/feature_usage.php' => 'manage_subscriptions', 'crm/subscriptions.php' => 'manage_subscriptions',
+    'crm/subscription_history.php' => 'manage_subscriptions', 'crm/coupons.php' => 'manage_subscriptions',
+    'crm/tickets.php' => 'manage_support', 'crm/announcements.php' => 'manage_settings',
+    'content/sales.php' => 'manage_settings', 'plans.php' => 'manage_settings', 'settings/app_modules.php' => 'manage_settings',
+    'finance/invoices.php' => 'manage_billing', 'finance/invoice_addresses.php' => 'manage_billing',
+    'finance/payments.php' => 'manage_billing', 'finance/taxes.php' => 'manage_billing',
+    'settings/admins.php' => 'manage_admins', 'settings/password_reset.php' => 'manage_admins',
+    'settings/roles.php' => 'manage_roles',
+];
+foreach (['website/seo.php', 'website/form_security.php', 'website/features.php', 'website/modules.php', 'website/module_form.php',
+          'website/blog.php', 'website/blog_form.php', 'website/blog_sil.php', 'website/videos.php', 'website/video_form.php',
+          'website/video_sil.php', 'settings/package_features.php', 'settings/api_keys.php', 'dist/apps/settings/general.php',
+          'settings/email_templates.php', 'settings/email_queue.php', 'settings/files.php', 'settings/logs.php',
+          'settings/logs_archive.php'] as $sbYol) { $sbIzin[$sbYol] = 'manage_settings'; }
+foreach (['activity', 'audit', 'login_attempts', 'maintenance', 'notification_queue', 'notifications', 'password_resets',
+          'php_error_logs', 'sessions', 'system_errors', 'system_events', 'user_activity', 'webhook_logs', 'webhooks'] as $sbYol) {
+    $sbIzin['logs/' . $sbYol . '.php'] = 'view_logs';
+}
+
+function sbGorunur(string $href): bool {
+    global $sbIzin;
+    $yol = strtok($href, '?');
+    if (!isset($sbIzin[$yol])) { return true; }
+    foreach ((array)$sbIzin[$yol] as $sbP) { if (Auth::hasModule($sbP)) { return true; } }
+    return false;
+}
+
+// Yetkisi olmayan öğeleri, boş kalan grupları ve altı boş kalan bölüm başlıklarını çıkar
+$sbSuzulmus = [];
+foreach ($sbMenu as $sbOge) {
+    if (isset($sbOge['alt'])) {
+        $sbOge['alt'] = array_values(array_filter($sbOge['alt'], static fn($sbA) => sbGorunur($sbA['href'])));
+        if (!array_filter($sbOge['alt'], static fn($sbA) => empty($sbA['gizli']))) { continue; }
+    } elseif (isset($sbOge['href']) && !sbGorunur($sbOge['href'])) {
+        continue;
+    }
+    $sbSuzulmus[] = $sbOge;
+}
+$sbMenu = [];
+foreach ($sbSuzulmus as $sbI => $sbOge) {
+    if (isset($sbOge['bolum'])) {
+        $sbSonraki = $sbSuzulmus[$sbI + 1] ?? null;
+        if ($sbSonraki === null || isset($sbSonraki['bolum'])) { continue; }
+    }
+    $sbMenu[] = $sbOge;
+}
+
 function sbIkon(array $ikon): string {
     $p = '';
     for ($i = 1; $i <= (int)$ikon[1]; $i++) { $p .= '<span class="path' . $i . '"></span>'; }
@@ -168,6 +223,8 @@ $sbBekleyen = [
     ['sifreTalep',  'settings/password_reset.php',     'Şifre talebi',  'pl-kirmizi'],
     ['mailKuyruk',  'settings/email_queue.php',        'Mail kuyruğu',  'pl-uyari'],
 ];
+// Bekleyen iş kısayolları da yetkiye göre (temsilci şifre talebi / mail kuyruğu sayısını görmesin)
+$sbBekleyen = array_values(array_filter($sbBekleyen, static fn($sbB) => sbGorunur($sbB[1])));
 $sbBekleyenVar = false;
 foreach ($sbBekleyen as $sbB) { if (($sbSay[$sbB[0]] ?? 0) > 0) { $sbBekleyenVar = true; } }
 ?>

@@ -5,6 +5,8 @@
  */
 
 require_once '../config/header.php';
+// Güvenlik: önceden yetki kontrolü yoktu; panele giren her yönetici fiyat/paket/içerik değiştirebiliyordu
+Auth::requireModule('manage_settings');
 require_once '../config/sidebar.php';
 
 // Form Submit (Ekle/Güncelle)

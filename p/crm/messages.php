@@ -4,7 +4,8 @@
  * Liste, okuma, e-posta ile yanıt (mail kuyruğu), durum ve potansiyel müşteriye aktarma.
  */
 require_once '../config/header.php';
-Auth::requireModule('manage_tenants');
+// Lead ekranı: müşteri temsilcisi (manage_leads) veya firma yöneticisi (manage_tenants) erişebilir
+Auth::requireAnyModule(['manage_leads', 'manage_tenants']);
 
 // Tablo (iletişim formu ilk mesajda oluşturur; panelden önce açılırsa burada da kurulur)
 $db->TableOperations("CREATE TABLE IF NOT EXISTS iletisim_mesajlari (

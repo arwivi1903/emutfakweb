@@ -17,6 +17,7 @@ if (php_sapi_name() !== 'cli') {
 
 require_once __DIR__ . '/../functions/provision.php'; // provision_admin_pdo + env
 require_once __DIR__ . '/../functions/mailer.php';
+require_once __DIR__ . '/../functions/whatsapp.php';
 
 $maxAttempts = 5;
 $batch = 50;
@@ -64,20 +65,36 @@ foreach ($items as $row) {
     $subject = $row['subject'] ?? '(konu yok)';
     $message = $row['message'] ?? '';
 
-    if ($to === '' || !filter_var($to, FILTER_VALIDATE_EMAIL)) {
-        $pdo->prepare("UPDATE mail_kuyrugu SET status='failed', attempts=attempts+1, last_error='Geçersiz alıcı adresi', processed_at=NOW() WHERE queue_id=?")->execute([$id]);
-        $failed++;
-        continue;
+    $channel = (string)($row['channel'] ?? 'email');
+
+    // WhatsApp bildirimi (ör. iletişim formu): Meta Cloud API ile gönderilir
+    $kopyaNot = '';
+    if ($channel === 'whatsapp') {
+        [$ok, $hata] = prolyn_whatsapp_gonder($to, $message);
+    } else {
+        if ($to === '' || !filter_var($to, FILTER_VALIDATE_EMAIL)) {
+            $pdo->prepare("UPDATE mail_kuyrugu SET status='failed', attempts=attempts+1, last_error='Geçersiz alıcı adresi', processed_at=NOW() WHERE queue_id=?")->execute([$id]);
+            $failed++;
+            continue;
+        }
+        // Gönderen kimliği: payload'da açıkça verilmişse o, yoksa kaynağa göre (lead → destek, yanıt → info, diğer → noreply)
+        $kimlik = in_array($payload['kimlik'] ?? '', ['destek', 'bilgi', 'noreply'], true)
+            ? $payload['kimlik'] : prolyn_mail_kimlik_kaynaktan((string)($row['source'] ?? ''));
+        $ok = prolyn_send_mail($to, $subject, $message, $isHtml, $extraHeaders, $kimlik);
+        $hata = $ok ? '' : prolyn_mail_son_hata();
+        // Gönderim başarılı ama "Gönderilenler" kopyası alınamadıysa not düş (durum yine 'sent')
+        $kopyaNot = $ok ? prolyn_mail_kopya_hata() : '';
     }
 
-    $ok = prolyn_send_mail($to, $subject, $message, $isHtml, $extraHeaders);
     if ($ok) {
-        $pdo->prepare("UPDATE mail_kuyrugu SET status='sent', attempts=attempts+1, processed_at=NOW() WHERE queue_id=?")->execute([$id]);
+        $pdo->prepare("UPDATE mail_kuyrugu SET status='sent', attempts=attempts+1, last_error=?, processed_at=NOW() WHERE queue_id=?")
+            ->execute([$kopyaNot !== '' ? mb_substr('Gönderildi; Gönderilenler kopyası alınamadı: ' . $kopyaNot, 0, 250) : null, $id]);
         $sent++;
     } else {
         // Deneme sayısı dolduysa failed, yoksa pending kalsın (tekrar denenir)
         $newStatus = ((int)$row['attempts'] + 1 >= $maxAttempts) ? 'failed' : 'pending';
-        $pdo->prepare("UPDATE mail_kuyrugu SET status=?, attempts=attempts+1, last_error='Gönderim başarısız (PHP error log: [mailer])', processed_at=NOW() WHERE queue_id=?")->execute([$newStatus, $id]);
+        $pdo->prepare("UPDATE mail_kuyrugu SET status=?, attempts=attempts+1, last_error=?, processed_at=NOW() WHERE queue_id=?")
+            ->execute([$newStatus, mb_substr($hata !== '' ? $hata : 'Gönderim başarısız (PHP error log)', 0, 250), $id]);
         $failed++;
     }
 }

@@ -185,18 +185,26 @@ function current_admin(bool $refreshFromDb = true): ?array
 // Yetki kontrolü
 function oturumkontrol(array $allowedRoles = [], array $requiredPermissions = []): void
 {
+    // 04.11.2026 — Oturumda giriş bilgisi var mıydı? current_admin() öncesi bakılır,
+    // çünkü current_admin() bulunamayan yöneticide bu alanları siler.
+    start_secure_session();
+    $oturumVardi = !empty($_SESSION['admin_id']) && !empty($_SESSION['email']);
+
     $admin = current_admin(true);
 
     if (!$admin) {
-        // Debug bilgisi - log'a yaz
-        $debugInfo = [
-            'timestamp' => date('Y-m-d H:i:s'),
-            'session_admin_id' => $_SESSION['admin_id'] ?? 'boş',
-            'session_email' => $_SESSION['email'] ?? 'boş',
-            'session_data_keys' => array_keys($_SESSION),
-            'reason' => 'current_admin() null döndü'
-        ];
-        error_log("Yetki Hatası: " . json_encode($debugInfo));
+        /* Giriş bilgisi hiç yoksa bu olağan bir durumdur: 30 dk hareketsizlik
+           zaman aşımı, çıkış sonrası eski sekme veya giriş yapmamış ziyaretçi.
+           Eskiden bunlar da "Yetki Hatası" diye loglanıp error_log'u dolduruyordu.
+           Artık yalnızca GERÇEK anormallik loglanır: oturumda yönetici varken
+           DB'de bulunamaması, pasif olması veya DB hatası. */
+        if ($oturumVardi) {
+            error_log("Yetki Hatası: " . json_encode([
+                'uri'    => strtok((string)($_SERVER['REQUEST_URI'] ?? ''), '?'),
+                'ip'     => $_SERVER['REMOTE_ADDR'] ?? '',
+                'reason' => 'Oturumdaki yönetici bulunamadı, pasif ya da DB hatası',
+            ], JSON_UNESCAPED_UNICODE));
+        }
         swallMsg("login", "yetki");
         exit;
     }

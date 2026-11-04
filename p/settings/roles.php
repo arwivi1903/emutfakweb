@@ -6,6 +6,25 @@ require_once __DIR__ . '/../config/sidebar.php';
 
 $db = new Database();
 
+/* manage_leads izni (potansiyel müşteriler). Yoksa bir kez eklenir ve adı "temsilci" içeren
+   role (Müşteri Temsilcisi) otomatik verilir; sonrasında bu ekrandan yönetilir. */
+try {
+    if (!(int)$db->getColumn("SELECT COUNT(*) FROM izinler WHERE name = 'manage_leads'")) {
+        $izinId = $db->Insert("INSERT INTO izinler (name, description) VALUES ('manage_leads', ?)",
+            ['Potansiyel müşteriler: lead listesi, takip, not, WhatsApp / e-posta gönderimi, gelen mesajlar']);
+        if ($izinId) {
+            $db->Insert("INSERT INTO rol_izinleri (role_id, permission_id)
+                         SELECT r.id, ? FROM roller r
+                         WHERE r.name LIKE '%temsilci%'
+                           AND NOT EXISTS (SELECT 1 FROM rol_izinleri x WHERE x.role_id = r.id AND x.permission_id = ?)",
+                [(int)$izinId, (int)$izinId]);
+            xlog('INSERT', 'manage_leads izni eklendi ve temsilci rolüne verildi', (int)$izinId, $_SESSION['admin_id'] ?? 0, $db, null, null, 'izinler');
+        }
+    }
+} catch (Throwable $e) {
+    error_log('[roller] manage_leads izni eklenemedi: ' . $e->getMessage());
+}
+
 // POST İşlemleri (Ekleme/Düzenleme/Silme)
 if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['action'])) {
     $action = $_POST['action'];

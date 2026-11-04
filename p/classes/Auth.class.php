@@ -254,6 +254,55 @@ class Auth
      *
      * @param string $permissionName İzin adı (ör. manage_tenants)
      */
+    /**
+     * Oturumdaki yöneticinin izin adları (rollerinden). İstek başına tek sorgu; sonuç önbelleklenir.
+     * Menüyü süzmek ve sayfa içi düğmeleri göstermek için kullanılır; sayfa erişimi yine requireModule ile korunur.
+     */
+    private static function izinListesi(): array
+    {
+        static $liste = null;
+        if ($liste !== null) { return $liste; }
+        $liste = [];
+        if (empty($_SESSION['admin_id'])) { return $liste; }
+        global $db;
+        try {
+            $rows = $db->getRows("SELECT DISTINCT i.name FROM yonetici_rolleri yr
+                                  JOIN rol_izinleri ri ON yr.role_id = ri.role_id
+                                  JOIN izinler i ON ri.permission_id = i.id
+                                  WHERE yr.admin_id = ?", [(int)$_SESSION['admin_id']]) ?: [];
+            foreach ($rows as $r) { $liste[(string)$r->name] = true; }
+        } catch (Throwable $e) {
+            error_log('Permission list error: ' . $e->getMessage());
+        }
+        return $liste;
+    }
+
+    /** Yönetici bu izne sahip mi? (superadmin her zaman evet) */
+    public static function hasModule(string $permissionName): bool
+    {
+        if (isset($_SESSION['role']) && $_SESSION['role'] === 'superadmin') { return true; }
+        return isset(self::izinListesi()[$permissionName]);
+    }
+
+    /**
+     * Verilen izinlerden EN AZ BİRİ yoksa erişimi reddeder.
+     * Örn. lead ekranları: manage_leads (müşteri temsilcisi) veya manage_tenants (firma yöneticisi).
+     */
+    public static function requireAnyModule(array $permissionNames): void
+    {
+        if (empty($_SESSION['admin_id'])) {
+            header("Location: " . prolynweb_panel_url('login.php'));
+            exit;
+        }
+        foreach ($permissionNames as $p) {
+            if (self::hasModule((string)$p)) { return; }
+        }
+        global $db;
+        xlogSimple('ACCESS_DENIED', 'Modül: ' . implode(' | ', $permissionNames), null, (int)$_SESSION['admin_id'], $db);
+        header("Location: " . prolynweb_panel_url('partials/access_denied.php'));
+        exit;
+    }
+
     public static function requireModule(string $permissionName): void
     {
         if (session_status() === PHP_SESSION_NONE) {

@@ -11,7 +11,8 @@
  * Veri/yetki mantığı (POST işlemleri, sorgular, CSRF) önceki sürümle aynıdır.
  */
 require_once '../config/header.php';
-Auth::requireModule('manage_tenants');
+// Lead ekranı: müşteri temsilcisi (manage_leads) veya firma yöneticisi (manage_tenants) erişebilir
+Auth::requireAnyModule(['manage_leads', 'manage_tenants']);
 require_once __DIR__ . '/../functions/lead.php';
 lead_sema_kur($db);
 
@@ -27,7 +28,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         if ($id > 0 && isset(LEAD_DURUMLAR[$durum])) {
             $db->Update("UPDATE potansiyel_musteriler SET durum = ?, ret_tarihi = IF(? = 'ret', NOW(), ret_tarihi) WHERE lead_id = ?", [$durum, $durum, $id]);
             lead_aktivite($db, $id, 'durum', 'Durum: ' . LEAD_DURUMLAR[$durum][0]);
-            $flash = ['success', 'Durum güncellendi.'];
+            $flash = ['success', 'Durum güncellendi; kayıt «' . LEAD_DURUMLAR[$durum][0] . '» aşamasına taşındı.'];
         }
     }
 
@@ -39,7 +40,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $db->Update("UPDATE potansiyel_musteriler SET durum = ?, ret_tarihi = IF(? = 'ret', NOW(), ret_tarihi) WHERE lead_id = ?", [$durum, $durum, $id]);
                 lead_aktivite($db, $id, 'durum', 'Toplu durum: ' . LEAD_DURUMLAR[$durum][0]);
             }
-            $flash = ['success', count($ids) . ' kaydın durumu güncellendi.'];
+            $flash = ['success', count($ids) . ' kayıt «' . LEAD_DURUMLAR[$durum][0] . '» aşamasına taşındı.'];
         }
     }
 
@@ -86,6 +87,10 @@ $f = [
     'sirala'  => (string)($_GET['sirala'] ?? ''),
 ];
 if (!in_array($f['web'], ['site', 'sosyal', 'yok'], true)) { $f['web'] = ''; }
+// Her durum yalnızca kendi aşamasında listelenir; aşama seçilmemişse "Yeni" açılır.
+// İstisna: arama ve "Takibi gelen" görünümü bir iş listesidir, tüm aşamaları tarar (firmayı nerede olursa bulmak için).
+$tumAsamalar = ($f['q'] !== '' || $f['takip'] === 'bugun');
+if (!isset(LEAD_DURUMLAR[$f['durum']])) { $f['durum'] = $tumAsamalar ? '' : 'yeni'; }
 $durdurSql = "'" . implode("','", LEAD_DURDUR) . "'";   // sabit listeden üretilir, kullanıcı girdisi değildir
 $where = ['1=1']; $p = [];
 // Müşteri ve kapananlar (Olumsuz, İletişim istemiyor) varsayılan listede görünmez;
@@ -173,7 +178,8 @@ $gelismisAcik = ($f['oncelik'] !== '' || $f['il'] !== '' || $f['segment'] !== ''
 // Aktif filtre çipleri
 $cipler = [];
 if ($f['q'] !== '')       { $cipler[] = ['Arama: ' . $f['q'], $qs(['q' => '', 'sayfa' => ''])]; }
-if ($f['durum'] !== '' && isset(LEAD_DURUMLAR[$f['durum']])) { $cipler[] = ['Durum: ' . LEAD_DURUMLAR[$f['durum']][0], $qs(['durum' => '', 'sayfa' => ''])]; }
+// Aşama çipi yok: aşama her zaman satış hattı kutularında seçili görünür
+if ($tumAsamalar) { $cipler[] = ['Tüm aşamalarda', $qs(['q' => '', 'takip' => '', 'sayfa' => ''])]; }
 if ($f['takip'] === 'bugun') { $cipler[] = ['Takibi gelenler', $qs(['takip' => '', 'sayfa' => ''])]; }
 if ($f['hazir'] === '1')  { $cipler[] = ['Kapanmışlar gizli', $qs(['hazir' => '', 'sayfa' => ''])]; }
 if ($f['oncelik'] !== '') { $cipler[] = ['Öncelik: ' . $f['oncelik'], $qs(['oncelik' => '', 'sayfa' => ''])]; }
@@ -235,8 +241,10 @@ require_once '../config/sidebar.php';
           <span class="text-muted fs-7 fw-semibold mt-1">Mutfak · dolap · banyo kampanyası satış hattı · <?= number_format($toplamTum, 0, ',', '.') ?> firma</span>
         </div>
         <div class="d-flex align-items-center gap-2 flex-wrap">
+          <?php if (Auth::hasModule('manage_tenants')): // şablon düzenleme ve toplu içe aktarma yöneticide kalır ?>
           <a href="crm/lead_templates.php" class="btn btn-sm btn-light"><i class="ki-duotone ki-message-text-2 fs-3"><span class="path1"></span><span class="path2"></span><span class="path3"></span></i> Şablonlar</a>
           <a href="crm/lead_import.php" class="btn btn-sm btn-light-primary"><i class="ki-duotone ki-file-up fs-3"><span class="path1"></span><span class="path2"></span></i> İçe Aktar</a>
+          <?php endif; ?>
           <a href="crm/lead_detail.php?yeni=1" class="btn btn-sm btn-primary"><i class="ki-duotone ki-plus fs-3"></i> Yeni Lead</a>
         </div>
       </div>
@@ -302,17 +310,17 @@ require_once '../config/sidebar.php';
         </div>
 
         <!-- 2) SATIŞ HATTI -->
-        <div class="mb-6">
+        <div class="mb-6" id="leadHat">
           <div class="d-flex justify-content-between align-items-center mb-2">
             <span class="fw-bold text-gray-800 fs-6">Satış hattı</span>
-            <?php if ($f['durum'] !== ''): ?><a href="crm/leads.php?<?= $e($qs(['durum' => '', 'sayfa' => ''])) ?>" class="fs-8 text-muted">Aşama süzmesini kaldır</a><?php endif; ?>
+            <span class="fs-8 text-muted"><?= $tumAsamalar ? 'Arama / takip görünümü: tüm aşamalar taranıyor' : 'Liste yalnızca seçili aşamayı gösterir' ?></span>
           </div>
           <div class="lp-hat">
             <?php foreach ($hatAsamalari as $kod):
                 [$ad, $renk] = LEAD_DURUMLAR[$kod];
                 $aktif = $f['durum'] === $kod;
             ?>
-            <a href="crm/leads.php?<?= $e($qs(['durum' => $aktif ? '' : $kod, 'takip' => '', 'hazir' => '', 'sayfa' => ''])) ?>"
+            <a href="crm/leads.php?<?= $e($qs(['durum' => $kod, 'q' => '', 'takip' => '', 'hazir' => '', 'sayfa' => ''])) ?>"
                class="lp-stage <?= $aktif ? 'is-active' : '' ?>" style="--lp-c: var(--bs-<?= $e($renk) ?>)">
               <span class="lp-n d-block"><?= number_format($durumSayilari[$kod] ?? 0, 0, ',', '.') ?></span>
               <span class="lp-l"><?= $e($ad) ?></span>
@@ -323,7 +331,7 @@ require_once '../config/sidebar.php';
             <span class="text-muted">Kapananlar:</span>
             <?php foreach ($kapaliDurumlar as $kod):
                 $aktif = $f['durum'] === $kod; ?>
-              <a href="crm/leads.php?<?= $e($qs(['durum' => $aktif ? '' : $kod, 'takip' => '', 'hazir' => '', 'sayfa' => ''])) ?>" class="<?= $aktif ? 'is-active' : '' ?>">
+              <a href="crm/leads.php?<?= $e($qs(['durum' => $kod, 'q' => '', 'takip' => '', 'hazir' => '', 'sayfa' => ''])) ?>" class="<?= $aktif ? 'is-active' : '' ?>">
                 <?= $e(LEAD_DURUMLAR[$kod][0]) ?> · <?= number_format($durumSayilari[$kod] ?? 0, 0, ',', '.') ?>
               </a>
             <?php endforeach; ?>
@@ -334,7 +342,7 @@ require_once '../config/sidebar.php';
         <div class="card mb-4">
           <div class="card-body py-4">
             <form method="get" action="crm/leads.php">
-              <?php foreach (['durum', 'takip', 'hazir'] as $gizli): if ($f[$gizli] !== ''): ?>
+              <?php foreach (['takip', 'hazir'] as $gizli): if ($f[$gizli] !== ''): ?>
                 <input type="hidden" name="<?= $gizli ?>" value="<?= $e($f[$gizli]) ?>">
               <?php endif; endforeach; ?>
               <div class="d-flex gap-2 flex-wrap align-items-center">
@@ -401,7 +409,8 @@ require_once '../config/sidebar.php';
           <div class="card">
             <div class="card-header border-0 pt-5 pb-0 flex-wrap gap-2">
               <div class="card-title flex-column align-items-start">
-                <span class="fw-bold fs-4"><?= number_format($toplamFiltre, 0, ',', '.') ?> kayıt</span>
+                <span class="fw-bold fs-4"><?= number_format($toplamFiltre, 0, ',', '.') ?> kayıt
+                  <span class="text-muted fw-semibold fs-6">· <?= $f['durum'] !== '' ? $e(LEAD_DURUMLAR[$f['durum']][0]) : 'tüm aşamalar' ?></span></span>
                 <?php if ($toplamFiltre > 0): ?>
                 <span class="text-muted fs-8"><?= number_format($offset + 1, 0, ',', '.') ?>–<?= number_format($offset + count($leads), 0, ',', '.') ?> arası gösteriliyor · sıralama: <?= $e($siralamalar[$f['sirala']][0]) ?></span>
                 <?php endif; ?>
@@ -425,7 +434,7 @@ require_once '../config/sidebar.php';
                   <?php if (!$leads): ?>
                     <tr><td colspan="6" class="text-center text-muted py-12">
                       <?php if ($toplamTum === 0): ?>
-                        Henüz kayıt yok. <a href="crm/lead_import.php" class="fw-bold">CSV içe aktararak</a> veya <a href="crm/lead_detail.php?yeni=1" class="fw-bold">elle ekleyerek</a> başlayın.
+                        Henüz kayıt yok. <?php if (Auth::hasModule('manage_tenants')): ?><a href="crm/lead_import.php" class="fw-bold">CSV içe aktararak</a> veya <?php endif; ?> <a href="crm/lead_detail.php?yeni=1" class="fw-bold">elle ekleyerek</a> başlayın.
                       <?php else: ?>
                         Bu filtreye uyan kayıt yok. <a href="crm/leads.php" class="fw-bold">Filtreleri temizle</a>
                       <?php endif; ?>
@@ -640,7 +649,7 @@ require_once '../config/sidebar.php';
   var aramaKutusu = document.getElementById('leadAra');
   if (aramaKutusu && window.fetch && window.DOMParser) {
     var zaman = null, iptal = null, yazimda = false;
-    var bolgeler = ['leadBulkForm', 'leadDurumForm', 'leadChipler', 'leadTemizleYer'];
+    var bolgeler = ['leadHat', 'leadBulkForm', 'leadDurumForm', 'leadChipler', 'leadTemizleYer'];   // leadHat: aramada aktif aşama vurgusu kalksın
     var ara = function () {
       var fd = new URLSearchParams(new FormData(aramaKutusu.form));
       Array.from(fd.keys()).forEach(function (k) { if (fd.get(k) === '') { fd.delete(k); } });

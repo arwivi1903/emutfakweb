@@ -3,7 +3,8 @@
  * Prolyn Admin Panel - Lead detayı / yeni lead
  */
 require_once '../config/header.php';
-Auth::requireModule('manage_tenants');
+// Lead ekranı: müşteri temsilcisi (manage_leads) veya firma yöneticisi (manage_tenants) erişebilir
+Auth::requireAnyModule(['manage_leads', 'manage_tenants']);
 require_once __DIR__ . '/../functions/lead.php';
 lead_sema_kur($db);
 
@@ -60,12 +61,20 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             }
             $flash = ['danger', 'Kayıt eklenemedi.'];
         } else {
-            $eski = $db->getRowAssoc("SELECT durum FROM potansiyel_musteriler WHERE lead_id = ?", [$id]);
+            $eski = $db->getRowAssoc("SELECT durum, eposta FROM potansiyel_musteriler WHERE lead_id = ?", [$id]);
             $db->Update("UPDATE potansiyel_musteriler SET firma_adi=?, yetkili=?, telefon=?, whatsapp=?, eposta=?, web=?, il=?, ilce=?, segment=?, oncelik=?, sonraki_takip=?, notlar=?, durum=?,
                          ret_tarihi = IF(? = 'ret' AND ret_tarihi IS NULL, NOW(), ret_tarihi) WHERE lead_id=?",
                 [$a['firma_adi'], $a['yetkili'], $a['telefon'], $a['whatsapp'], $a['eposta'], $a['web'], $a['il'], $a['ilce'], $a['segment'], $a['oncelik'], $a['sonraki_takip'], $a['notlar'], $durum, $durum, $id]);
             if ($eski && $eski['durum'] !== $durum) { lead_aktivite($db, $id, 'durum', 'Durum: ' . LEAD_DURUMLAR[$durum][0]); }
             $flash = ['success', 'Kaydedildi.'];
+            // E-posta düzeltildiyse ve önceki e-posta eski adrese gittiyse kullanıcıya tekrar gönderim yolunu göster
+            if ($eski && strtolower((string)$eski['eposta']) !== strtolower((string)$a['eposta'])) {
+                lead_aktivite($db, $id, 'sistem', 'E-posta değişti: ' . ($eski['eposta'] ?: '—') . ' → ' . ($a['eposta'] ?: '—'));
+                $sonM = lead_son_kampanya_maili($db, $id);
+                if ($sonM && strtolower((string)$sonM['recipient']) !== strtolower((string)$a['eposta'])) {
+                    $flash = ['info', 'Kaydedildi. Önceki e-posta ' . $sonM['recipient'] . ' adresine gitmişti; "Ulaş" bölümünden yeni adrese tekrar gönderebilirsiniz.'];
+                }
+            }
         }
     }
 
@@ -96,6 +105,20 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             }
             $flash = ['success', 'Not eklendi.'];
         }
+    }
+
+    // Hatalı adrese giden son kampanya e-postasını, kayıttaki düzeltilmiş adrese tekrar gönder
+    if ($action === 'mail_resend' && !$yeni) {
+        $lead = $db->getRowAssoc("SELECT * FROM potansiyel_musteriler WHERE lead_id = ?", [$id]);
+        $son = $lead ? lead_son_kampanya_maili($db, $id) : null;
+        // Formdaki kuyruk no ile sunucudaki "son e-posta" aynı olmalı (eski sayfadan çift gönderimi engeller)
+        if ($son && (int)($_POST['queue_id'] ?? 0) !== (int)$son['queue_id']) { $son = null; }
+        [$ok, $neden] = $lead ? lead_tekrar_gonderilebilir_mi($lead, $son) : [false, 'kayıt yok'];
+        $k = lead_mail_kurallari();
+        if (!$ok) { $flash = ['warning', 'Tekrar gönderilemez: ' . $neden . '.']; }
+        elseif (lead_bugun_gonderilen_mail($db) >= $k['gunluk_limit']) { $flash = ['warning', 'Günlük kampanya e-postası sınırına ulaşıldı (' . $k['gunluk_limit'] . ').']; }
+        elseif (lead_mail_yeniden_gonder($db, $lead, $son)) { $flash = ['success', 'E-posta ' . $lead['eposta'] . ' adresine tekrar gönderilmek üzere kuyruğa eklendi.']; }
+        else { $flash = ['danger', 'E-posta kuyruğa eklenemedi.']; }
     }
 
     if ($action === 'mail' && !$yeni) {
@@ -130,6 +153,8 @@ $waSablonlar = $db->getRowsAssoc("SELECT kod, ad FROM lead_sablonlari WHERE kana
 $mailSablonlar = $db->getRowsAssoc("SELECT kod, ad FROM lead_sablonlari WHERE kanal = 'eposta' AND aktif = 1 ORDER BY sira");
 [$waOk, $waNeden] = lead_gonderilebilir_mi($lead, 'whatsapp');
 [$mailOk, $mailNeden] = lead_gonderilebilir_mi($lead, 'eposta');
+$sonMail = $yeni ? null : lead_son_kampanya_maili($db, $id);
+[$tekrarOk] = lead_tekrar_gonderilebilir_mi($lead, $sonMail);
 $csrf = generateCSRFToken();
 $turIkon = ['whatsapp' => ['ki-whatsapp', 'success'], 'eposta' => ['ki-sms', 'info'], 'arama' => ['ki-phone', 'primary'], 'ziyaret' => ['ki-geolocation', 'warning'],
             'durum' => ['ki-arrows-loop', 'dark'], 'not' => ['ki-notepad', 'secondary'], 'sistem' => ['ki-setting-2', 'secondary']];
@@ -187,7 +212,7 @@ $oncelikRenk = ['A' => 'success', 'B' => 'primary', 'C' => 'secondary'][$lead['o
             <span class="badge badge-light-<?= $oncelikRenk ?>">Öncelik <?= $e($lead['oncelik']) ?> · <?= (int)$lead['puan'] ?></span>
             <?php if ($lead['google_puan'] !== null): ?><span class="badge badge-light">★ <?= $e((string)$lead['google_puan']) ?></span><?php endif; ?>
             <?php if ($konum !== ''): ?><span class="text-muted fs-7 fw-semibold"><?= $e($konum) ?><?= $lead['segment'] ? ' · ' . $e($lead['segment']) : '' ?></span><?php endif; ?>
-            <?php if ($lead['customer_id']): ?><a class="badge badge-light-success" href="crm/tenant_detail.php?id=<?= (int)$lead['customer_id'] ?>">Kurum #<?= (int)$lead['customer_id'] ?></a><?php endif; ?>
+            <?php if ($lead['customer_id']): ?><?php if (Auth::hasModule('manage_tenants')): ?><a class="badge badge-light-success" href="crm/tenant_detail.php?id=<?= (int)$lead['customer_id'] ?>">Kurum #<?= (int)$lead['customer_id'] ?></a><?php else: ?><span class="badge badge-light-success">Müşteri oldu</span><?php endif; ?><?php endif; ?>
           </div>
           <?php endif; ?>
         </div>
@@ -257,6 +282,18 @@ $oncelikRenk = ['A' => 'success', 'B' => 'primary', 'C' => 'secondary'][$lead['o
                   </div>
                   <div class="col-md-6">
                     <div class="fw-bold mb-2">E-posta <span class="text-muted fw-normal fs-8">(<?= (int)$lead['mail_sayisi'] ?> kez<?= $lead['son_mail'] ? ', son ' . date('d.m.Y', strtotime($lead['son_mail'])) : '' ?>)</span></div>
+                    <?php if ($tekrarOk): ?>
+                      <!-- Son e-posta farklı (hatalı) adrese gitti veya başarısız oldu: düzeltilmiş adrese aynı içerikle tekrar gönder -->
+                      <form method="post" action="crm/lead_detail.php?id=<?= $id ?>" class="notice bg-light-warning border border-warning border-dashed rounded p-4 mb-4">
+                        <?= csrfTokenField() ?><input type="hidden" name="action" value="mail_resend"><input type="hidden" name="queue_id" value="<?= (int)$sonMail['queue_id'] ?>">
+                        <div class="fs-7 text-gray-800 mb-3">
+                          Son e-posta <strong><?= $e($sonMail['recipient']) ?></strong> adresine
+                          <?= $sonMail['status'] === 'failed' ? '<span class="text-danger fw-bold">gönderilemedi</span>' : 'gitti' ?>
+                          (<?= date('d.m.Y H:i', strtotime($sonMail['created_at'])) ?>). Kayıttaki adres: <strong><?= $e($lead['eposta']) ?></strong>
+                        </div>
+                        <button class="btn btn-sm btn-warning js-kapat" data-soru="&quot;<?= $e($sonMail['subject']) ?>&quot; e-postası <?= $e($lead['eposta']) ?> adresine tekrar gönderilsin mi? Kampanya sayacı artmaz.">Düzeltilmiş adrese tekrar gönder</button>
+                      </form>
+                    <?php endif; ?>
                     <?php if ($mailOk): ?>
                       <form method="post" action="crm/lead_detail.php?id=<?= $id ?>" class="d-flex flex-column gap-2">
                         <?= csrfTokenField() ?><input type="hidden" name="action" value="mail">
